@@ -29,7 +29,7 @@ async function fetchFromS3(fileName: string) {
   try {
     const params = {
       Bucket: s3bucket,
-      Key: fileName,
+      Key: `${fileName}`,
     };
     const file = await s3.getObject(params).promise();
     return file.Body; // Return the file body
@@ -43,6 +43,7 @@ async function listFilesFromS3() {
   try {
     const params = {
       Bucket: s3bucket,
+      Prefix: 'images/',
     };
     const files = await s3.listObjectsV2(params).promise();
     console.log(files);
@@ -52,6 +53,7 @@ async function listFilesFromS3() {
     throw error;
   }
 }
+
 useEffect(() => {
   const fetchFiles = async () => {
     try {
@@ -98,8 +100,14 @@ const handleSwipe = async (direction: 'left' | 'right') => {
     console.log('Right');
     if (fetchedFiles.length > 0) {
       const fileToPopulate = fetchedFiles[0]; 
-      setCurrentRecipe(fileToPopulate.filename); 
-      router.push('/explore');
+      if (fileToPopulate) { // Check if fileToPopulate is defined
+        console.log(fileToPopulate.filename);
+        const recipeId = fileToPopulate.filename.split('/').pop()?.split('.')[0]; // Use optional chaining
+        if (recipeId) { // Ensure recipeId is defined before using it
+          setCurrentRecipe(recipeId); 
+          router.push('/explore');
+        }
+      }
     }
   }
 };

@@ -22,10 +22,11 @@ import { useRecipe } from '@/context/RecipeContext';
     useEffect(() => {
       const fetchRecipe = async () => {
         if (currentRecipe) {
+          console.log(currentRecipe);
           try {
             const params = {
               Bucket: s3bucket,
-              Key: `${currentRecipe}.json`, // Assuming the recipe is stored as a JSON file
+              Key: `jsondata/${currentRecipe}.json`, // Assuming the recipe is stored as a JSON file in the jsondata folder
             };
             const file = await s3.getObject(params).promise();
             if (file.Body) { // Check if file.Body is defined
@@ -46,9 +47,9 @@ import { useRecipe } from '@/context/RecipeContext';
     return (
       <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
         {recipeData ? (
-          <Text>{JSON.stringify(recipeData)}</Text> // Display the recipe data
+          <Text style={{ fontSize: 20, padding: 50 }}>{JSON.stringify(recipeData)}</Text> // Display the recipe data
         ) : (
-          <ThemedText>No recipe selected</ThemedText>
+          <ThemedText style={{ fontSize: 20, padding: 10 }}>No recipe selected</ThemedText>
         )}
       </View>
     );
