@@ -1,23 +1,58 @@
-import { StyleSheet, Image,  } from 'react-native';
+import { StyleSheet, View, Text } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
 import { useRecipe } from '@/context/RecipeContext';
 
-// Start of Selection
-export default function TabTwoScreen() {
-  const { currentRecipe } = useRecipe();
+  
+  import { useEffect, useState } from 'react';
+  import { S3 } from 'aws-sdk';
+  import Constants from 'expo-constants';
 
-  return (
-    <ThemedView>
-      {currentRecipe ? (
-        <ThemedText>{currentRecipe}</ThemedText>
-      ) : (
-        <ThemedText>No recipe selected</ThemedText>
-      )}
-    </ThemedView>
-  );
-}
+  export default function TabTwoScreen() {
+    const { currentRecipe } = useRecipe();
+    const [recipeData, setRecipeData] = useState(null);
+    const s3bucket = 'savorswipe-recipe';
+    const s3 = new S3({
+      region: Constants.manifest.extra.AWS_REGION,
+      accessKeyId: Constants.manifest.extra.AWS_ID,
+      secretAccessKey: Constants.manifest.extra.AWS_SECRET
+    });
+
+    useEffect(() => {
+      const fetchRecipe = async () => {
+        if (currentRecipe) {
+          try {
+            const params = {
+              Bucket: s3bucket,
+              Key: `${currentRecipe}.json`, // Assuming the recipe is stored as a JSON file
+            };
+            const file = await s3.getObject(params).promise();
+            if (file.Body) { // Check if file.Body is defined
+              const data = JSON.parse(file.Body.toString('utf-8'));
+              setRecipeData(data);
+            } else {
+              console.error('File body is undefined');
+            }
+          } catch (error) {
+            console.error('Error fetching recipe from S3:', error);
+          }
+        }
+      };
+
+      fetchRecipe();
+    }, [currentRecipe]);
+
+    return (
+      <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+        {recipeData ? (
+          <Text>{JSON.stringify(recipeData)}</Text> // Display the recipe data
+        ) : (
+          <ThemedText>No recipe selected</ThemedText>
+        )}
+      </View>
+    );
+  }
 
 
 const styles = StyleSheet.create({
