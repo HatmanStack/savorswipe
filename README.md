@@ -1,12 +1,11 @@
 # SavorSwipe
 
-Welcome to the Recipe Picker App! This mobile application allows users to browse through a collection of delicious recipes and select their favorites by swiping left or right. Built with Expo, this app provides a smooth and interactive user experience.
+Welcome to the Recipe Picker App! This mobile application allows users to browse through a collection of delicious recipes and select their favorites by swiping left or right. Built with Expo, this app provides a smooth and interactive user experience. [SavorSwipe]("https://main.d21v5ak15nf4k9.amplifyapp.com/")
 
 ## Features
 
 - **Swipe Navigation**: Easily browse through recipes by swiping left to discard or right to select.
 - **Recipe Details**: View detailed information about each recipe, including ingredients and cooking instructions.
-
 
 ## Technologies Used
 
