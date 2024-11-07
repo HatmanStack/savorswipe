@@ -1,5 +1,5 @@
 import 'react-native-gesture-handler';
-import { StyleSheet, Image, View  } from 'react-native';
+import { StyleSheet, Image, View, Animated, Dimensions  } from 'react-native';
 import {useState, useEffect, useRef} from 'react';
 import { useRouter } from 'expo-router';
 import { PanGestureHandler } from 'react-native-gesture-handler'; 
@@ -7,17 +7,32 @@ import { useRecipe } from '@/context/RecipeContext';
 import Constants from 'expo-constants';
 import { S3 } from 'aws-sdk';
 import { ThemedText } from '@/components/ThemedText';
-import { Animated } from 'react-native'; 
-
-
+ 
   
 export default function HomeScreen() {
-  const [fetchedFiles, setFetchedFiles] = useState<{ filename: string; file: string }[]>([]);
-  const [getFreshData, setGetFreshData] = useState(false);
+  const [fetchedFiles, setFetchedFiles] = useState<{ filename: string, file: string }[]>([]);
+  const [allFiles, setAllFiles] = useState<string[]>([]);
+  const [jsonData, setJsonData] = useState<Record<string, any> | null>(null);
+  const [firstFile, setFirstFile] = useState<{ filename: string, file: string } | null>(null); 
+  const [fileToFetch, setFileToFetch] = useState<string>();
   const s3bucket = 'savorswipe-recipe';
   const router = useRouter();
   const { setCurrentRecipe } = useRecipe();
   const translateX = useRef(new Animated.Value(0)).current;
+  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
+
+  const [isMobile, setIsMobile] = useState(false); 
+
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(screenWidth < 768); 
+    };
+    checkIfMobile(); 
+    const onChange = () => checkIfMobile();
+    Dimensions.addEventListener('change', onChange);
+    
+  }, [screenWidth]);
 
 const s3 = new S3({
   region: Constants.manifest.extra.AWS_REGION,
@@ -46,47 +61,80 @@ async function listFilesFromS3() {
       Prefix: 'images/',
     };
     const files = await s3.listObjectsV2(params).promise();
-    console.log(files);
-    return files.Contents?.map((file) => file.Key as string) || []; 
+    const returnFiles = files.Contents
+        ?.map((file) => file.Key as string)
+        .filter((fileKey) => !fileKey.endsWith('images/'))
+    if(returnFiles){
+    const shuffledFiles = returnFiles.sort(() => Math.random() - 0.5); // Randomize the files
+    return shuffledFiles;
+    }
   } catch (error) {
     console.error('Error listing files from S3:', error);
     throw error;
   }
 }
 
+async function getJsonFromS3() {
+  try {
+    const params = {
+      Bucket: s3bucket,
+      Key: 'jsondata/combined_data.json',
+    };
+    const file = await s3.getObject(params).promise();
+    if (file.Body) { // Check if file.Body is defined
+      const data = JSON.parse(file.Body.toString('utf-8'));
+      return data; // Return the parsed JSON data
+    } else {
+      console.error('File body is undefined');
+      return null;
+    }
+  } catch (error) {
+    console.error('Error fetching JSON from S3:', error);
+    throw error;
+  }
+}
+
+async function fetchImages(){
+  if (allFiles.length > 0) {
+    const randomIndex = Math.floor(Math.random() * allFiles.length);
+    setFileToFetch(allFiles[randomIndex]);
+  }
+}
+
 useEffect(() => {
   const fetchFiles = async () => {
-    try {
-      
-      const allFiles = await listFilesFromS3();
-      const randomFiles = new Set(); // Use a Set to track unique files
-
-      while (randomFiles.size < 3 && randomFiles.size < allFiles.length) {
-        const randomIndex = Math.floor(Math.random() * allFiles.length);
-        const fileToFetch = allFiles[randomIndex];
-        if (!randomFiles.has(fileToFetch)) { // Check if the file has already been fetched
-          randomFiles.add(fileToFetch);
-          console.log(fileToFetch);
-          await addFileToFetchedArray(fileToFetch);
-        }
-      }
+    try {    
+      const fileListHolder = await listFilesFromS3();
+      setAllFiles(fileListHolder);
+      setJsonData(await getJsonFromS3());
+      for (let i = 0; i < 3; i++) {
+        const randomIndex = Math.floor(Math.random() * fileListHolder.length);
+        setFileToFetch(fileListHolder[randomIndex]);
+      }  
     } catch (error) {
       console.error('Error fetching files:', error);
     }
   };
-
   fetchFiles();
-}, [getFreshData]);
+}, []);
 
-async function addFileToFetchedArray(fileName: string) {
-  const file = await fetchFromS3(fileName);
-  if (file) { 
-    const base64String = file.toString('base64'); // Convert the file to a base64 string
-    setFetchedFiles(prevFiles => [...prevFiles, { filename: fileName, file: `data:image/jpeg;base64,${base64String}` }]); // Update state with the new filename and base64 string
-  }
-}
+useEffect(() => {
+  const addFileToFetchedArray = async () => {
+    if (fileToFetch) {
+      const file = await fetchFromS3(fileToFetch);
+      if (file && fetchedFiles.length < 3) { 
+        const base64String = file.toString('base64');
+        setFetchedFiles(prevFiles => [...prevFiles, { filename: fileToFetch, file: `data:image/jpeg;base64,${base64String}` }]);
+      }
+      setAllFiles(allFiles.filter((_, index) => index !== allFiles.indexOf(fileToFetch)));
+    }
+  };
+  addFileToFetchedArray();
+}, [fileToFetch]);
+useEffect(() => {
+  setFirstFile(fetchedFiles[0]);
+}, [fetchedFiles]);
 
-const firstFile = fetchedFiles[0] || null; // Ensure firstFile is null if fetchedFiles is empty
 
 const handleSwipe = async (direction: 'left' | 'right') => {
   if (direction === 'left') {
@@ -94,7 +142,10 @@ const handleSwipe = async (direction: 'left' | 'right') => {
     if (fetchedFiles.length > 0) {
       const updatedFiles = fetchedFiles.slice(1); // Remove the first file
       setFetchedFiles(updatedFiles);
-      setGetFreshData(!getFreshData); // Update the state
+      fetchImages(); 
+      if(allFiles.length < 3 ){
+        setAllFiles(await listFilesFromS3());
+      }
     }
   } else if (direction === 'right') {
     console.log('Right');
@@ -104,8 +155,12 @@ const handleSwipe = async (direction: 'left' | 'right') => {
         console.log(fileToPopulate.filename);
         const recipeId = fileToPopulate.filename.split('/').pop()?.split('.')[0]; // Use optional chaining
         if (recipeId) { // Ensure recipeId is defined before using it
-          setCurrentRecipe(recipeId); 
-          router.push('/explore');
+          if (jsonData && jsonData[recipeId]) { // Check if jsonData is defined and recipeId exists as a key
+            setCurrentRecipe(jsonData[recipeId]); 
+            router.push('/explore');
+          } else {
+            console.error('jsonData is undefined'); // Optional: log an error if jsonData is not available
+          }
         }
       }
     }
@@ -120,7 +175,12 @@ const debounce = (func: (...args: any[]) => void, delay: number) => {
   };
 };
 
-const debouncedHandleSwipe = debounce(handleSwipe, 300);
+const debouncedHandleSwipe = debounce(handleSwipe, 100);
+
+const handleLayout = (event: any) => {
+  const { width, height } = event.nativeEvent.layout; 
+  setImageDimensions({ width, height });
+};
 
 return (
   <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
@@ -135,15 +195,20 @@ return (
       minDist={30} 
       minVelocity={0.5}
     >
-      <Animated.View style={{ transform: [{ translateX: translateX }] }}>
-        {firstFile ? ( // Conditional rendering to handle empty fetchedFiles
-          <Image
-            source={{ uri: firstFile.file }} 
-            style={{ width: 150, height: 150, alignSelf: 'center' }} // Set image size to 150 x 150 and center it
-            resizeMode="cover"
-          />
-        ) : (
-          <ThemedText>No files available</ThemedText> // Fallback UI when no files are available
+      <Animated.View style={{ transform: [{ translateX }] }}>
+      {firstFile ? (
+        <Image
+          source={{ uri: firstFile.file }}
+          style={{
+            width: isMobile ? screenWidth : 1000, 
+            height: isMobile ? screenHeight : 700, 
+            alignSelf: 'center',
+            resizeMode: 'cover',
+          }}
+          onLayout={handleLayout} 
+        />
+      ) : (
+          <ThemedText>No files available</ThemedText> 
         )}
       </Animated.View>
     </PanGestureHandler>
