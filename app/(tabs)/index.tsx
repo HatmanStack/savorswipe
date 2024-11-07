@@ -19,20 +19,19 @@ export default function HomeScreen() {
   const router = useRouter();
   const { setCurrentRecipe } = useRecipe();
   const translateX = useRef(new Animated.Value(0)).current;
-  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
 
   const [isMobile, setIsMobile] = useState(false); 
 
   useEffect(() => {
     const checkIfMobile = () => {
-      setIsMobile(screenWidth < 768); 
+      setIsMobile(imageDimensions.width < 768); 
     };
     checkIfMobile(); 
     const onChange = () => checkIfMobile();
     Dimensions.addEventListener('change', onChange);
     
-  }, [screenWidth]);
+  }, [imageDimensions]);
 
 const s3 = new S3({
   region: Constants.manifest.extra.AWS_REGION,
@@ -103,14 +102,19 @@ async function fetchImages(){
 
 useEffect(() => {
   const fetchFiles = async () => {
-    try {    
+    try {   
+      setImageDimensions(Dimensions.get('window')); 
       const fileListHolder = await listFilesFromS3();
+      if (fileListHolder && Array.isArray(fileListHolder)) {
       setAllFiles(fileListHolder);
       setJsonData(await getJsonFromS3());
       for (let i = 0; i < 3; i++) {
         const randomIndex = Math.floor(Math.random() * fileListHolder.length);
         setFileToFetch(fileListHolder[randomIndex]);
-      }  
+      }
+    } else {
+      console.error('fileListHolder is undefined or not an array');
+    }
     } catch (error) {
       console.error('Error fetching files:', error);
     }
@@ -137,6 +141,9 @@ useEffect(() => {
 
 
 const handleSwipe = async (direction: 'left' | 'right') => {
+
+  setImageDimensions(Dimensions.get('window'));
+
   if (direction === 'left') {
     console.log('Left');
     if (fetchedFiles.length > 0) {
@@ -144,7 +151,8 @@ const handleSwipe = async (direction: 'left' | 'right') => {
       setFetchedFiles(updatedFiles);
       fetchImages(); 
       if(allFiles.length < 3 ){
-        setAllFiles(await listFilesFromS3());
+        const fetchedFilesFromS3 = await listFilesFromS3();
+        setAllFiles(fetchedFilesFromS3 || []);
       }
     }
   } else if (direction === 'right') {
@@ -177,11 +185,6 @@ const debounce = (func: (...args: any[]) => void, delay: number) => {
 
 const debouncedHandleSwipe = debounce(handleSwipe, 100);
 
-const handleLayout = (event: any) => {
-  const { width, height } = event.nativeEvent.layout; 
-  setImageDimensions({ width, height });
-};
-
 return (
   <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
     <PanGestureHandler 
@@ -200,12 +203,11 @@ return (
         <Image
           source={{ uri: firstFile.file }}
           style={{
-            width: isMobile ? screenWidth : 1000, 
-            height: isMobile ? screenHeight : 700, 
+            width: isMobile ? imageDimensions.width : 1000, 
+            height: isMobile ? imageDimensions.height : 700, 
             alignSelf: 'center',
             resizeMode: 'cover',
           }}
-          onLayout={handleLayout} 
         />
       ) : (
           <ThemedText>No files available</ThemedText> 
