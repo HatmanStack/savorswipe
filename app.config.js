@@ -4,13 +4,17 @@ dotenv.config();
 
 export default {
     // Basic app information
-    name: 'MyReactApp', // Replace with your app name
-    slug: 'my-react-app', // Unique identifier for your app
+    name: 'SavorSwipe', // Replace with your app name
+    slug: 'savor-swipe', // Unique identifier for your app
     version: '1.0.0', // Version of your app
     orientation: 'portrait', // Orientation of the app
-    icon: './assets/icon.png', // Path to your app icon
+    icon: './assets/icon.png', 
+    platforms: ["ios", "android", "web"],
+    web: {
+      favicon: "./assets/adaptive-icon.png", // Path to your web tab icon
+    },
     splash: {
-      image: './assets/splash.png', // Path to your splash screen image
+      image: './assets/adaptive-icon.png', // Path to your splash screen image
       resizeMode: 'contain', // How the splash image should be resized
       backgroundColor: '#ffffff', // Background color of the splash screen
     },
@@ -25,7 +29,7 @@ export default {
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: './assets/adaptive-icon.png', // Path to adaptive icon
+        foregroundImage: './assets/images/adaptive-icon.png', // Path to adaptive icon
         backgroundColor: '#FFFFFF', // Background color for adaptive icon
       },
     },

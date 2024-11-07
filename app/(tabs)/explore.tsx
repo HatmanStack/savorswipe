@@ -1,58 +1,96 @@
-import { StyleSheet, View, Text } from 'react-native';
+import { StyleSheet, ScrollView, Dimensions} from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-
+import { Collapsible } from '@/components/Collapsible';
 import { useRecipe } from '@/context/RecipeContext';
 
-  
-  import { useEffect, useState } from 'react';
-  import { S3 } from 'aws-sdk';
-  import Constants from 'expo-constants';
-
   export default function TabTwoScreen() {
-    const { currentRecipe } = useRecipe();
-    const [recipeData, setRecipeData] = useState(null);
-    const s3bucket = 'savorswipe-recipe';
-    const s3 = new S3({
-      region: Constants.manifest.extra.AWS_REGION,
-      accessKeyId: Constants.manifest.extra.AWS_ID,
-      secretAccessKey: Constants.manifest.extra.AWS_SECRET
-    });
-
-    useEffect(() => {
-      const fetchRecipe = async () => {
-        if (currentRecipe) {
-          console.log(currentRecipe);
-          try {
-            const params = {
-              Bucket: s3bucket,
-              Key: `jsondata/${currentRecipe}.json`, // Assuming the recipe is stored as a JSON file in the jsondata folder
-            };
-            const file = await s3.getObject(params).promise();
-            if (file.Body) { // Check if file.Body is defined
-              const data = JSON.parse(file.Body.toString('utf-8'));
-              setRecipeData(data);
-            } else {
-              console.error('File body is undefined');
-            }
-          } catch (error) {
-            console.error('Error fetching recipe from S3:', error);
-          }
-        }
-      };
-
-      fetchRecipe();
-    }, [currentRecipe]);
-
+    type Recipe = {
+      Title: string;
+      Description: string | string[];
+      Ingredients: string | string[];
+      Directions: string | string[];
+    };
+    const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+    const { currentRecipe } = useRecipe() as { currentRecipe: Recipe | null | string };
+    
     return (
-      <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-        {recipeData ? (
-          <Text style={{ fontSize: 20, padding: 50 }}>{JSON.stringify(recipeData)}</Text> // Display the recipe data
+     <ThemedView style={{width: screenWidth, height: screenHeight}}>
+      <ScrollView style={styles.scrollview}>
+        {typeof currentRecipe !== 'string' && currentRecipe ? (
+          <ThemedView style={styles.title}>
+          
+            <ThemedText type="title" style={styles.title}>{currentRecipe.Title}</ThemedText>
+            {currentRecipe.Description && (
+              <Collapsible title="Description">
+                {Array.isArray(currentRecipe.Description) ? (
+                  currentRecipe.Description.map((item, index) => (
+                    <ThemedText key={index}>{item}</ThemedText>
+                  ))
+                ) : (
+                  <ThemedText>{currentRecipe.Description}</ThemedText>
+                )}
+              </Collapsible>
+            )}
+            {typeof currentRecipe.Ingredients === 'object' && !Array.isArray(currentRecipe.Ingredients) ? (
+  <Collapsible title="Ingredients" >
+    {Object.entries(currentRecipe.Ingredients).map(([key, value], index) => (
+      <Collapsible key={index} title={key}>
+        {Array.isArray(value) ? (
+          value.map((item, itemIndex) => (
+            <ThemedText key={itemIndex}>{item}</ThemedText>
+          ))
         ) : (
-          <ThemedText style={{ fontSize: 20, padding: 10 }}>No recipe selected</ThemedText>
+          <ThemedText>{value as React.ReactNode}</ThemedText>
         )}
-      </View>
-    );
+      </Collapsible>
+    ))}
+  </Collapsible>
+) : (
+  <Collapsible title="Ingredients" >
+    {Array.isArray(currentRecipe.Ingredients) ? (
+      currentRecipe.Ingredients.map((item, index) => (
+        <ThemedText key={index}>{item}</ThemedText>
+      ))
+    ) : (
+      <ThemedText>{currentRecipe.Ingredients}</ThemedText>
+    )}
+  </Collapsible>
+)}
+
+{typeof currentRecipe.Directions === 'object' && !Array.isArray(currentRecipe.Directions) ? (
+  Object.entries(currentRecipe.Directions).map(([key, value], index) => (
+    <Collapsible key={index} title={key}>
+      {Array.isArray(value) ? (
+        value.map((item, itemIndex) => (
+          <ThemedText key={itemIndex}>{item}</ThemedText>
+        ))
+      ) : (
+        <ThemedText>{value as React.ReactNode}</ThemedText>
+      )}
+    </Collapsible>
+  ))
+) : (
+  <Collapsible title="Directions">
+    {Array.isArray(currentRecipe.Directions) ? (
+      currentRecipe.Directions.map((item, index) => (
+        <ThemedText key={index}>{item}</ThemedText>
+      ))
+    ) : (
+      <ThemedText>{currentRecipe.Directions}</ThemedText>
+    )}
+  </Collapsible>
+)}
+          </ThemedView>
+        ) : (
+          <ThemedView>
+          <ThemedText>Swipe Right on an Image</ThemedText>
+          </ThemedView>
+        )}
+        
+      </ScrollView>
+      </ThemedView>
+      );
   }
 
 
@@ -67,9 +105,11 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     margin: 10,
   },
-  photo: {
-    width: '100%',
-    height: 200, // Adjust height as needed
+  scrollview:{
+    padding: 50
+  },
+  title: {
+    marginBottom: 50 // Adjust height as needed
   },
 });
 
