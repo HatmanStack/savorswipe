@@ -1,5 +1,5 @@
 from openai import OpenAI
-from pdf2image import convert_from_path
+#from pdf2image import convert_from_path
 import base64
 import json
 import os
@@ -300,18 +300,20 @@ def search_image(title):
 
 def to_s3(recipe, search_results):
     combined_data_key = 'jsondata/combined_data.json'
-    bucket_name = 'savorswipe-recipe' 
-    existing_data =  s3_client.get_object(Bucket=bucket_name, Key=combined_data_key)
-    existing_data_body = existing_data['Body'].read()  
-    existing_data_json = json.loads(existing_data_body)  
-    highest_key = max(int(key) for key in existing_data_json.keys()) + 1
+    bucket_name = os.getenv('S3_BUCKET') 
+    try:
+        existing_data = s3_client.get_object(Bucket=bucket_name, Key=combined_data_key)
+        existing_data_body = existing_data['Body'].read()  
+        existing_data_json = json.loads(existing_data_body)  
+        highest_key = max(int(key) for key in existing_data_json.keys()) + 1
+    except s3_client.exceptions.NoSuchKey:
+        existing_data_json = {}
+        highest_key = 1  # Start with 1 if no existing data
 
     if upload_image(search_results, bucket_name, highest_key):
         recipe['key'] = highest_key
         existing_data_json[str(highest_key)] = recipe
-        updated_data_json = json.dumps(existing_data_json)
-    
-    
+        updated_data_json = json.dumps(existing_data_json)    
         s3_client.put_object(Bucket=bucket_name, Key=combined_data_key, Body=updated_data_json, ContentType='application/json')
 
 

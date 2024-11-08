@@ -38,8 +38,10 @@ export default {
     AWS_SECRET: process.env.AWS_SECRET,
     AWS_ID: process.env.AWS_ID,
     AWS_LAMBDA_FUNCTION: process.env.AWS_LAMBDA_FUNCTION,
-    AWS_REGION: process.env.AWS_REGION,
+    AWS_REGION_S3: process.env.AWS_REGION_S3,
+    AWS_REGION_LAMBDA: process.env.AWS_REGION_LAMBDA,
     
+    AWS_S3_BUCKET: process.env.AWS_S3_BUCKET
     },
     web: {
       favicon: './assets/favicon.png', // Path to favicon

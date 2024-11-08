@@ -1,6 +1,6 @@
 # SavorSwipe
 
-SavorSwipe lets you browse through pictures of food until something catches your eye. Once you find a dish you like, simply swipe right to access the recipe! Easily add your own recipes by snapping a photo of the ingredients and directions. [SavorSwipe](https://main.d21v5ak15nf4k9.amplifyapp.com/)
+SavorSwipe lets you browse through pictures of food until something catches your eye. Once you find a dish you like, simply swipe right to access the recipe! Easily add your own recipes by snapping a photo of the ingredients and directions. [SavorSwipe](https://savorswipe.fun/)
 
 ## Features
 
@@ -10,7 +10,9 @@ SavorSwipe lets you browse through pictures of food until something catches your
 ## Technologies Used
 
 - **Expo**: A framework and platform for universal React applications.
-- **AWS**: Backend
+- **AWS**: Lambda for Dynamic Processing, S3 for Storage
+- **GPC**: Custom Search JSON API - Web image search for food 
+- **OPENAI**: OCR for adding new recipes
 
 ## Installation
 
@@ -24,13 +26,37 @@ To get started with the SavorSwipe, follow these steps:
 
 2. **Install dependencies**:
    ```bash
-   npm install
+   npm install -g yarn
+   yarn
    ```
 
 3. **Start the development server**:
    ```bash
-   expo start
+   npm start
    ```
+
+4. **Create the backend Services**
+   - s3 bucket to hold recipes
+      - Two folders /images and /jsondata
+   - Lambda Function
+      - With the Environmental Variables
+      ```bash
+      API_KEY=<openai key for image ocr>
+      SEARCH_ID=<custom search engine ID for Google Custom Search JSON API>
+      SEARCH_KEY=<GPC API key to access Search Engine>
+      AWS_S3_BUCKET=<to store images and recipes>
+      ```
+
+5. **Add .env File**
+   ```bash
+   AWS_REGION_S3=<>
+   AWS_REGION_LAMBDA=<>
+   AWS_ID=<>
+   AWS_SECRET=<>
+   AWS_LAMBDA_FUNCTION=<>
+   AWS_S3_BUCKET=<>
+   ```
+
 
 ## Usage
 
