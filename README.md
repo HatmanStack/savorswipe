@@ -1,6 +1,6 @@
 # SavorSwipe
 
-SavorSwipe allows you to food picture surf until something grabs your eye then swipe right to get the recipe.  Easily add recipes by snapping a pic and uploading. [SavorSwipe]("https://main.d21v5ak15nf4k9.amplifyapp.com/")
+SavorSwipe lets you browse through pictures of food until something catches your eye. Once you find a dish you like, simply swipe right to access the recipe! Easily add your own recipes by snapping a photo of the ingredients and directions. [SavorSwipe](https://main.d21v5ak15nf4k9.amplifyapp.com/)
 
 ## Features
 
