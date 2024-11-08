@@ -42,6 +42,9 @@ export default {
     AWS_S3_BUCKET: process.env.AWS_S3_BUCKET
     },
     web: {
-      favicon: './assets/favicon.png', // Path to favicon
+      favicon: './assets/icon.png',
+      name: "SavorSwipe",
+      orientation: "portrait",
+      shortName: "SavorSwipe"
     },
   };
