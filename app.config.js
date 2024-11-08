@@ -37,7 +37,7 @@ export default {
     
     AWS_SECRET: process.env.AWS_SECRET,
     AWS_ID: process.env.AWS_ID,
-    
+    AWS_LAMBDA_FUNCTION: process.env.AWS_LAMBDA_FUNCTION,
     AWS_REGION: process.env.AWS_REGION,
     
     },

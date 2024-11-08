@@ -1,6 +1,6 @@
 # SavorSwipe
 
-Welcome to the Recipe Picker App! This mobile application allows users to browse through a collection of delicious recipes and select their favorites by swiping left or right. Built with Expo, this app provides a smooth and interactive user experience. [SavorSwipe]("https://main.d21v5ak15nf4k9.amplifyapp.com/")
+SavorSwipe allows you to food picture surf until something grabs your eye then swipe right to get the recipe.  Easily add recipes by snapping a pic and uploading. [SavorSwipe]("https://main.d21v5ak15nf4k9.amplifyapp.com/")
 
 ## Features
 
@@ -10,7 +10,7 @@ Welcome to the Recipe Picker App! This mobile application allows users to browse
 ## Technologies Used
 
 - **Expo**: A framework and platform for universal React applications.
-- **AWS**
+- **AWS**: Backend
 
 ## Installation
 
