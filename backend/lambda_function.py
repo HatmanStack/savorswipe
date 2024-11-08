@@ -4,12 +4,10 @@ import base64
 import json
 import os
 import boto3
-from duckduckgo_search import DDGS
 import requests
 
 s3_client = boto3.client('s3')
 client = OpenAI(api_key=os.getenv('API_KEY'))
-
 
 @staticmethod
 def encode_image(image_path):
@@ -31,7 +29,7 @@ def pdf_to_base64_images(base64_pdf):
 
     for page_num, img in enumerate(images):
         temp_image_path = f"/tmp/temp_page_{page_num}.png"
-        img.save(temp_image_path, format="PNG")
+        img.save(temp_image_path, format="JPG")
         temp_image_paths.append(temp_image_path)
         base64_image = encode_image(temp_image_path)
         base64_images.append(base64_image)
@@ -100,7 +98,7 @@ Here is an example output:
                 "role": "user",
                 "content": [
                     {"type": "text", "text": "extract the data in this recipe and output into JSON "},
-                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{base64_image}", "detail": "high"}}
+                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}", "detail": "high"}}
                 ]
             }
         ],
@@ -120,6 +118,7 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
 4. Consolidate duplicate recipes when appropriate
 5. Standardize output format while maintaining data fidelity
 6. All tips or comments about the dish should be included in the Description
+7. If a recipe doesn't have important fields like Ingredients or Directions Populated don't return it
 
 # Data Processing Rules
 1. LANGUAGE PRESERVATION
@@ -198,7 +197,7 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
     )
     return response.choices[0].message.content
 
-def extract_from_multiple_pages(base64_images, original_filename, output_directory):
+def extract_from_multiple_pages(base64_images):
     recipes = []
     
     for base64_image in base64_images:
@@ -224,8 +223,8 @@ def lambda_handler(event, context):
         file_content = event['base64']  # The file content from the event
     else:
         return
-    
-    if 'pdf' in file_content[0,100]:
+
+    if 'pdf' in file_content[0:25]:
         print('start pdf')
         base64_images = pdf_to_base64_images(file_content)
         if not base64_images:
@@ -233,19 +232,38 @@ def lambda_handler(event, context):
             'statusCode': 200,
             'body': json.dumps('Too many pages.')
         }
-    elif 'image' in file_content[0,100]:
-        print('start image')
-        base64_images = file_content
     else:
-        return {
-            'statusCode': 400,
-            'body': json.dumps('Unsupported file format.')
-        }
+        print('start image')
+        try:
+            with open("/tmp/test_image.jpg", "wb") as f:
+                f.write(base64.b64decode(file_content))
+            with open("/tmp/test_image.jpg", "rb") as f:
+                base64_string = base64.b64encode(f.read()).decode("utf-8")
+            print("Base64 string is valid and encoded from test_image.jpg.")
+        except Exception as e:
+            print(f"Error decoding base64 string: {e}")
+        base64_images = [base64_string]
 
     output_data = extract_from_multiple_pages(base64_images)
-    for recipe in output_data:
-        print('start upload')
-        to_s3(recipe, get_image(recipe['Title']))
+    print(output_data)
+    
+    # Load output_data as JSON
+    try:
+        output_data_json = json.loads(output_data)
+    except json.JSONDecodeError as e:
+        print(f"Error decoding output_data to JSON: {e}")
+        return {
+            'statusCode': 500,
+            'body': json.dumps('Failed to decode output data.')
+        }
+
+    if isinstance(output_data_json, list):
+        for recipe in output_data_json:
+            print('start upload list')
+            to_s3(recipe, search_image(recipe['Title']))
+    else:
+        print('start upload single')
+        to_s3(output_data_json, search_image(output_data_json['Title']))
 
     return {
         'statusCode': 200,
@@ -253,34 +271,84 @@ def lambda_handler(event, context):
     }
 
 
-def get_image(title):
-    results = DDGS().images(
-    keywords=title,
-    region="us-en",
-    safesearch="on",
-    size='Medium',
-    type_image='photo',
-    license_image='ShareCommercially',
-    max_results=1,
-    )
-    url = results[0]['url']
-    print(f'Image url {url}')
-    return url
+def search_image(title):
+    url = "https://www.googleapis.com/customsearch/v1"
+    params = {
+        'key': os.getenv('SEARCH_KEY'),                # Your API key
+        'cx': os.getenv('SEARCH_ID'),        # Your Search Engine ID
+        'q': title, 
+        'searchType': 'image',  
+        'num': 10,
+        'imgSize': 'xlarge', 
+        'imgType': 'photo',                      
+    }
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        # Parse the JSON response
+        search_results = response.json()
+        
+        # Check if there are any items in the results
+        if 'items' in search_results and len(search_results['items']) > 0:
+            # Get the URL of the first image
+            return search_results
+        else:
+            print("No image results found.")
+            return None
+    else:
+        print(f"Error: {response.status_code} - {response.text}")
+        return None
 
-def to_s3(recipe, image_url):
-    combined_data_key = 'jsondata/combineddata.json'
-    bucket_name = 'savor-swipe-recipe' 
-    images_prefix = 'images/'
-
+def to_s3(recipe, search_results):
+    combined_data_key = 'jsondata/combined_data.json'
+    bucket_name = 'savorswipe-recipe' 
     existing_data =  s3_client.get_object(Bucket=bucket_name, Key=combined_data_key)
-    existing_data_json = json.loads(existing_data['Body'])
-    highest_key = max(existing_data_json.keys(), key=int) + 1
-    recipe['key'] = highest_key
-    existing_data_json[highest_key] = recipe
-    image_data = requests.get(image_url).content
-    image_key = images_prefix + str(highest_key) + '.jpg'
-    updated_data_json = json.dumps(existing_data_json)
+    existing_data_body = existing_data['Body'].read()  
+    existing_data_json = json.loads(existing_data_body)  
+    highest_key = max(int(key) for key in existing_data_json.keys()) + 1
+
+    if upload_image(search_results, bucket_name, highest_key):
+        recipe['key'] = highest_key
+        existing_data_json[str(highest_key)] = recipe
+        updated_data_json = json.dumps(existing_data_json)
     
-    print('Bucket upload starting')
-    s3_client.put_object(Bucket=bucket_name, Key=image_key, Body=image_data, ContentType='image/jpeg')
-    s3_client.put_object(Bucket=bucket_name, Key=combined_data_key, Body=updated_data_json, ContentType='application/json')
+    
+        s3_client.put_object(Bucket=bucket_name, Key=combined_data_key, Body=updated_data_json, ContentType='application/json')
+
+
+
+def upload_image(search_results, bucket_name, highest_key):
+    images_prefix = 'images/'
+    for searched_item in search_results['items']:
+        image_url = searched_item['link']
+        print(f"Fetching image from URL: {image_url}")
+        image_response = requests.get(image_url)
+
+        if image_response.status_code == 200:
+            if 'image' in image_response.headers['Content-Type']:
+                
+                image_data = image_response.content
+                image_key = images_prefix + str(highest_key) + '.jpg'
+
+                # Upload to S3
+                s3_client = boto3.client('s3')
+                try:
+                    s3_client.put_object(
+                        Bucket=bucket_name,  # Replace with your bucket name
+                        Key=image_key,
+                        Body=image_data,
+                        ContentType='image/jpeg'  # Adjust based on the actual image type
+                    )
+                    print('Image uploaded successfully.')
+                    return True
+                    
+                except Exception as e:
+                    print(f"Error uploading image to S3: {e}")
+                    return False
+            else:
+                print("The fetched content is not an image.")
+        else:
+            print(f"Error fetching image: {image_response.status_code} - {image_response.text}")
+    return False    
+    
+    
+    
