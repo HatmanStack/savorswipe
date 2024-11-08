@@ -7,8 +7,8 @@ import { useRecipe } from '@/context/RecipeContext';
 import Constants from 'expo-constants';
 import { S3 } from 'aws-sdk';
 import { ThemedText } from '@/components/ThemedText';
-import * as ImagePicker from "expo-image-picker";  
-import * as ImageManipulator from 'expo-image-manipulator'; 
+import UploadImage from '@/components/UploadRecipe';
+
 
 const buttonSrc = require('@/assets/images/plus.png'); 
 
@@ -18,7 +18,11 @@ export default function HomeScreen() {
   const [jsonData, setJsonData] = useState<Record<string, any> | null>(null);
   const [firstFile, setFirstFile] = useState<{ filename: string, file: string } | null>(null); 
   const [fileToFetch, setFileToFetch] = useState<string>();
+  const [startFilePicker, setStartFilePicker] = useState<boolean | null>(null); // State to hold the uploaded image
+
   const s3bucket = Constants.manifest.extra.AWS_S3_BUCKET;
+  console.log(s3bucket)
+ 
   const router = useRouter();
   const { setCurrentRecipe } = useRecipe();
   const translateX = useRef(new Animated.Value(0)).current;
@@ -26,6 +30,7 @@ export default function HomeScreen() {
   const [isMobile, setIsMobile] = useState(false); 
 
   useEffect(() => {
+    
     const checkIfMobile = () => {
       setIsMobile(imageDimensions.width < 768); 
     };
@@ -176,73 +181,10 @@ const handleSwipe = async (direction: 'left' | 'right') => {
   }
 };
 
-const callLambdaFunction = async (base64Image: string) => {
-  const AWS = require('aws-sdk');
-  const lambda = new AWS.Lambda({
-    region: Constants.manifest.extra.AWS_REGION_LAMBDA,
-    accessKeyId: Constants.manifest.extra.AWS_ID,
-    secretAccessKey: Constants.manifest.extra.AWS_SECRET
-  });
-
-  const params = {
-    FunctionName: Constants.manifest.extra.AWS_LAMBDA_FUNCTION,
-    InvocationType: 'RequestResponse',
-    Payload: JSON.stringify({
-      base64: base64Image
-    })
-  };
-  
-  try {
-    const data: AWS.Lambda.InvocationResponse = await lambda.invoke(params).promise();
-    const response = JSON.parse(data.Payload as string).body; 
-    if (typeof response === 'string') { 
-      Alert.alert("Upload Successful", "Your image has been uploaded successfully.");
-    } else {
-      Alert.alert("Upload Failed", "There was an issue with the response.");
-    }
-  } catch (error) {
-    console.error('Error invoking Lambda function:', error);
-    Alert.alert("Upload Failed", "There was an error invoking the Lambda function.");
-  }
-}
-
-const selectImage = async () => {
-  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (status !== "granted") {
-    alert("Sorry, we need media library permissions to select an image.");
-    return;
-  }
-  console.log("Selecting image");
-  const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
-    allowsEditing: true,
-    aspect: [4, 3],
-    quality: 1,
-  });
-
-  if (!result.canceled) {
-    console.log(result);
-    const imageUri = result.assets[0]?.uri; 
-    if (imageUri) { 
-      const resizedImage = await resizeImage(imageUri, 2000); // Resize image to below 6k
-      console.log(resizedImage); // Convert to base64 format
-      if(resizedImage){
-      const lambdaResponse = await callLambdaFunction(resizedImage);
-      console.log('Lambda Response:', lambdaResponse);
-      }
-    } else {
-      console.error('Base64 image is undefined');
-    }
-  }
-};
-
-const resizeImage = async (uri: string, maxSize: number) => {
-  const manipulatorResult = await ImageManipulator.manipulateAsync(
-    uri,
-    [{ resize: { width: maxSize, height: maxSize } }],
-    { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
-  );
-  return manipulatorResult.base64; // Return the base64 string of the resized image
+const handleImageUpload = (base64Image: string) => {
+  setUploadedImage(base64Image); 
+  console.log('Uploaded Image:', base64Image); 
+  setUploadVisible(false); 
 };
 
 const debounce = (func: (...args: any[]) => void, delay: number) => {
@@ -257,7 +199,8 @@ const debouncedHandleSwipe = debounce(handleSwipe, 100);
 
 return (
   <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-    <Pressable style={{ position: 'absolute', top: 20, left: 20, zIndex: 1 }} onPress={selectImage}>
+    <UploadImage onImageUploaded={handleImageUpload} /> 
+    <Pressable style={{ position: 'absolute', top: 20, left: 20, zIndex: 1 }} onPress={() => setStartFilePicker(true)}>
       <Image source={buttonSrc } style={{ width: 50, height: 50 }} />
     </Pressable>
     <PanGestureHandler 
