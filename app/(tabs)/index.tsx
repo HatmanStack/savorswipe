@@ -18,7 +18,7 @@ export default function HomeScreen() {
   const [jsonData, setJsonData] = useState<Record<string, any> | null>(null);
   const [firstFile, setFirstFile] = useState<{ filename: string, file: string } | null>(null); 
   const [fileToFetch, setFileToFetch] = useState<string>();
-  const s3bucket = 'savorswipe-recipe';
+  const s3bucket = Constants.manifest.extra.AWS_S3_BUCKET;
   const router = useRouter();
   const { setCurrentRecipe } = useRecipe();
   const translateX = useRef(new Animated.Value(0)).current;
@@ -36,7 +36,7 @@ export default function HomeScreen() {
   }, [imageDimensions]);
 
 const s3 = new S3({
-  region: Constants.manifest.extra.AWS_REGION,
+  region: Constants.manifest.extra.AWS_REGION_S3,
           accessKeyId: Constants.manifest.extra.AWS_ID,
           secretAccessKey: Constants.manifest.extra.AWS_SECRET
 });
@@ -179,13 +179,13 @@ const handleSwipe = async (direction: 'left' | 'right') => {
 const callLambdaFunction = async (base64Image: string) => {
   const AWS = require('aws-sdk');
   const lambda = new AWS.Lambda({
-    region: 'us-west-2',
+    region: Constants.manifest.extra.AWS_REGION_LAMBDA,
     accessKeyId: Constants.manifest.extra.AWS_ID,
     secretAccessKey: Constants.manifest.extra.AWS_SECRET
   });
 
   const params = {
-    FunctionName: 'savorswipe-recipe-add',
+    FunctionName: Constants.manifest.extra.AWS_LAMBDA_FUNCTION,
     InvocationType: 'RequestResponse',
     Payload: JSON.stringify({
       base64: base64Image
