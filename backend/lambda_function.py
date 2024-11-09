@@ -39,7 +39,7 @@ def lambda_handler(event, context):
         if not base64_images:
             return {
             'statusCode': 200,
-            'body': json.dumps('Too many pages.')
+            'body': json.dumps('Error: Too many pages.')
         }
     else:
         print('start image')
@@ -63,9 +63,14 @@ def lambda_handler(event, context):
         print(f"Error decoding output_data to JSON: {e}")
         return {
             'statusCode': 500,
-            'body': json.dumps('Failed to decode output data.')
+            'body': json.dumps('Error: Failed to decode output data.')
         }
     
+    if len(output_data_json) == 0:
+        return {
+            'statusCode': 400,
+            'body': json.dumps('Error: No data found in output.')
+        }
     if isinstance(output_data_json, list):
         for recipe in output_data_json:
             print('start upload list')
@@ -77,7 +82,7 @@ def lambda_handler(event, context):
     if upload_success:
         return_message = 'Processing completed successfully! Output saved'
     else:
-        return_message = 'Processing Failed'
+        return_message = 'Error: Processing Failed'
     return {
         'statusCode': 200,
         'body': json.dumps(return_message)

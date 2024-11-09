@@ -2,22 +2,21 @@ import Constants from 'expo-constants';
 import { S3 } from 'aws-sdk';
 import { useEffect, useState } from 'react';
 import { Dimensions } from 'react-native';
+import { useRecipe } from '@/context/RecipeContext';
 
 interface GetImagesProps {
     getNewList: boolean;
     fetchImage: boolean;
-    allFiles: string[];
     setFirstFile: (data: any) => void;
-    setAllFiles: (files: string[]) => void;
     setJsonData: (data: any) => void;
     setImageDimensions: (data: any) => void;
 }
 
-export default function GetImages({ getNewList, fetchImage, allFiles, setFirstFile, setAllFiles, setJsonData, setImageDimensions }: GetImagesProps) {
+export default function GetImages({ getNewList, fetchImage, setFirstFile, setJsonData, setImageDimensions }: GetImagesProps) {
     const s3bucket = Constants.manifest.extra.AWS_S3_BUCKET;
     const [fileToFetch, setFileToFetch] = useState<string>('');
     const [fetchedFiles, setFetchedFiles] = useState<{ filename: string, file: string }[]>([]);
-
+    const { uploadSuccess, setUploadSuccess, allFiles, setAllFiles  } = useRecipe();
     const s3 = new S3({
         region: Constants.manifest.extra.AWS_REGION_S3,
         accessKeyId: Constants.manifest.extra.AWS_ID,
@@ -80,27 +79,42 @@ export default function GetImages({ getNewList, fetchImage, allFiles, setFirstFi
 
     useEffect(() => {
         const fetchFilesIfNeeded = async () => {
+            console.log(`GetNewList: ${getNewList}`)
             if (getNewList) {
                 const fileListHolderStandAlone = await listFilesFromS3();
                 if (fileListHolderStandAlone && Array.isArray(fileListHolderStandAlone)) {
+                    console.log(`FileListHOlderStandAlone ${fileListHolderStandAlone}`)
+                    console.log(allFiles)
                     setAllFiles(fileListHolderStandAlone);
+                    setTimeout(() => {
+                        console.log(allFiles);
+                    }, 4000);
                 }
             }
         };
         fetchFilesIfNeeded();
     }, [getNewList]);
+    
 
     useEffect(() => {
         const fetchFiles = async () => {
             try {
                 setImageDimensions(Dimensions.get('window'));
                 const fileListHolder = await listFilesFromS3();
+                const combinedJsonData = await getJsonFromS3();
                 if (fileListHolder && Array.isArray(fileListHolder)) {
                     setAllFiles(fileListHolder);
-                    setJsonData(await getJsonFromS3());
+                    setJsonData(combinedJsonData);
                     for (let i = 0; i < 3; i++) {
                         const randomIndex = Math.floor(Math.random() * fileListHolder.length);
-                        setFileToFetch(fileListHolder[randomIndex]);
+                        const highestKey = String(Math.max(...Object.keys(combinedJsonData).map(Number)));
+                        if(uploadSuccess && i==0){
+                            console.log('Refetching JSONData');
+                            setFileToFetch(combinedJsonData[highestKey]);
+                            setUploadSuccess(false);
+                        } else {
+                            setFileToFetch(fileListHolder[randomIndex]);
+                        }
                     }
                 } else {
                     console.error('fileListHolder is undefined or not an array');
@@ -110,10 +124,11 @@ export default function GetImages({ getNewList, fetchImage, allFiles, setFirstFi
             }
         };
         fetchFiles();
-    }, []);
+    }, [uploadSuccess]);
 
     useEffect(() => {
         const addFileToFetchedArray = async () => {
+           
             if (typeof fileToFetch === 'string' && fileToFetch) {
                 const file = await fetchFromS3(fileToFetch);
                 if (file && fetchedFiles.length < 3) {

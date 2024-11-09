@@ -1,8 +1,7 @@
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from 'expo-image-manipulator';
 import Constants from 'expo-constants';
-import React from 'react';
-import { Alert } from 'react-native';
+
 
 const resizeImage = async (uri: string, maxSize: number) => {
   const manipulatorResult = await ImageManipulator.manipulateAsync(
@@ -13,7 +12,7 @@ const resizeImage = async (uri: string, maxSize: number) => {
   return manipulatorResult.base64; // Return the base64 string of the resized image
 };
 
-const callLambdaFunction = async (base64Image: string) => {
+const callLambdaFunction = async (base64Image: string): Promise<string> => {
   const AWS = require('aws-sdk');
   const lambda = new AWS.Lambda({
     region: Constants.manifest.extra.AWS_REGION_LAMBDA,
@@ -31,23 +30,26 @@ const callLambdaFunction = async (base64Image: string) => {
 
   try {
     const data: AWS.Lambda.InvocationResponse = await lambda.invoke(params).promise();
-    const response = JSON.parse(data.Payload as string).body;
-    if (typeof response === 'string') {
-      Alert.alert("Upload Successful", "Your image has been uploaded successfully.");
+    console.log('Uploading To Lambda');
+    const response = JSON.parse(data.Payload as string);
+    if (typeof response === 'string' && response.includes('Error')) {
+      console.log("Upload Failed");
+      return 'Failed'; 
     } else {
-      Alert.alert("Upload Failed", "There was an issue with the response.");
-    }
+      console.log("Upload Success");
+      return 'Success';
+    } 
   } catch (error) {
     console.error('Error invoking Lambda function:', error);
-    Alert.alert("Upload Failed", "There was an error invoking the Lambda function.");
+    return 'Failed'; 
   }
 }
 
-const UploadImage = async () => {
+const UploadImage = async (): Promise<string> => {
   const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (status !== "granted") {
     alert("Sorry, we need media library permissions to select an image.");
-    return;
+    return 'Failed';
   }
   console.log("Selecting image");
   const result = await ImagePicker.launchImageLibraryAsync({
@@ -56,23 +58,21 @@ const UploadImage = async () => {
     aspect: [4, 3],
     quality: 1,
   });
-
+  
   if (!result.canceled) {
     console.log(result);
     const imageUri = result.assets[0]?.uri;
     if (imageUri) {
       const resizedImage = await resizeImage(imageUri, 2000); // Resize image to below 6k
-      console.log(resizedImage); // Convert to base64 format
       if (resizedImage) {
         const lambdaResponse = await callLambdaFunction(resizedImage);
-        console.log('Lambda Response:', lambdaResponse);
+        return lambdaResponse;
       }
     } else {
       console.error('Base64 image is undefined');
     }
   }
-
-
+  return 'Failed'; 
 };
 
-export default UploadImage; // Change the default export to UploadImage
+export default UploadImage; 
