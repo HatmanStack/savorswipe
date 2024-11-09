@@ -83,6 +83,9 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
 5. Standardize output format while maintaining data fidelity
 6. All tips or comments about the dish should be included in the Description
 7. If a recipe doesn't have important fields like Ingredients or Directions Populated don't return it
+8. It's necessary for every recipe to have at least a Title and Ingredients or a Title and Directions at minimum otherwise discard
+9. If the Ingredients or Directions field doesn't exsist or is empty to your best to provide the missing information
+10. Provide any tips in the Description that are reasonable even if they aren't present in the recipe
 
 # Data Processing Rules
 1. LANGUAGE PRESERVATION

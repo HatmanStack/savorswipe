@@ -8,17 +8,18 @@ import { ThemedText } from '@/components/ThemedText';
 import GetImages from '@/components/GetImages';
 import UploadImage from '@/components/UploadRecipe';
 const buttonSrc = require('@/assets/images/plus.png');
+const holderImg = require('@/assets/images/icon.png')
 
 export default function HomeScreen() {
-  const [allFiles, setAllFiles] = useState<string[]>([]);
   const [jsonData, setJsonData] = useState<Record<string, any> | null>(null);
   const [firstFile, setFirstFile] = useState<{ filename: string, file: string } | null>(null);
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
+  const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [fetchImage, setFetchImage] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [getNewList, setGetNewList] = useState(false);
   const translateX = useRef(new Animated.Value(0)).current;
-  const { setCurrentRecipe } = useRecipe();
+  const { setCurrentRecipe, uploadSuccess, setUploadSuccess, allFiles, setAllFiles  } = useRecipe();
   const router = useRouter();
 
 
@@ -32,13 +33,11 @@ export default function HomeScreen() {
 
   }, [imageDimensions]);
 
-
-
   const handleSwipe = async (direction: 'left' | 'right') => {
     setImageDimensions(Dimensions.get('window'));
     if (allFiles.length < 3) {
       setGetNewList(true);
-      console.log("Getting Fresh Eyes");
+      console.log(allFiles);
     }
     if (allFiles.length > 40) {
       setGetNewList(false);
@@ -73,10 +72,22 @@ export default function HomeScreen() {
   };
 
   const debouncedHandleSwipe = debounce(handleSwipe, 100);
+ 
 
   const handleUpload = async () => {
     try {
-      await UploadImage();
+      const uploadResponse = await UploadImage();
+      if (uploadResponse === 'Success') {
+        setUploadSuccess(true);
+        setUploadMessage('Upload Success');
+      } else {
+        setUploadMessage('Upload Failed');
+      }
+
+      setTimeout(() => {
+        setUploadMessage(null);
+      }, 1000);
+
     } catch (error) {
       console.error('Error during image upload:', error);
     }
@@ -84,12 +95,15 @@ export default function HomeScreen() {
 
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+      {uploadMessage && (
+        <ThemedText style={{ position: 'absolute', top: 50, textAlign: 'center', width: '100%' }}>
+          {uploadMessage}
+        </ThemedText>
+      )}
       <GetImages
         getNewList={getNewList}
         fetchImage={fetchImage}
-        allFiles={allFiles}
         setFirstFile={setFirstFile}
-        setAllFiles={setAllFiles}
         setJsonData={setJsonData}
         setImageDimensions={setImageDimensions}
       />
@@ -110,7 +124,7 @@ export default function HomeScreen() {
         <Animated.View style={{ transform: [{ translateX }] }}>
           {firstFile ? (
             <Image
-              source={{ uri: firstFile.file }}
+              source={{ uri: firstFile.file } || holderImg}
               style={{
                 width: isMobile ? imageDimensions.width : 1000,
                 height: isMobile ? imageDimensions.height : 700,

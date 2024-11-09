@@ -1,5 +1,4 @@
 openai 
 pdf2image 
 boto3
-#duckduckgo_search 
 requests
