@@ -14,6 +14,9 @@ def to_s3(recipe, search_results):
         existing_data = s3_client.get_object(Bucket=bucket_name, Key=combined_data_key)
         existing_data_body = existing_data['Body'].read()  
         existing_data_json = json.loads(existing_data_body)  
+        for existing_recipe in existing_data_json.values():
+            if existing_recipe.get('Title') == recipe.get('Title'):
+                return False 
         highest_key = max(int(key) for key in existing_data_json.keys()) + 1
     except s3_client.exceptions.NoSuchKey:
         existing_data_json = {}

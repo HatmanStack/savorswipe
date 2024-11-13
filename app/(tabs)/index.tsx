@@ -8,7 +8,7 @@ import { ThemedText } from '@/components/ThemedText';
 import GetImages from '@/components/GetImages';
 import UploadImage from '@/components/UploadRecipe';
 const buttonSrc = require('@/assets/images/plus.png');
-const holderImg = require('@/assets/images/icon.png')
+const holderImg = require('@/assets/images/skillet.svg')
 
 export default function HomeScreen() {
   const [jsonData, setJsonData] = useState<Record<string, any> | null>(null);
