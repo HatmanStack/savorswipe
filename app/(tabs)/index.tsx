@@ -122,9 +122,9 @@ export default function HomeScreen() {
         minVelocity={0.5}
       >
         <Animated.View style={{ transform: [{ translateX }] }}>
-          {firstFile ? (
+          
             <Image
-              source={{ uri: firstFile.file } || holderImg}
+              source={firstFile ? { uri: firstFile.file } : holderImg} 
               style={{
                 width: isMobile ? imageDimensions.width : 1000,
                 height: isMobile ? imageDimensions.height : 700,
@@ -132,9 +132,7 @@ export default function HomeScreen() {
                 resizeMode: 'cover',
               }}
             />
-          ) : (
-            <ThemedText>No files available</ThemedText>
-          )}
+          
         </Animated.View>
       </PanGestureHandler>
     </View>
