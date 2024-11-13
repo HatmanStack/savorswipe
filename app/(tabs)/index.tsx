@@ -8,7 +8,7 @@ import { ThemedText } from '@/components/ThemedText';
 import GetImages from '@/components/GetImages';
 import UploadImage from '@/components/UploadRecipe';
 const buttonSrc = require('@/assets/images/plus.png');
-const holderImg = require('@/assets/images/skillet.svg')
+const holderImg = require('@/assets/images/skillet.png')
 
 export default function HomeScreen() {
   const [jsonData, setJsonData] = useState<Record<string, any> | null>(null);
@@ -126,8 +126,8 @@ export default function HomeScreen() {
             <Image
               source={firstFile ? { uri: firstFile.file } : holderImg} 
               style={{
-                width: isMobile ? imageDimensions.width : 1000,
-                height: isMobile ? imageDimensions.height : 700,
+                width: firstFile ? (isMobile ? imageDimensions.width : 1000) : 200,
+                height: firstFile ? (isMobile ? imageDimensions.height : 700) : 200,
                 alignSelf: 'center',
                 resizeMode: 'cover',
               }}
@@ -139,19 +139,3 @@ export default function HomeScreen() {
   )
 }
 
-const styles = StyleSheet.create({
-  card: {
-    borderRadius: 10,
-    overflow: 'hidden',
-    elevation: 3, // For Android shadow
-    shadowColor: '#000', // For iOS shadow
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    margin: 10,
-  },
-  photo: {
-    width: '100%',
-    height: 200, // Adjust height as needed
-  },
-});
