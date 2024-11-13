@@ -8,10 +8,13 @@ export default {
     slug: 'savor-swipe', // Unique identifier for your app
     version: '1.0.0', // Version of your app
     orientation: 'portrait', // Orientation of the app
-    icon: './assets/icon.png', 
+    icon: './assets/images/icon.png', 
     platforms: ["ios", "android", "web"],
     web: {
-      favicon: "./assets/adaptive-icon.png", // Path to your web tab icon
+      favicon: './assets/images/icon.png',
+      name: "SavorSwipe",
+      orientation: "portrait",
+      shortName: "SavorSwipe"
     },
     splash: {
       image: './assets/adaptive-icon.png', // Path to your splash screen image
@@ -40,11 +43,6 @@ export default {
     AWS_REGION_S3: process.env.AWS_REGION_S3,
     AWS_REGION_LAMBDA: process.env.AWS_REGION_LAMBDA,
     AWS_S3_BUCKET: process.env.AWS_S3_BUCKET
-    },
-    web: {
-      favicon: './assets/icon.png',
-      name: "SavorSwipe",
-      orientation: "portrait",
-      shortName: "SavorSwipe"
-    },
+    }
+    
   };

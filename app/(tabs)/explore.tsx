@@ -95,16 +95,6 @@ export default function TabTwoScreen() {
 
 
 const styles = StyleSheet.create({
-  card: {
-    borderRadius: 10,
-    overflow: 'hidden',
-    elevation: 3, // For Android shadow
-    shadowColor: '#000', // For iOS shadow
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    margin: 10,
-  },
   scrollview: {
     padding: 50
   },
