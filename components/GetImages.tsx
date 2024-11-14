@@ -156,7 +156,9 @@ export default function GetImages({ getNewList, fetchImage, setFirstFile, setJso
     }, [fetchImage]);
 
     useEffect(() => {
-        setFirstFile(fetchedFiles[0]);
+        if (fetchedFiles.length > 0) {
+            setFirstFile(fetchedFiles[0]);
+        }
     }, [fetchedFiles]);
 
     return (
