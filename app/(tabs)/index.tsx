@@ -36,15 +36,14 @@ export default function HomeScreen() {
   const handleSwipe = async (direction: 'left' | 'right') => {
     setImageDimensions(Dimensions.get('window'));
     if (allFiles.length < 3) {
-      setGetNewList(true);
-      console.log(allFiles);
+      setGetNewList(prev => !prev); 
     }
     if (allFiles.length > 40) {
       setGetNewList(false);
     }
     if (direction === 'left') {
       console.log('Left');
-      setFetchImage(!fetchImage);
+      setFetchImage(prev => !prev);
     } else if (direction === 'right') {
       console.log('Right');
       const fileToPopulate = firstFile;
