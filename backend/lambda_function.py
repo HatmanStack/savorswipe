@@ -71,21 +71,23 @@ def lambda_handler(event, context):
             'statusCode': 400,
             'body': json.dumps('Error: No data found in output.')
         }
+    jsonData = None  # Initialize jsonData to None for the first run
     if isinstance(output_data_json, list):
         for recipe in output_data_json:
             print('start upload list')
-            upload_success = upload.to_s3(recipe, si.google_search_image(recipe['Title']))
+            upload_success, jsonData = upload.to_s3(recipe, si.google_search_image(recipe['Title']), jsonData)
     else:
         print('start upload single')
-        upload_success = upload.to_s3(output_data_json, si.google_search_image(output_data_json['Title']))
+        upload_success, jsonData = upload.to_s3(output_data_json, si.google_search_image(output_data_json['Title']))
     
     if upload_success:
         return_message = 'Processing completed successfully! Output saved'
     else:
         return_message = 'Error: Processing Failed'
+    message = {"return_message": return_message, "jsonData": jsonData}
     return {
         'statusCode': 200,
-        'body': json.dumps(return_message)
+        'body': json.dumps(message)
     }
 
 
