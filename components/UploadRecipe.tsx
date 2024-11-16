@@ -32,16 +32,10 @@ const callLambdaFunction = async (base64Image: string): Promise<string> => {
     const data: AWS.Lambda.InvocationResponse = await lambda.invoke(params).promise();
     console.log('Uploading To Lambda');
     const response = JSON.parse(data.Payload as string);
-    if (typeof response === 'string' && response.includes('Error')) {
-      console.log("Upload Failed");
-      return 'Failed'; 
-    } else {
-      console.log("Upload Success");
-      return 'Success';
-    } 
+    return response;
   } catch (error) {
     console.error('Error invoking Lambda function:', error);
-    return 'Failed'; 
+    return "Failed";
   }
 }
 

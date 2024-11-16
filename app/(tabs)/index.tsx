@@ -14,7 +14,7 @@ export default function HomeScreen() {
   const [jsonData, setJsonData] = useState<Record<string, any> | null>(null);
   const [firstFile, setFirstFile] = useState<{ filename: string, file: string } | null>(null);
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
-  const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+  const [uploadMessage, setUploadMessage] = useState<string | undefined>(undefined);
   const [fetchImage, setFetchImage] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [getNewList, setGetNewList] = useState(false);
@@ -75,16 +75,23 @@ export default function HomeScreen() {
 
   const handleUpload = async () => {
     try {
-      const uploadResponse = await UploadImage();
-      if (uploadResponse === 'Success') {
-        setUploadSuccess(true);
-        setUploadMessage('Upload Success');
+      const uploadResponse = await UploadImage(); // Ensure UploadImage returns the correct type
+      if (typeof uploadResponse === 'string') {
+        // Handle the case where uploadResponse is a string
+        setUploadMessage(uploadResponse); // Set the message directly if it's a string
       } else {
-        setUploadMessage('Upload Failed');
+        const { return_message, jsonData } = uploadResponse as { return_message: string; jsonData: Record<string, any> };  // Type assertion for jsonData as a dictionary
+        setJsonData(jsonData);
+        console.log(return_message);
+        if (return_message === 'Processing completed successfully! Output saved') {
+          setUploadMessage('Upload Success');
+        } else {
+          setUploadMessage('Upload Failed');
+        }
       }
 
       setTimeout(() => {
-        setUploadMessage(null);
+        setUploadMessage(undefined);
       }, 1000);
 
     } catch (error) {
