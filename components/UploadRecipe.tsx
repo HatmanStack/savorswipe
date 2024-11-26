@@ -1,7 +1,7 @@
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from 'expo-image-manipulator';
 import Constants from 'expo-constants';
-
+import { useEffect } from 'react';
 
 const resizeImage = async (uri: string, maxSize: number) => {
   const manipulatorResult = await ImageManipulator.manipulateAsync(
@@ -32,20 +32,26 @@ const callLambdaFunction = async (base64Image: string): Promise<string> => {
     const data: AWS.Lambda.InvocationResponse = await lambda.invoke(params).promise();
     console.log('Uploading To Lambda');
     const response = JSON.parse(data.Payload as string);
-    return response;
+    if (response.statusCode === 200) {
+      const responseBody = JSON.parse(response.body); 
+      return responseBody;
+    }
+    return "Upload Failed";
   } catch (error) {
     console.error('Error invoking Lambda function:', error);
-    return "Failed";
+    return "Upload Failed";
   }
 }
 
-const UploadImage = async (): Promise<string> => {
+
+const selectAndUploadImage = async (setUploadMessage: (result: string | null) => void, setUploadVisible: (visible: boolean) => void) => {
   const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (status !== "granted") {
     alert("Sorry, we need media library permissions to select an image.");
-    return 'Failed';
+    setUploadVisible(false);
+    return 'Upload Failed';
   }
-  console.log("Selecting image");
+  
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ImagePicker.MediaTypeOptions.Images,
     allowsEditing: true,
@@ -54,19 +60,42 @@ const UploadImage = async (): Promise<string> => {
   });
   
   if (!result.canceled) {
-    console.log(result);
     const imageUri = result.assets[0]?.uri;
     if (imageUri) {
       const resizedImage = await resizeImage(imageUri, 2000); // Resize image to below 6k
       if (resizedImage) {
+        
         const lambdaResponse = await callLambdaFunction(resizedImage);
-        return lambdaResponse;
+        
+        setUploadMessage(lambdaResponse);
+        setUploadVisible(false);
+        return;
       }
     } else {
       console.error('Base64 image is undefined');
     }
   }
-  return 'Failed'; 
+  console.log("status2")
+  setUploadVisible(false);
+  setUploadMessage("Upload Failed");
 };
 
-export default UploadImage; 
+type UploadImageProps = {
+  setUploadMessage: (message: string | null) => void; 
+  setUploadVisible: (visible: boolean) => void;
+  
+};
+
+const UploadImage: React.FC<UploadImageProps> = ({ setUploadMessage, setUploadVisible }) => { // Added a comma between props
+
+  useEffect(() => {
+    const initiateUpload = async () => {
+      await selectAndUploadImage(setUploadMessage, setUploadVisible);
+    };
+    initiateUpload();
+  }, []);
+  return null;
+
+};
+
+export default UploadImage;
