@@ -73,7 +73,7 @@ export default function HomeScreen() {
       <GetImages
         getNewList={getNewList}
         fetchImage={fetchImage}
-        firstFile={firstFile}
+        firstFile={firstFile ? firstFile.file : ''} 
         setFirstFile={setFirstFile}
         setImageDimensions={setImageDimensions}
       />
