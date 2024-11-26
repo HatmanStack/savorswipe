@@ -8,13 +8,13 @@ import GetImages from '@/components/GetImages';
 const holderImg = require('@/assets/images/skillet.png')
 
 export default function HomeScreen() {
-  const [firstFile, setFirstFile] = useState<{ filename: string, file: string } | null>(null);
+  
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
   const [fetchImage, setFetchImage] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [getNewList, setGetNewList] = useState(false);
   const translateX = useRef(new Animated.Value(0)).current;
-  const { setCurrentRecipe, allFiles, jsonData } = useRecipe();
+  const { setCurrentRecipe, firstFile, allFiles, jsonData } = useRecipe();
   const router = useRouter();
 
   useEffect(() => {
@@ -56,6 +56,14 @@ export default function HomeScreen() {
     }
   };
 
+  useEffect(() => {
+    if (!firstFile) {
+      // Trigger any updates or side effects when firstFile is set
+      console.log('firstFile has been set:', firstFile);
+      // You can add any additional logic here if needed
+    }
+  }, [firstFile]);
+
   const debounce = (func: (...args: any[]) => void, delay: number) => {
     let timeout: NodeJS.Timeout; // Specify the type for timeout
     return (...args: any[]) => {
@@ -65,7 +73,6 @@ export default function HomeScreen() {
   };
 
   const debouncedHandleSwipe = debounce(handleSwipe, 100);
- 
 
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
@@ -73,8 +80,7 @@ export default function HomeScreen() {
       <GetImages
         getNewList={getNewList}
         fetchImage={fetchImage}
-        firstFile={firstFile ? firstFile.file : ''} 
-        setFirstFile={setFirstFile}
+        setFetchImage={setFetchImage}
         setImageDimensions={setImageDimensions}
       />
       <PanGestureHandler

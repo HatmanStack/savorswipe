@@ -3,9 +3,7 @@ import os
 import boto3
 import requests
 
-
 s3_client = boto3.client('s3')
-
 
 def to_s3(recipe, search_results, jsonData = None):
     combined_data_key = 'jsondata/combined_data.json'
@@ -47,6 +45,9 @@ def upload_image(search_results, bucket_name, highest_key):
                 image_data = image_response.content
                 image_key = images_prefix + str(highest_key) + '.jpg'
 
+                tmp_image_path = f'/tmp/searchImage.jpg'
+                with open(tmp_image_path, 'wb') as image_file:
+                    image_file.write(image_data)
                 # Upload to S3
                 s3_client = boto3.client('s3')
                 try:

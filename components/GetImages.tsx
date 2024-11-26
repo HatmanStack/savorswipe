@@ -51,15 +51,14 @@ export async function fetchFromS3(fileName: string) {
 interface GetImagesProps {
     getNewList: boolean;
     fetchImage: boolean;
-    firstFile: string;
-    setFirstFile: (data: any) => void;
+    setFetchImage: (data: any) => void;
     setImageDimensions: (data: any) => void;
 }
 
-export default function GetImages({ getNewList, fetchImage, firstFile, setFirstFile, setImageDimensions }: GetImagesProps) {
+export default function GetImages({ getNewList, fetchImage, setFetchImage, setImageDimensions }: GetImagesProps) {
     const [fileToFetch, setFileToFetch] = useState<string | string[]>([]);
     const [fetchedFiles, setFetchedFiles] = useState<{ filename: string, file: string }[]>([]);
-    const { uploadMessage, allFiles, jsonData, setJsonData, setAllFiles  } = useRecipe();
+    const { firstFile, setFirstFile, allFiles, jsonData, setJsonData, setAllFiles  } = useRecipe();
     
     const shuffleAndSetKeys = (keysArray?: string[]) => {
         if (!keysArray) {
@@ -105,32 +104,6 @@ export default function GetImages({ getNewList, fetchImage, firstFile, setFirstF
     }, []);
 
     useEffect(() => {
-        const fetchData = async () => {
-            console.log(uploadMessage);
-            // React and Lambda work too quickly for s3 write calls to propogate.  Need fix to slow Down UploadMessage 
-            /** 
-            if(uploadMessage && uploadMessage.includes("successfully!")){ 
-                const combinedJsonData = await getJsonFromS3();
-                setJsonData(combinedJsonData);
-                console.log(combinedJsonData);
-                const highestKey = String(Math.max(...Object.keys(combinedJsonData).map(Number)) + 1); // Add one to highest key
-                console.log(highestKey)
-                const newFileToFetch = `images/${combinedJsonData[highestKey]["key"]}.jpg`;
-                
-                const file = await fetchFromS3(newFileToFetch);
-                if (file) {
-                    const base64String = file.toString('base64');
-                    const newFile = { filename: newFileToFetch, file: `data:image/jpeg;base64,${base64String}` };
-                    setFirstFile(newFile);
-                }
-                shuffleAndSetKeys(Object.keys(combinedJsonData));
-            }
-        };*/
-        }
-        fetchData();
-    },[uploadMessage])
-
-    useEffect(() => {
         const addFileToFetchedArray = async () => {
             console.log(fileToFetch)
             const files = Array.isArray(fileToFetch) ? fileToFetch : [fileToFetch];
@@ -168,9 +141,9 @@ export default function GetImages({ getNewList, fetchImage, firstFile, setFirstF
 
     useEffect(() => {
         if (!firstFile) {
-            setFirstFile(fetchedFiles[0]);  // Come up with a fix for the Conditional Render
+            setFetchImage((prev: boolean) => !prev);
         }
-    }, [fetchedFiles]);
+    }, [fetchedFiles])
 
     return null;
 }
