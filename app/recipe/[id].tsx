@@ -1,5 +1,5 @@
 import React, {useState, useEffect} from 'react';
-import { Linking, Dimensions, Image } from 'react-native';
+import { Linking, Dimensions, Image, Pressable } from 'react-native';
 import { getJsonFromS3, fetchFromS3 } from '@/components/GetImages';
 import { ThemedView } from '@/components/ThemedView';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
@@ -10,7 +10,7 @@ export default function RecipeDetail() {
   const [recipeDetails, setRecipeDetails] = useState();
   const [recipeImage, setRecipeImage] = useState<string | undefined>();
   const [screenDimensions, setScreenDimensions] = useState({ width: Dimensions.get('window').width, height: Dimensions.get('window').height });
-
+  const buttonSrc = require('@/assets/images/home.png');
   useEffect(() => {
     const handleResize = () => {
       setScreenDimensions({ width: Dimensions.get('window').width, height: Dimensions.get('window').height });
@@ -72,6 +72,13 @@ export default function RecipeDetail() {
   }, [id]);
 
   return (
+    <>
+    <Pressable
+                style={{ position: 'absolute', top: 80, left: 20, zIndex: 1 }}
+                onPress={() => Linking.openURL('https://savorswipe.fun')}
+            >
+                <Image source={buttonSrc} style={{ width: 50, height: 50 }} />
+            </Pressable>
     <ParallaxScrollView
     headerBackgroundColor={{ light: "#bfaeba", dark: "#60465a" }}
     headerImage={
@@ -94,5 +101,6 @@ export default function RecipeDetail() {
       )}
     </ThemedView>
     </ParallaxScrollView>
+    </>
   );
 }
