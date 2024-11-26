@@ -1,6 +1,31 @@
+<h1 align="center">
+  <img width="800" src="banner.png" alt="savorswipe-app icon">
+</h1>
+<h4 align="center">
+  <a href="https://www.apache.org/licenses/LICENSE-2.0.html">
+    <img src="https://img.shields.io/badge/license-Apache2.0-blue" alt="savorswipe is under the Apache 2.0 liscense" />
+  </a>
+  <a href="https://github.com/circlemind-ai/fast-graphrag/blob/main/CONTRIBUTING.md">
+    <img src="https://img.shields.io/badge/Expo-51+-Purple" alt="Expo Version" />
+  </a>
+  <a href="https://programmablesearchengine.google.com/about/">
+    <img src="https://img.shields.io/badge/Google%20Custom%20Search-green" alt="Google Custom Search" />
+  </a>
+  <a href="https://platform.openai.com/docs/guides/text-to-speech">
+    <img src="https://img.shields.io/badge/OpenAI-Orange" alt="OpenAI OCR" />
+  </a>
+  <img src="https://img.shields.io/youtube/views/8hmrio2A5Og">
+  <img src="https://img.shields.io/badge/python->=3.12.1-Red">
+</h4>
+<p align="center">
+  <p align="center"><b>From Cravings to Cooking - Swipe, Discover, Repeat!<br> <a href="https://savorswipe.fun/"> SavorSwipe » </a> </b> </p>
+</p>
+
+
+
 # SavorSwipe
 
-SavorSwipe lets you browse through pictures of food until something catches your eye. Once you find a dish you like, simply swipe right to access the recipe! Easily add your own recipes by snapping a photo of the ingredients and directions. [SavorSwipe](https://savorswipe.fun/)
+SavorSwipe lets you browse through pictures of food until something catches your eye. Once you find a dish you like, simply swipe right to access the recipe! Easily add your own recipes by snapping a photo of the ingredients and directions. 
 
 ## Features
 

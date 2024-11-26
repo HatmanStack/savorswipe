@@ -1,27 +1,21 @@
 import 'react-native-gesture-handler';
-import { StyleSheet, Image, View, Animated, Dimensions, Pressable } from 'react-native';
+import { Image, View, Animated, Dimensions } from 'react-native';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import { useRecipe } from '@/context/RecipeContext';
-import { ThemedText } from '@/components/ThemedText';
 import GetImages from '@/components/GetImages';
-import UploadImage from '@/components/UploadRecipe';
-const buttonSrc = require('@/assets/images/plus.png');
 const holderImg = require('@/assets/images/skillet.png')
 
 export default function HomeScreen() {
-  const [jsonData, setJsonData] = useState<Record<string, any> | null>(null);
   const [firstFile, setFirstFile] = useState<{ filename: string, file: string } | null>(null);
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
-  const [uploadMessage, setUploadMessage] = useState<string | undefined>(undefined);
   const [fetchImage, setFetchImage] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [getNewList, setGetNewList] = useState(false);
   const translateX = useRef(new Animated.Value(0)).current;
-  const { setCurrentRecipe, uploadSuccess, setUploadSuccess, allFiles, setAllFiles  } = useRecipe();
+  const { setCurrentRecipe, allFiles, jsonData } = useRecipe();
   const router = useRouter();
-
 
   useEffect(() => {
     const checkIfMobile = () => {
@@ -73,49 +67,16 @@ export default function HomeScreen() {
   const debouncedHandleSwipe = debounce(handleSwipe, 100);
  
 
-  const handleUpload = async () => {
-    try {
-      const uploadResponse = await UploadImage(); // Ensure UploadImage returns the correct type
-      if (typeof uploadResponse === 'string') {
-        // Handle the case where uploadResponse is a string
-        setUploadMessage(uploadResponse); // Set the message directly if it's a string
-      } else {
-        const { return_message, jsonData } = uploadResponse as { return_message: string; jsonData: Record<string, any> };  // Type assertion for jsonData as a dictionary
-        setJsonData(jsonData);
-        console.log(return_message);
-        if (return_message === 'Processing completed successfully! Output saved') {
-          setUploadMessage('Upload Success');
-        } else {
-          setUploadMessage('Upload Failed');
-        }
-      }
-
-      setTimeout(() => {
-        setUploadMessage(undefined);
-      }, 1000);
-
-    } catch (error) {
-      console.error('Error during image upload:', error);
-    }
-  };
-
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-      {uploadMessage && (
-        <ThemedText style={{ position: 'absolute', top: 50, textAlign: 'center', width: '100%' }}>
-          {uploadMessage}
-        </ThemedText>
-      )}
+      
       <GetImages
         getNewList={getNewList}
         fetchImage={fetchImage}
+        firstFile={firstFile}
         setFirstFile={setFirstFile}
-        setJsonData={setJsonData}
         setImageDimensions={setImageDimensions}
       />
-      <Pressable style={{ position: 'absolute', top: 20, left: 20, zIndex: 1 }} onPress={handleUpload}>
-        <Image source={buttonSrc} style={{ width: 50, height: 50 }} />
-      </Pressable>
       <PanGestureHandler
         onGestureEvent={(event) => {
           if (event.nativeEvent.translationX < -30) {
@@ -128,7 +89,6 @@ export default function HomeScreen() {
         minVelocity={0.5}
       >
         <Animated.View style={{ transform: [{ translateX }] }}>
-          
             <Image
               source={firstFile ? { uri: firstFile.file } : holderImg} 
               style={{
