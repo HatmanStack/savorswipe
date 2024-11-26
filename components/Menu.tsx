@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Image, Modal, View, Pressable } from 'react-native';
+import { Linking, StyleSheet, Image, Modal, View, Pressable } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useRecipe } from '@/context/RecipeContext';
@@ -134,11 +134,11 @@ export default function Menu() {
                                     <ThemedText >
                                         <p style={{ textAlign: 'center' }}> {currentRecipe.Title} </p>
                                     </ThemedText>
-
-                                    <ThemedText >
-                                        <p style={{ textAlign: 'center' }}>{`https://savorswipe.fun/recipe/${currentRecipe.key}`}</p>
-                                    </ThemedText>
-                                </>
+                                    
+                                    <Pressable onPress={() => Linking.openURL(`https://savorswipe.fun/recipe/${currentRecipe.key}`)}>
+                                        <ThemedText style={{ textAlign: 'center' }}>{`https://savorswipe.fun/recipe/${currentRecipe.key}`}</ThemedText>
+                                    </Pressable>
+                                    </>
                             ) : (
                                 <ThemedText>Select a Recipe By Swiping Right</ThemedText>
                             )}
