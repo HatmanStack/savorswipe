@@ -27,6 +27,12 @@ def extract_from_multiple_pages(base64_images):
     return final_recipe
 
 
+def encode_images_to_base64():
+    image_path = f'/tmp/searchImage.jpg'
+    with open(image_path, 'rb') as image_file:
+        encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
+    return encoded_image
+
 def lambda_handler(event, context):
     if 'base64' in event:
         file_content = event['base64']  # The file content from the event
@@ -71,7 +77,8 @@ def lambda_handler(event, context):
             'statusCode': 400,
             'body': json.dumps('Error: No data found in output.')
         }
-    jsonData = None  # Initialize jsonData to None for the first run
+    jsonData = None
+    
     if isinstance(output_data_json, list):
         for recipe in output_data_json:
             print('start upload list')
@@ -79,12 +86,20 @@ def lambda_handler(event, context):
     else:
         print('start upload single')
         upload_success, jsonData = upload.to_s3(output_data_json, si.google_search_image(output_data_json['Title']))
-    
+        
+            
     if upload_success:
         return_message = 'Processing completed successfully! Output saved'
     else:
         return_message = 'Error: Processing Failed'
-    message = {"return_message": return_message, "jsonData": jsonData}
+
+    if upload_success:
+        encoded_image_string = str(encode_images_to_base64())
+    else:
+        encoded_image_string = ''
+
+    message = {"returnMessage": return_message, "jsonData": jsonData, "encodedImages": encoded_image_string}
+    
     return {
         'statusCode': 200,
         'body': json.dumps(message)

@@ -12,7 +12,7 @@ const resizeImage = async (uri: string, maxSize: number) => {
   return manipulatorResult.base64; // Return the base64 string of the resized image
 };
 
-const callLambdaFunction = async (base64Image: string): Promise<string> => {
+const callLambdaFunction = async (base64Image: string): Promise<Record<string, any>> => {
   const AWS = require('aws-sdk');
   const lambda = new AWS.Lambda({
     region: Constants.manifest.extra.AWS_REGION_LAMBDA,
@@ -34,22 +34,23 @@ const callLambdaFunction = async (base64Image: string): Promise<string> => {
     const response = JSON.parse(data.Payload as string);
     if (response.statusCode === 200) {
       const responseBody = JSON.parse(response.body); 
+      console.log(responseBody)
       return responseBody;
     }
-    return "Upload Failed";
+    return {returnMessage: "Upload Failed"};
   } catch (error) {
     console.error('Error invoking Lambda function:', error);
-    return "Upload Failed";
+    return {returnMessage: "Upload Failed"};
   }
 }
 
 
-const selectAndUploadImage = async (setUploadMessage: (result: string | null) => void, setUploadVisible: (visible: boolean) => void) => {
+const selectAndUploadImage = async (setUploadMessage: (result: Record<string, any> | null) => void, setUploadVisible: (visible: boolean) => void) => {
   const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (status !== "granted") {
     alert("Sorry, we need media library permissions to select an image.");
     setUploadVisible(false);
-    return 'Upload Failed';
+    return {returnMessage: "Upload Failed"};
   }
   
   const result = await ImagePicker.launchImageLibraryAsync({
@@ -75,15 +76,14 @@ const selectAndUploadImage = async (setUploadMessage: (result: string | null) =>
       console.error('Base64 image is undefined');
     }
   }
-  console.log("status2")
+  
   setUploadVisible(false);
-  setUploadMessage("Upload Failed");
+  setUploadMessage({returnMessage: "Upload Failed"});
 };
 
 type UploadImageProps = {
-  setUploadMessage: (message: string | null) => void; 
+  setUploadMessage: (message: Record<string, any> | null) => void; 
   setUploadVisible: (visible: boolean) => void;
-  
 };
 
 const UploadImage: React.FC<UploadImageProps> = ({ setUploadMessage, setUploadVisible }) => { // Added a comma between props
