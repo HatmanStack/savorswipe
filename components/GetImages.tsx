@@ -156,7 +156,7 @@ export default function GetImages({ getNewList, fetchImage, firstFile, setFirstF
 
     useEffect(() => {
         const fetchImages = async () => {
-            if (allFiles.length > 0) {
+            if (allFiles.length > 0) { 
                 setFirstFile(fetchedFiles[0]);
                 setFileToFetch(`images/${allFiles[0]}.jpg`); 
                 const updatedFiles = fetchedFiles.slice(1); 
@@ -168,7 +168,7 @@ export default function GetImages({ getNewList, fetchImage, firstFile, setFirstF
 
     useEffect(() => {
         if (!firstFile) {
-            setFirstFile(fetchedFiles[1]);
+            setFirstFile(fetchedFiles[0]);  // Come up with a fix for the Conditional Render
         }
     }, [fetchedFiles]);
 
