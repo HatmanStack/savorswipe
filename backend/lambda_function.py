@@ -6,11 +6,12 @@ import ocr
 import upload
 import search_image as si
 
-def extract_from_multiple_pages(base64_images):
+def extract_from_multiple_pages(base64_images, app_time):
     recipes = []
     
     for base64_image in base64_images:
         recipe_json = ocr.extract_recipe_data(base64_image)
+        upload.upload_user_data('user_images_json', 'application/json', 'json', recipe_json, app_time)  # Changed 'image/jpeg' to 'application/json'
         if recipe_json is None:
             print("Warning: extract_recipe_data returned None for an image.")
             continue  # Skip this image if extraction failed
@@ -22,7 +23,6 @@ def extract_from_multiple_pages(base64_images):
             print(f"Error decoding JSON: {e}")
 
     final_recipe = ocr.parseJSON(recipes)
-    print(final_recipe)
     
     return final_recipe
 
@@ -35,7 +35,8 @@ def encode_images_to_base64():
 
 def lambda_handler(event, context):
     if 'base64' in event:
-        file_content = event['base64']  # The file content from the event
+        file_content = event['base64'] 
+        app_time = upload.upload_user_data('user_images', 'image/jpeg', 'jpg', file_content )
     else:
         return
 
@@ -59,8 +60,8 @@ def lambda_handler(event, context):
             print(f"Error decoding base64 string: {e}")
         base64_images = [base64_string]
 
-    output_data = extract_from_multiple_pages(base64_images)
-    print(output_data)
+    output_data = extract_from_multiple_pages(base64_images, app_time)
+    print(str(output_data))
     
     # Load output_data as JSON
     try:
@@ -85,17 +86,13 @@ def lambda_handler(event, context):
             upload_success, jsonData = upload.to_s3(recipe, si.google_search_image(recipe['Title']), jsonData)
     else:
         print('start upload single')
-        upload_success, jsonData = upload.to_s3(output_data_json, si.google_search_image(output_data_json['Title']))
-        
+        upload_success, jsonData = upload.to_s3(output_data_json, si.google_search_image(output_data_json['Title']))   
             
     if upload_success:
         return_message = 'Processing completed successfully! Output saved'
-    else:
-        return_message = 'Error: Processing Failed'
-
-    if upload_success:
         encoded_image_string = str(encode_images_to_base64())
     else:
+        return_message = 'Error: Processing Failed'
         encoded_image_string = ''
 
     message = {"returnMessage": return_message, "jsonData": jsonData, "encodedImages": encoded_image_string}

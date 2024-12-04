@@ -2,12 +2,16 @@ import json
 import os
 import boto3
 import requests
+import time
+import io
+import base64
+from PIL import Image
 
 s3_client = boto3.client('s3')
+bucket_name = os.getenv('S3_BUCKET') 
 
 def to_s3(recipe, search_results, jsonData = None):
     combined_data_key = 'jsondata/combined_data.json'
-    bucket_name = os.getenv('S3_BUCKET') 
     try:
         if not jsonData:
             existing_data = s3_client.get_object(Bucket=bucket_name, Key=combined_data_key)
@@ -34,7 +38,7 @@ def to_s3(recipe, search_results, jsonData = None):
 
 def upload_image(search_results, bucket_name, highest_key):
     images_prefix = 'images/'
-    for searched_item in search_results['items']:
+    for searched_item in search_results['items']: ## You are returned 10 items from the google search to iterate through and find a good response
         image_url = searched_item['link']
         print(f"Fetching image from URL: {image_url}")
         image_response = requests.get(image_url)
@@ -55,7 +59,7 @@ def upload_image(search_results, bucket_name, highest_key):
                         Bucket=bucket_name,  # Replace with your bucket name
                         Key=image_key,
                         Body=image_data,
-                        ContentType='image/jpeg'  # Adjust based on the actual image type
+                        ContentType='image/jpeg'  
                     )
                     print('Image uploaded successfully.')
                     return True
@@ -66,8 +70,38 @@ def upload_image(search_results, bucket_name, highest_key):
             else:
                 print("The fetched content is not an image.")
         else:
-            print(f"Error fetching image: {image_response.status_code} - {image_response.text}")
+            print(f"Error fetching image: {image_response.status_code}")
     return False    
     
+
+def upload_user_data(prefix, content, type, data, app_time = None):    
+    s3_client = boto3.client('s3')
+    if not app_time:
+        app_time = int(time.time())
+    if type=='jpg':
+        try:
+            data = base64.b64decode(data)
+            image = Image.open(io.BytesIO(data))
+            jpeg_image_io = io.BytesIO()
+            image.convert('RGB').save(jpeg_image_io, format='JPEG')
+            data = jpeg_image_io.getvalue()
+        except Exception as e:
+            print(f"Error converting image to JPEG: {e}")
+            return
+    image_key = f'{prefix}/{app_time}.{type}'
+    try:
+        s3_client.put_object(
+            Bucket=bucket_name,  # Replace with your bucket name
+            Key=image_key,
+            Body=data,
+            ContentType=content  # Adjust based on the actual image type
+        )
+        print('User Image uploaded successfully.')
+        
+        
+    except Exception as e:
+        print(f"Error uploading User Image to S3: {e}")
     
-    
+    return app_time
+        
+           

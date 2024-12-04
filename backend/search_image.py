@@ -25,5 +25,5 @@ def google_search_image(title):
             print("No image results found.")
             return None
     else:
-        print(f"Error: {response.status_code} - {response.text}")
+        print(f"Error: {response.status_code}")
         return None
