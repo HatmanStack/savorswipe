@@ -105,7 +105,7 @@ export default function GetImages({ getNewList, fetchImage, setFetchImage, setIm
 
     useEffect(() => {
         const addFileToFetchedArray = async () => {
-            console.log(fileToFetch)
+            console.log(fileToFetch)  // This function is uncessarily complex rewrite 
             const files = Array.isArray(fileToFetch) ? fileToFetch : [fileToFetch];
             for (const filePath of files) {
                 if (typeof filePath === 'string' && filePath) {
@@ -130,7 +130,7 @@ export default function GetImages({ getNewList, fetchImage, setFetchImage, setIm
     useEffect(() => {
         const fetchImages = async () => {
             if (allFiles.length > 0) { 
-                setFirstFile(fetchedFiles[0]);
+                setFirstFile(fetchedFiles[0]);   //Weird React Pattern Rework this to use the array correctly and not just fetch a new file
                 setFileToFetch(`images/${allFiles[0]}.jpg`); 
                 const updatedFiles = fetchedFiles.slice(1); 
                 setFetchedFiles(updatedFiles);
@@ -141,7 +141,7 @@ export default function GetImages({ getNewList, fetchImage, setFetchImage, setIm
 
     useEffect(() => {
         if (!firstFile) {
-            setFetchImage((prev: boolean) => !prev);
+            setFetchImage((prev: boolean) => !prev);  // this is only necessary for a conditional render refactor
         }
     }, [fetchedFiles])
 
