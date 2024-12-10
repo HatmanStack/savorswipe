@@ -13,8 +13,8 @@ export default function HomeScreen() {
   const [fetchImage, setFetchImage] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [getNewList, setGetNewList] = useState(false);
-  const translateX = useRef(new Animated.Value(0)).current;
   const { setCurrentRecipe, firstFile, allFiles, jsonData } = useRecipe();
+  const translateX = useRef(new Animated.Value(0)).current;
   const router = useRouter();
 
   useEffect(() => {
@@ -29,39 +29,37 @@ export default function HomeScreen() {
 
   const handleSwipe = async (direction: 'left' | 'right') => {
     setImageDimensions(Dimensions.get('window'));
+    
+
+    // list management logic
     if (allFiles.length < 3) {
       setGetNewList(prev => !prev); 
     }
     if (allFiles.length > 40) {
       setGetNewList(false);
     }
+
     if (direction === 'left') {
       console.log('Left');
       setFetchImage(prev => !prev);
     } else if (direction === 'right') {
       console.log('Right');
-      const fileToPopulate = firstFile;
-      if (fileToPopulate) { // Check if fileToPopulate is defined
-        console.log(fileToPopulate.filename);
-        const recipeId = fileToPopulate.filename.split('/').pop()?.split('.')[0]; // Use optional chaining
-        if (recipeId) { // Ensure recipeId is defined before using it
-          if (jsonData && jsonData[recipeId]) { // Check if jsonData is defined and recipeId exists as a key
-            setCurrentRecipe(jsonData[recipeId]);
-            router.push('/explore');
-          } else {
-            console.error('jsonData is undefined'); // Optional: log an error if jsonData is not available
-          }
-        }
-      }
+      // Only navigate if we have a valid recipe
+      
+        router.push('/explore');
+      
     }
   };
 
-  useEffect(() => {
-    if (!firstFile) {
-      // Trigger any updates or side effects when firstFile is set
-      console.log('firstFile has been set:', firstFile);
-      // You can add any additional logic here if needed
-    }
+  useEffect(() => {  
+      if (firstFile) {
+        const recipeId = firstFile.filename.split('/').pop()?.split('.')[0];
+        if (recipeId && jsonData && jsonData[recipeId]) {
+          setCurrentRecipe(jsonData[recipeId]);
+        }
+        console.log('firstFile has been set:', firstFile);
+      }     
+    
   }, [firstFile]);
 
   const debounce = (func: (...args: any[]) => void, delay: number) => {
