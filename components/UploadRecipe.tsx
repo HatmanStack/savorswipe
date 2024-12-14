@@ -3,16 +3,16 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import Constants from 'expo-constants';
 import { useEffect } from 'react';
 
-const resizeImage = async (uri: string, maxSize: number) => {
+export const resizeImage = async (uri: string, maxSize: number) => {
   const manipulatorResult = await ImageManipulator.manipulateAsync(
     uri,
     [{ resize: { width: maxSize, height: maxSize } }],
     { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
   );
-  return manipulatorResult.base64; // Return the base64 string of the resized image
+  return manipulatorResult.base64;
 };
 
-const callLambdaFunction = async (base64Image: string): Promise<Record<string, any>> => {
+export const callLambdaFunction = async (base64Image: string): Promise<Record<string, any>> => {
   const AWS = require('aws-sdk');
   const lambda = new AWS.Lambda({
     region: Constants.manifest.extra.AWS_REGION_LAMBDA,
