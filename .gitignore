@@ -14,4 +14,7 @@ web-build/
 # macOS
 .DS_Store
 yarn.lock
+components/__tests__/HomeScreen.test.tsx
+components/__tests__/Recipe.test.tsx
+components/__tests__/Menu.test.tsx
 

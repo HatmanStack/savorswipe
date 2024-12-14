@@ -7,13 +7,13 @@ import { useRecipe } from '@/context/RecipeContext';
 export async function getJsonFromS3() {
     try {
         const params = {
-            Bucket: Constants.manifest.extra.AWS_S3_BUCKET,
+            Bucket: Constants.expoConfig?.extra?.AWS_S3_BUCKET,
             Key: 'jsondata/combined_data.json',
         };
         const s3 = new S3({
-            region: Constants.manifest.extra.AWS_REGION_S3,
-            accessKeyId: Constants.manifest.extra.AWS_ID,
-            secretAccessKey: Constants.manifest.extra.AWS_SECRET
+            region:  Constants.expoConfig?.extra?.AWS_REGION_S3,
+            accessKeyId:  Constants.expoConfig?.extra?.AWS_ID,
+            secretAccessKey: Constants.expoConfig?.extra?.AWS_SECRET,
         });
         const file = await s3.getObject(params).promise();
         if (file.Body) {
@@ -32,13 +32,13 @@ export async function getJsonFromS3() {
 export async function fetchFromS3(fileName: string) {
     try {
         const params = {
-            Bucket: Constants.manifest.extra.AWS_S3_BUCKET,
+            Bucket: Constants.expoConfig?.extra?.AWS_S3_BUCKET,
             Key: `${fileName}`,
         };
         const s3 = new S3({
-            region: Constants.manifest.extra.AWS_REGION_S3,
-            accessKeyId: Constants.manifest.extra.AWS_ID,
-            secretAccessKey: Constants.manifest.extra.AWS_SECRET
+            region:  Constants.expoConfig?.extra?.AWS_REGION_S3,
+            accessKeyId:  Constants.expoConfig?.extra?.AWS_ID,
+            secretAccessKey: Constants.expoConfig?.extra?.AWS_SECRET,
         });
         const file = await s3.getObject(params).promise();
         return file.Body; // Return the file body
