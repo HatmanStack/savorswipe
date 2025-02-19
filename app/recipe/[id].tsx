@@ -77,7 +77,7 @@ export default function RecipeDetail() {
     <>
     <Pressable
                 style={{ position: 'absolute', top: 80, left: 20, zIndex: 1 }}
-                onPress={() => router.push('http://localhost:8081')}
+                onPress={() => router.push('/')}
             >
                 <Image source={buttonSrc} style={{ width: 50, height: 50 }} />
             </Pressable>

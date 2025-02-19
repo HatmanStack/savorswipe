@@ -42,7 +42,7 @@ export default function HomeScreen() {
     } else if (direction === 'right') {
       console.log('Right');
       if (currentRecipe)  {
-        router.push(`http://localhost:8081/recipe/${currentRecipe.key}`);
+        router.push(`/recipe/${currentRecipe.key}`);
       }
     }
   };
