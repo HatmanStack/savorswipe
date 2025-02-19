@@ -1,5 +1,5 @@
 import 'react-native-gesture-handler';
-import { Image, View, Animated, Dimensions } from 'react-native';
+import { Linking, Image, View, Animated, Dimensions } from 'react-native';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { PanGestureHandler } from 'react-native-gesture-handler';
@@ -8,12 +8,11 @@ import GetImages from '@/components/GetImages';
 const holderImg = require('@/assets/images/skillet.png')
 
 export default function HomeScreen() {
-  
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
   const [fetchImage, setFetchImage] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [getNewList, setGetNewList] = useState(false);
-  const { setCurrentRecipe, firstFile, allFiles, jsonData } = useRecipe();
+  const { currentRecipe, setCurrentRecipe, firstFile, allFiles, jsonData } = useRecipe();
   const translateX = useRef(new Animated.Value(0)).current;
   const router = useRouter();
 
@@ -30,8 +29,6 @@ export default function HomeScreen() {
   const handleSwipe = async (direction: 'left' | 'right') => {
     setImageDimensions(Dimensions.get('window'));
     
-
-    // list management logic
     if (allFiles.length < 3) {
       setGetNewList(prev => !prev); 
     }
@@ -44,10 +41,9 @@ export default function HomeScreen() {
       setFetchImage(prev => !prev);
     } else if (direction === 'right') {
       console.log('Right');
-      // Only navigate if we have a valid recipe
-      
-        router.push('/explore');
-      
+      if (currentRecipe)  {
+        router.push(`http://localhost:8081/recipe/${currentRecipe.key}`);
+      }
     }
   };
 
@@ -63,10 +59,10 @@ export default function HomeScreen() {
   }, [firstFile]);
 
   const debounce = (func: (...args: any[]) => void, delay: number) => {
-    let timeout: NodeJS.Timeout; // Specify the type for timeout
+    let timeout: NodeJS.Timeout; 
     return (...args: any[]) => {
       clearTimeout(timeout);
-      timeout = setTimeout(() => func(...args), delay); // Use spread operator instead of apply
+      timeout = setTimeout(() => func(...args), delay); 
     };
   };
 

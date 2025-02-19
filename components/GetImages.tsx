@@ -1,4 +1,3 @@
-import Constants from 'expo-constants';
 import { S3 } from 'aws-sdk';
 import { useEffect, useState } from 'react';
 import { Dimensions } from 'react-native';
@@ -7,13 +6,13 @@ import { useRecipe } from '@/context/RecipeContext';
 export async function getJsonFromS3() {
     try {
         const params = {
-            Bucket: Constants.expoConfig?.extra?.AWS_S3_BUCKET,
+            Bucket: process.env.EXPO_PUBLIC_AWS_S3_BUCKET,
             Key: 'jsondata/combined_data.json',
         };
         const s3 = new S3({
-            region:  Constants.expoConfig?.extra?.AWS_REGION_S3,
-            accessKeyId:  Constants.expoConfig?.extra?.AWS_ID,
-            secretAccessKey: Constants.expoConfig?.extra?.AWS_SECRET,
+            region: process.env.EXPO_PUBLIC_AWS_REGION_S3,
+            accessKeyId:  process.env.EXPO_PUBLIC_AWS_ID,
+            secretAccessKey: process.env.EXPO_PUBLIC_AWS_SECRET,
         });
         const file = await s3.getObject(params).promise();
         if (file.Body) {
@@ -32,13 +31,13 @@ export async function getJsonFromS3() {
 export async function fetchFromS3(fileName: string) {
     try {
         const params = {
-            Bucket: Constants.expoConfig?.extra?.AWS_S3_BUCKET,
+            Bucket: process.env.EXPO_PUBLIC_AWS_S3_BUCKET,
             Key: `${fileName}`,
         };
         const s3 = new S3({
-            region:  Constants.expoConfig?.extra?.AWS_REGION_S3,
-            accessKeyId:  Constants.expoConfig?.extra?.AWS_ID,
-            secretAccessKey: Constants.expoConfig?.extra?.AWS_SECRET,
+            region:  process.env.EXPO_PUBLIC_AWS_REGION_S3,
+            accessKeyId: process.env.EXPO_PUBLIC_AWS_ID,
+            secretAccessKey: process.env.EXPO_PUBLIC_AWS_SECRET,
         });
         const file = await s3.getObject(params).promise();
         return file.Body; // Return the file body

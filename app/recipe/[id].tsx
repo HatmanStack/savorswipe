@@ -1,6 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import { Linking, Dimensions, Image, Pressable } from 'react-native';
 import { getJsonFromS3, fetchFromS3 } from '@/components/GetImages';
+import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import RecipeDetails from '@/components/Recipe';
@@ -11,6 +12,7 @@ export default function RecipeDetail() {
   const [recipeImage, setRecipeImage] = useState<string | undefined>();
   const [screenDimensions, setScreenDimensions] = useState({ width: Dimensions.get('window').width, height: Dimensions.get('window').height });
   const buttonSrc = require('@/assets/images/home.png');
+  const router = useRouter();
   useEffect(() => {
     const handleResize = () => {
       setScreenDimensions({ width: Dimensions.get('window').width, height: Dimensions.get('window').height });
@@ -75,7 +77,7 @@ export default function RecipeDetail() {
     <>
     <Pressable
                 style={{ position: 'absolute', top: 80, left: 20, zIndex: 1 }}
-                onPress={() => Linking.openURL('https://savorswipe.fun')}
+                onPress={() => router.push('http://localhost:8081')}
             >
                 <Image source={buttonSrc} style={{ width: 50, height: 50 }} />
             </Pressable>
