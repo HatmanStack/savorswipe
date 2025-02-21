@@ -10,6 +10,8 @@ interface RecipeContextType {
   setJsonData: (data: Record<string, any> | null) => void; // Added setJsonData to the interface
   firstFile: { filename: string; file: string } | null; // Added firstFile to the interface
   setFirstFile: (file: { filename: string; file: string } | null) => void; // Added setFirstFile to the interface
+  startImage: { filename: string; file: string } | null; // Weird Conditional Rendering Issue
+  setStartImage: (file: { filename: string; file: string } | null) => void;  // Weird Conditional Rendering Issue
 }
 
 // Create the context
@@ -21,9 +23,10 @@ export const RecipeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [firstFile, setFirstFile] = useState<{ filename: string, file: string } | null>(null);
   const [jsonData, setJsonData] = useState<Record<string, any> | null>(null);
   const [allFiles, setAllFiles] = useState<string[]>([]);
+  const [startImage, setStartImage] = useState<{ filename: '', file: '' } | null>({ filename: '', file: '' } ); // Weird Conditional Rendering Issue
 
   return (
-    <RecipeContext.Provider value={{ currentRecipe, setCurrentRecipe, firstFile, setFirstFile, jsonData, setJsonData, allFiles, setAllFiles }}>
+    <RecipeContext.Provider value={{ currentRecipe, setCurrentRecipe, firstFile, setFirstFile, jsonData, setJsonData, allFiles, setAllFiles, startImage, setStartImage }}>
       {children}
     </RecipeContext.Provider>
   );

@@ -12,7 +12,7 @@ export default function HomeScreen() {
   const [fetchImage, setFetchImage] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [getNewList, setGetNewList] = useState(false);
-  const { currentRecipe, setCurrentRecipe, firstFile, allFiles, jsonData } = useRecipe();
+  const { currentRecipe, setCurrentRecipe, firstFile, allFiles, jsonData, setStartImage } = useRecipe();
   const translateX = useRef(new Animated.Value(0)).current;
   const router = useRouter();
 
@@ -38,6 +38,7 @@ export default function HomeScreen() {
 
     if (direction === 'left') {
       console.log('Left');
+      setStartImage(null);
       setFetchImage(prev => !prev);
     } else if (direction === 'right') {
       console.log('Right');

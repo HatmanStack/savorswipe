@@ -109,12 +109,10 @@ export default function Menu() {
                     <ThemedView style={[styles.modalContent, { alignItems: 'center' }]}>
                         <ThemedText style={styles.modalTitle}>About This App</ThemedText>
                         <ThemedText><p style={{ textAlign: 'center' }}>
-                            Swipe through a visually stunning collection of dishes—swipe left to explore mouthwatering photos,
-                            and swipe right to instantly access the full recipe, ingredients, and instructions. Got a recipe of
-                            your own? Simply upload a picture of your ingredients or directions to add it to the app’s swipe list,
-                            making your culinary creations available to others. Plus, you can generate a static link for any recipe to
-                            easily share with friends and family. Whether you’re looking for inspiration or sharing your latest food
-                            creation, this app makes cooking fun and social!</p>
+                        Swipe left to discover mouthwatering food photos 
+                        and right to reveal the complete recipe—ingredients with directions. 
+                        Upload a picture of your own directions, ingredients or recipe to join it to the swipe list. 
+                        </p>
                         </ThemedText>
                         <Pressable style={styles.closeButton} onPress={() => setInfoVisible(false)}>
                             <ThemedText>Close</ThemedText>
