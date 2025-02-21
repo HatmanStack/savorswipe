@@ -21,8 +21,6 @@
   <p align="center"><b>From Cravings to Cooking - Swipe, Discover, Repeat!<br> <a href="https://savorswipe.fun/"> SavorSwipe » </a> </b> </p>
 </p>
 
-
-
 # SavorSwipe
 
 SavorSwipe lets you browse through pictures of food until something catches your eye. Once you find a dish you like, simply swipe right to access the recipe! Easily add your own recipes by snapping a photo of the ingredients and directions. 

@@ -25,11 +25,10 @@ export default function Menu() {
     const [menuVisible, setMenuVisible] = useState(false);
     const [infoVisible, setInfoVisible] = useState(false);
     const [uploadVisible, setUploadVisible] = useState(false);
-    const [recipeInfoVisible, setRecipeInfoVisible] = useState(false);
     const [uploadMessage, setUploadMessage] = useState<Record<string, any> | null>(null);
     const [uploadCount, setUploadCount] = useState(0);
     const [uploadText, setUploadText] = useState<string | null>(null);
-    const { currentRecipe, setFirstFile, setAllFiles, jsonData, setJsonData } = useRecipe() as RecipeContext;
+    const { setFirstFile, setAllFiles, jsonData, setJsonData } = useRecipe() as RecipeContext;
     const buttonSrc = require('@/assets/images/hamburger.png');
 
     const handleInfoPress = () => {
@@ -41,11 +40,6 @@ export default function Menu() {
         setMenuVisible(false);
         setUploadCount(prevCount => prevCount + 1);
         setUploadVisible(true);
-    };
-
-    const handleRecipeInfoPress = () => {
-        setMenuVisible(false);
-        setRecipeInfoVisible(true);
     };
 
     useEffect(() => {
@@ -97,12 +91,7 @@ export default function Menu() {
                         <Pressable style={styles.menuItem} onPress={handleUploadPress}>
                             <ThemedText>Upload Recipe</ThemedText>
                         </Pressable>
-                        <Pressable
-                            style={styles.menuItem}
-                            onPress={handleRecipeInfoPress}
-                        >
-                            <ThemedText>Recipe Information Link</ThemedText>
-                        </Pressable>
+                        
                         <Pressable style={styles.menuItem} onPress={() => setMenuVisible(false)}>
                             <ThemedText>Close</ThemedText>
                         </Pressable>
@@ -139,35 +128,7 @@ export default function Menu() {
                 <UploadImage key={uploadCount} setUploadMessage={setUploadMessage} setUploadVisible={setUploadVisible} />
             )}
 
-            <Modal
-                animationType="slide"
-                transparent={true}
-                visible={recipeInfoVisible}
-                onRequestClose={() => setRecipeInfoVisible(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <ThemedView style={[styles.modalContent, { alignItems: 'center' }]}>
-                        <ThemedText style={styles.modalTitle}>
-                            {currentRecipe && typeof currentRecipe !== 'string' ? (
-                                <>
-                                    <ThemedText >
-                                        <p style={{ textAlign: 'center' }}> {currentRecipe.Title} </p>
-                                    </ThemedText>
-                                    
-                                    <Pressable onPress={() => Linking.openURL(`https://savorswipe.fun/recipe/${currentRecipe.key}`)}>
-                                        <ThemedText style={{ textAlign: 'center' }}>{`https://savorswipe.fun/recipe/${currentRecipe.key}`}</ThemedText>
-                                    </Pressable>
-                                    </>
-                            ) : (
-                                <ThemedText>Select a Recipe By Swiping Right</ThemedText>
-                            )}
-                        </ThemedText>
-                        <Pressable style={styles.closeButton} onPress={() => setRecipeInfoVisible(false)}>
-                            <ThemedText>Close</ThemedText>
-                        </Pressable>
-                    </ThemedView>
-                </View>
-            </Modal>
+          
         </>
     );
 }

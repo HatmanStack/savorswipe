@@ -37,8 +37,8 @@ export default function RecipeDetail() {
       <Image
               source={firstFile ? { uri: firstFile.file } : holderImg} 
               style={{
-                width: screenDimensions.width > 1000 ?  1000 : 200,
-                height: screenDimensions.height > 700 ?  700 : 200,
+                width: screenDimensions.width > 1000 ?  1000 : screenDimensions.width,
+                height: screenDimensions.height > 700 ?  700 : screenDimensions.height,
                 alignSelf: 'center',
                 resizeMode: 'cover',
               }}

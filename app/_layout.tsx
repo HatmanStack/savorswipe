@@ -11,7 +11,7 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <RecipeProvider>
-        <Menu />
+      <Menu />
         <Stack 
           screenOptions={{
             headerShown: false,

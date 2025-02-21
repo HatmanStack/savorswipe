@@ -1,5 +1,5 @@
 import { S3 } from 'aws-sdk';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Dimensions } from 'react-native';
 import { useRecipe } from '@/context/RecipeContext';
 
@@ -55,8 +55,8 @@ interface GetImagesProps {
 }
 
 export default function GetImages({ getNewList, fetchImage, setFetchImage, setImageDimensions }: GetImagesProps) {
-    const [fileToFetch, setFileToFetch] = useState<string | string[]>([]);
-    const [fetchedFiles, setFetchedFiles] = useState<{ filename: string, file: string }[]>([]);
+    const fileToFetchRef = useRef<string | string[]>([]);
+    const fetchedFilesRef = useRef<{ filename: string, file: string }[]>([]);
     const { firstFile, setFirstFile, allFiles, jsonData, setJsonData, setAllFiles  } = useRecipe();
     
     const shuffleAndSetKeys = (keysArray?: string[]) => {
@@ -91,7 +91,7 @@ export default function GetImages({ getNewList, fetchImage, setFetchImage, setIm
                     holderFilesToFetch.push(`images/${key}.jpg`);
                     keysArray.splice(randomIndex, 1); 
                 }
-                setFileToFetch(holderFilesToFetch);
+                fileToFetchRef.current = holderFilesToFetch;
                 shuffleAndSetKeys(keysArray);
                  
             
@@ -104,17 +104,17 @@ export default function GetImages({ getNewList, fetchImage, setFetchImage, setIm
 
     useEffect(() => {
         const addFileToFetchedArray = async () => {
-            console.log(fileToFetch)  // This function is uncessarily complex rewrite 
-            const files = Array.isArray(fileToFetch) ? fileToFetch : [fileToFetch];
+            console.log(fileToFetchRef.current); 
+            const files = Array.isArray(fileToFetchRef.current) ? fileToFetchRef.current : [fileToFetchRef.current];
             for (const filePath of files) {
                 if (typeof filePath === 'string' && filePath) {
                     const file = await fetchFromS3(filePath);
-                    if (file && fetchedFiles.length < 3) {
+                    if (file && fetchedFilesRef.current.length < 3) {
                         const base64String = file.toString('base64');
-                        setFetchedFiles((prevFiles) => [
-                            ...prevFiles, 
+                        fetchedFilesRef.current = [
+                            ...fetchedFilesRef.current,
                             { filename: filePath, file: `data:image/jpeg;base64,${base64String}` }
-                        ]);
+                        ];
                     }
                     const parsedFileName = filePath.replace('images/', '').replace('.jpg', '');
                     if (allFiles.includes(parsedFileName)) {
@@ -123,26 +123,28 @@ export default function GetImages({ getNewList, fetchImage, setFetchImage, setIm
                 }
             }
         };
+        console.log('fetchedFilesRef:', fetchedFilesRef.current);
         addFileToFetchedArray();
-    }, [fileToFetch]);
-
+    }, [fileToFetchRef.current]);
+    
     useEffect(() => {
         const fetchImages = async () => {
-            if (allFiles.length > 0) { 
-                setFirstFile(fetchedFiles[0]);   //Weird React Pattern Rework this to use the array correctly and not just fetch a new file
-                setFileToFetch(`images/${allFiles[0]}.jpg`); 
-                const updatedFiles = fetchedFiles.slice(1); 
-                setFetchedFiles(updatedFiles);
+            if (allFiles.length > 0) {
+                setFirstFile(fetchedFilesRef.current[0]); 
+                fileToFetchRef.current = `images/${allFiles[0]}.jpg`;
+                const updatedFiles = fetchedFilesRef.current.slice(1);
+                fetchedFilesRef.current = updatedFiles;
             }
         };
         fetchImages();
+        console.log('fetchImage:', fetchImage);
     }, [fetchImage]);
-
+    
     useEffect(() => {
         if (!firstFile) {
-            setFetchImage((prev: boolean) => !prev);  // this is only necessary for a conditional render refactor
+            setFetchImage((prev: boolean) => !prev); 
         }
-    }, [fetchedFiles])
+    }, [fetchedFilesRef.current]);
 
     return null;
 }
