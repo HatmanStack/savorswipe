@@ -57,7 +57,7 @@ interface GetImagesProps {
 export default function GetImages({ getNewList, fetchImage, setFetchImage, setImageDimensions }: GetImagesProps) {
     const fileToFetchRef = useRef<string | string[]>([]);
     const fetchedFilesRef = useRef<{ filename: string, file: string }[]>([]);
-    const { firstFile, setFirstFile, allFiles, jsonData, setJsonData, setAllFiles  } = useRecipe();
+    const { firstFile, setFirstFile, allFiles, jsonData, setJsonData, setAllFiles, startImage, setStartImage  } = useRecipe();
     
     const shuffleAndSetKeys = (keysArray?: string[]) => {
         if (!keysArray) {
@@ -104,7 +104,7 @@ export default function GetImages({ getNewList, fetchImage, setFetchImage, setIm
 
     useEffect(() => {
         const addFileToFetchedArray = async () => {
-            console.log(fileToFetchRef.current); 
+            console.log('Start of addFileToFetched',fetchedFilesRef.current); 
             const files = Array.isArray(fileToFetchRef.current) ? fileToFetchRef.current : [fileToFetchRef.current];
             for (const filePath of files) {
                 if (typeof filePath === 'string' && filePath) {
@@ -120,11 +120,15 @@ export default function GetImages({ getNewList, fetchImage, setFetchImage, setIm
                     if (allFiles.includes(parsedFileName)) {
                         setAllFiles(allFiles.filter(f => f !== parsedFileName));
                     }
+                    if(startImage && fetchedFilesRef.current.length > 0){ // Weird Conditional Rendering Issue
+                        setStartImage(fetchedFilesRef.current[0]);   // Weird Conditional Rendering Issue
+                    } 
                 }
             }
         };
-        console.log('fetchedFilesRef:', fetchedFilesRef.current);
+        
         addFileToFetchedArray();
+        
     }, [fileToFetchRef.current]);
     
     useEffect(() => {
@@ -143,7 +147,11 @@ export default function GetImages({ getNewList, fetchImage, setFetchImage, setIm
     useEffect(() => {
         if (!firstFile) {
             setFetchImage((prev: boolean) => !prev); 
+            console.log('firstfile not set');
+        }else{
+            console.log('firstFile has been set:', firstFile);
         }
+        
     }, [fetchedFilesRef.current]);
 
     return null;
