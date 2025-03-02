@@ -3,15 +3,19 @@ import { Dimensions, Image, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useRecipe } from '@/context/RecipeContext';
 import { ThemedView } from '@/components/ThemedView';
+import { getJsonFromS3, fetchFromS3 } from '@/components/GetImages';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import RecipeDetails from '@/components/Recipe';
+import { ThemedText } from '@/components/ThemedText';
 const holderImg = require('@/assets/images/skillet.png')
 
 export default function RecipeDetail() {
-  const { currentRecipe, firstFile, jsonData } = useRecipe();
+  const { currentRecipe, setCurrentRecipe, setFirstFile, firstFile, setJsonData, jsonData } = useRecipe();
   const [screenDimensions, setScreenDimensions] = useState({ width: Dimensions.get('window').width, height: Dimensions.get('window').height });
   const buttonSrc = require('@/assets/images/home.png');
   const router = useRouter();
+  const [recipeExists, setRecipeExists] = useState(true);
+  const urlParts = window?.location?.href?.split('/') || [];
   useEffect(() => {
     const handleResize = () => {
       setScreenDimensions({ width: Dimensions.get('window').width, height: Dimensions.get('window').height });
@@ -22,39 +26,93 @@ export default function RecipeDetail() {
       subscription?.remove();
     };
   }, []);
+  
+
+  useEffect(() => {
+    // Only run this effect if we don't have currentRecipe
+    if (!currentRecipe) {
+      const fetchData = async () => {
+        try {
+          const tempJsonData = await getJsonFromS3();
+          const recipeId = urlParts[urlParts.length - 1];
+          const recipeFilePath = `images/${recipeId}.jpg`;
+          
+          console.log('Recipe ID:', recipeId);
+          console.log('Recipe file path:', recipeFilePath);
+          
+          if (!tempJsonData[recipeId]) {
+            console.log('Recipe not found:', recipeId);
+            setRecipeExists(false);
+            return; // Exit early if recipe doesn't exist
+          }
+          
+          setJsonData(tempJsonData);
+          setCurrentRecipe(tempJsonData[recipeId]);
+          
+          try {
+            const file = await fetchFromS3(recipeFilePath);
+            const base64StringTemp = file.toString('base64');
+            setFirstFile({ 
+              filename: recipeFilePath, 
+              file: `data:image/jpeg;base64,${base64StringTemp}` 
+            });
+          } catch (error) {
+            console.error('Error fetching image:', error);
+          }
+        } catch (error) {
+          console.error('Error loading data:', error);
+        }
+      };
+      
+      fetchData();
+    }
+  }, [currentRecipe, urlParts]);
 
   return (
     <>
-    <Pressable
-                style={{ position: 'absolute', top: 80, left: 20, zIndex: 1 }}
-                onPress={() => router.push('/')}
-            >
-                <Image source={buttonSrc} style={{ width: 50, height: 50 }} />
-            </Pressable>
-    <ParallaxScrollView
-    headerBackgroundColor={{ light: "#bfaeba", dark: "#60465a" }}
-    headerImage={
-      <Image
+      <Pressable
+        style={{ position: 'absolute', top: 80, left: 20, zIndex: 1 }}
+        onPress={() => router.push('/')}
+      >
+        <Image source={buttonSrc} style={{ width: 50, height: 50 }} />
+      </Pressable>
+      
+      {!recipeExists ? (
+        <ThemedView style={{ padding: 20, alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+          <Image 
+            source={holderImg} 
+            style={{ width: 100, height: 100, marginBottom: 20 }} 
+          />
+          <ThemedText style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10 }}>
+            Recipe Not Found
+          </ThemedText>
+          <ThemedText style={{ textAlign: 'center', marginBottom: 20 }}>
+            The recipe you're looking for doesn't exist or is no longer available.
+          </ThemedText>
+        </ThemedView>
+      ) : (
+        <ParallaxScrollView
+          headerBackgroundColor={{ light: "#bfaeba", dark: "#60465a" }}
+          headerImage={
+            <Image
               source={firstFile ? { uri: firstFile.file } : holderImg} 
               style={{
-                width: screenDimensions.width > 1000 ?  1000 : screenDimensions.width,
-                height: screenDimensions.height > 700 ?  700 : screenDimensions.height,
+                width: screenDimensions.width > 1000 ? 1000 : screenDimensions.width,
+                height: screenDimensions.height > 700 ? 700 : screenDimensions.height,
                 alignSelf: 'center',
                 resizeMode: 'cover',
               }}
             />
-    }
-    headerText={<></>} 
-    >
-    <ThemedView style={{ width: screenDimensions.width, height: screenDimensions.height }}>
-      
-    {currentRecipe && (
-  <>
-    <RecipeDetails currentRecipe={jsonData[currentRecipe.key]}></RecipeDetails>
-  </>
-)}
-    </ThemedView>
-    </ParallaxScrollView>
+          }
+          headerText={<></>} 
+        >
+          <ThemedView style={{ width: screenDimensions.width, height: screenDimensions.height }}>
+            {currentRecipe && (
+              <RecipeDetails currentRecipe={jsonData[currentRecipe.key]}/>
+            )}
+          </ThemedView>
+        </ParallaxScrollView>
+      )}
     </>
   );
 }
