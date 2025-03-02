@@ -7,6 +7,7 @@ import { getJsonFromS3, fetchFromS3 } from '@/components/GetImages';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import RecipeDetails from '@/components/Recipe';
 import { ThemedText } from '@/components/ThemedText';
+import { useGlobalSearchParams} from 'expo-router';
 const holderImg = require('@/assets/images/skillet.png')
 
 export default function RecipeDetail() {
@@ -14,8 +15,8 @@ export default function RecipeDetail() {
   const [screenDimensions, setScreenDimensions] = useState({ width: Dimensions.get('window').width, height: Dimensions.get('window').height });
   const buttonSrc = require('@/assets/images/home.png');
   const router = useRouter();
+  const glob = useGlobalSearchParams();
   const [recipeExists, setRecipeExists] = useState(true);
-  const urlParts = window?.location?.href?.split('/') || [];
   useEffect(() => {
     const handleResize = () => {
       setScreenDimensions({ width: Dimensions.get('window').width, height: Dimensions.get('window').height });
@@ -34,20 +35,16 @@ export default function RecipeDetail() {
       const fetchData = async () => {
         try {
           const tempJsonData = await getJsonFromS3();
-          const recipeId = urlParts[urlParts.length - 1];
-          const recipeFilePath = `images/${recipeId}.jpg`;
+          const recipeFilePath = `images/${glob.id}.jpg`;
           
-          console.log('Recipe ID:', recipeId);
-          console.log('Recipe file path:', recipeFilePath);
-          
-          if (!tempJsonData[recipeId]) {
-            console.log('Recipe not found:', recipeId);
+          if (!tempJsonData[glob.id]) {
+            console.log('Recipe not found:', glob.id);
             setRecipeExists(false);
             return; // Exit early if recipe doesn't exist
           }
           
           setJsonData(tempJsonData);
-          setCurrentRecipe(tempJsonData[recipeId]);
+          setCurrentRecipe(tempJsonData[glob.id]);
           
           try {
             const file = await fetchFromS3(recipeFilePath);
@@ -66,7 +63,7 @@ export default function RecipeDetail() {
       
       fetchData();
     }
-  }, [currentRecipe, urlParts]);
+  }, [currentRecipe, glob]);
 
   return (
     <>
