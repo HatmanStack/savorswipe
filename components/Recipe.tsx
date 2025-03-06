@@ -11,6 +11,8 @@ type Recipe = {
   Directions?: string | string[] | Record<string, string | string[]>;
 };
 
+const windowWidth = Dimensions.get('window').width;
+
 function RecipeDetails({ currentRecipe }: { currentRecipe: Recipe }) {
   if (!currentRecipe) {
     return null; // or a fallback UI
@@ -96,7 +98,7 @@ function RecipeDetails({ currentRecipe }: { currentRecipe: Recipe }) {
 
 const styles = StyleSheet.create({
   scrollview: {
-    padding: 50,
+    padding: windowWidth * 0.02,
     marginRight: 50,
   },
   title: {

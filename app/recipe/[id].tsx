@@ -13,7 +13,7 @@ const holderImg = require('@/assets/images/skillet.png')
 export default function RecipeDetail() {
   const { currentRecipe, setCurrentRecipe, setFirstFile, firstFile, setJsonData, jsonData } = useRecipe();
   const [screenDimensions, setScreenDimensions] = useState({ width: Dimensions.get('window').width, height: Dimensions.get('window').height });
-  const buttonSrc = require('@/assets/images/home.png');
+  const buttonSrc = require('@/assets/images/home_bg.png');
   const router = useRouter();
   const glob = useGlobalSearchParams();
   const [recipeExists, setRecipeExists] = useState(true);
