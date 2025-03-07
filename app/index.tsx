@@ -43,6 +43,7 @@ export default function HomeScreen() {
     } else if (direction === 'right') {
       console.log('Right');
       if (currentRecipe)  {
+        console.log('Navigating to:', `/recipe/${currentRecipe.key}`);
         router.push(`/recipe/${currentRecipe.key}`);
       }
     }
@@ -54,7 +55,7 @@ export default function HomeScreen() {
         if (recipeId && jsonData && jsonData[recipeId]) {
           setCurrentRecipe(jsonData[recipeId]);
         }
-        console.log('firstFile has been set:', firstFile);
+        
       }     
     
   }, [firstFile]);

@@ -27,7 +27,7 @@ export const RecipeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [jsonData, setJsonData] = useState<Record<string, any> | null>(null);
   const [allFiles, setAllFiles] = useState<string[]>([]);
   const [startImage, setStartImage] = useState<{ filename: '', file: '' } | null>({ filename: '', file: '' } ); // Weird Conditional Rendering Issue
-  const [mealTypeFilters, setMealTypeFilters] = useState<MealType[]>([]);
+  const [mealTypeFilters, setMealTypeFilters] = useState<MealType[]>(['main dish' , 'dessert' , 'appetizer' , 'breakfast' , 'side dish' , 'beverage']);
 
   return (
     <RecipeContext.Provider value={{ currentRecipe, setCurrentRecipe, firstFile, setFirstFile, jsonData, setJsonData, 
