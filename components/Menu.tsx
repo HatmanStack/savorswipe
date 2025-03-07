@@ -56,9 +56,11 @@ export default function Menu() {
 
   const handleMealTypeChange = (type: MealType) => {
     if (mealTypeFilters.includes(type)) {
-      setMealTypeFilters(mealTypeFilters.filter((t) => t !== type));
+      const updatedFilters = mealTypeFilters.filter((t) => t !== type);
+      setMealTypeFilters(updatedFilters);
     } else {
-      setMealTypeFilters([...mealTypeFilters, type]);
+      const updatedFilters = [...mealTypeFilters, type];
+      setMealTypeFilters(updatedFilters);
     }
   };
 

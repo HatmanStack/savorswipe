@@ -2,6 +2,7 @@ import { S3 } from 'aws-sdk';
 import { useEffect, useState, useRef } from 'react';
 import { Dimensions } from 'react-native';
 import { useRecipe } from '@/context/RecipeContext';
+import { ComplexAnimationBuilder } from 'react-native-reanimated';
 
 export async function getJsonFromS3() {
     try {
@@ -57,25 +58,37 @@ interface GetImagesProps {
 export default function GetImages({ getNewList, fetchImage, setFetchImage, setImageDimensions }: GetImagesProps) {
     const fileToFetchRef = useRef<string | string[]>([]);
     const fetchedFilesRef = useRef<{ filename: string, file: string }[]>([]);
-    const { firstFile, setFirstFile, allFiles, jsonData, setJsonData, setAllFiles, startImage, setStartImage  } = useRecipe();
+    const { firstFile, setFirstFile, allFiles, jsonData, setJsonData, setAllFiles, startImage, setStartImage, mealTypeFilters  } = useRecipe();
     
     const shuffleAndSetKeys = (keysArray?: string[]) => {
         if (!keysArray) {
             if (!jsonData) return; 
             keysArray = Object.keys(jsonData);
         }
+        
+        if (jsonData) {
+            keysArray = keysArray.filter(key => {
+                const recipe = jsonData[key];
+                if (mealTypeFilters.length === 0) {
+                    return true;
+                } 
+                return recipe && recipe.Type && 
+                    (Array.isArray(recipe.Type) 
+                        ? recipe.Type.some(type => mealTypeFilters.includes(type))
+                        : mealTypeFilters.includes(recipe.Type));
+            });
+        }
         const shuffledKeys = keysArray.sort(() => Math.random() - 0.5);
         setAllFiles(shuffledKeys);
     }
+
     
     useEffect(() => {
         const fetchFilesIfNeeded = async () => {
-            if (getNewList) {
-                shuffleAndSetKeys();
-            }
+            shuffleAndSetKeys(); 
         };
         fetchFilesIfNeeded();
-    }, [getNewList]);
+    }, [getNewList, mealTypeFilters]);
     
     useEffect(() => {
         const fetchFiles = async () => {
@@ -104,7 +117,7 @@ export default function GetImages({ getNewList, fetchImage, setFetchImage, setIm
 
     useEffect(() => {
         const addFileToFetchedArray = async () => {
-            console.log('Start of addFileToFetched',fetchedFilesRef.current); 
+            
             const files = Array.isArray(fileToFetchRef.current) ? fileToFetchRef.current : [fileToFetchRef.current];
             for (const filePath of files) {
                 if (typeof filePath === 'string' && filePath) {
@@ -141,15 +154,13 @@ export default function GetImages({ getNewList, fetchImage, setFetchImage, setIm
             }
         };
         fetchImages();
-        console.log('fetchImage:', fetchImage);
+        
     }, [fetchImage]);
     
     useEffect(() => {
         if (!firstFile) {
             setFetchImage((prev: boolean) => !prev); 
-            console.log('firstfile not set');
-        }else{
-            console.log('firstFile has been set:', firstFile);
+          
         }
         
     }, [fetchedFilesRef.current]);
