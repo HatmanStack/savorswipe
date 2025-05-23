@@ -1,49 +1,68 @@
-import { S3 } from 'aws-sdk';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Dimensions } from 'react-native';
 import { useRecipe } from '@/context/RecipeContext';
-import { ComplexAnimationBuilder } from 'react-native-reanimated';
+
+const CLOUDFRONT_BASE_URL = process.env.EXPO_PUBLIC_CLOUDFRONT_BASE_URL;
 
 export async function getJsonFromS3() {
+    // Construct the full URL to the JSON file on CloudFront
+    const fileKey = 'jsondata/combined_data.json'; // The path to your file in S3
+    const url = `${CLOUDFRONT_BASE_URL}/${fileKey}`;
+
     try {
-        const params = {
-            Bucket: process.env.EXPO_PUBLIC_AWS_S3_BUCKET,
-            Key: 'jsondata/combined_data.json',
-        };
-        const s3 = new S3({
-            region: process.env.EXPO_PUBLIC_AWS_REGION_S3,
-            accessKeyId:  process.env.EXPO_PUBLIC_AWS_ID,
-            secretAccessKey: process.env.EXPO_PUBLIC_AWS_SECRET,
-        });
-        const file = await s3.getObject(params).promise();
-        if (file.Body) {
-            const data = JSON.parse(file.Body.toString('utf-8'));
-            return data;
-        } else {
-            console.error('File body is undefined');
-            return null;
+        console.log(`Workspaceing JSON from: ${url}`);
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            // Handle HTTP errors, e.g., 404 Not Found, 403 Forbidden
+            console.error(`HTTP error ${response.status} while fetching JSON from CloudFront: ${response.statusText}`);
+            const errorText = await response.text(); // Attempt to get more error info
+            console.error('Error details:', errorText);
+            throw new Error(`Failed to fetch JSON from CloudFront. Status: ${response.status}`);
         }
+
+        const data = await response.json(); // .json() parses the response body as JSON
+        return data;
+
     } catch (error) {
-        console.error('Error fetching JSON from S3:', error);
+        console.error('Error fetching JSON from CloudFront:', error);
+        // Re-throw the error if you want calling code to handle it
         throw error;
     }
 }
 
-export async function fetchFromS3(fileName: string) {
+export async function fetchFromS3(fileName: string): Promise<String> {
+    // Construct the full URL to the file on CloudFront
+    const url = `${CLOUDFRONT_BASE_URL}/${fileName}`;
+
     try {
-        const params = {
-            Bucket: process.env.EXPO_PUBLIC_AWS_S3_BUCKET,
-            Key: `${fileName}`,
-        };
-        const s3 = new S3({
-            region:  process.env.EXPO_PUBLIC_AWS_REGION_S3,
-            accessKeyId: process.env.EXPO_PUBLIC_AWS_ID,
-            secretAccessKey: process.env.EXPO_PUBLIC_AWS_SECRET,
-        });
-        const file = await s3.getObject(params).promise();
-        return file.Body; // Return the file body
+        console.log(`Workspaceing file from: ${url}`);
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            // Handle HTTP errors
+            console.error(`HTTP error ${response.status} while fetching file from CloudFront: ${response.statusText}`);
+            const errorText = await response.text(); // Attempt to get more error info
+            console.error('Error details:', errorText);
+            throw new Error(`Failed to fetch file from CloudFront. Status: ${response.status}`);
+        }
+        const fileBody = await response.blob()
+        // response.blob() is suitable for binary files like images, PDFs, etc.
+        // If you expect text, you might use response.text()
+        // If you need an ArrayBuffer, use response.arrayBuffer()
+        if (typeof window !== 'undefined' && window.URL && window.URL.createObjectURL) {
+            return window.URL.createObjectURL(fileBody);
+        }
+
+        // For native, convert to base64 (optional, not shown here)
+        // You may need to use a library like 'react-native-fs' for native base64 conversion
+
+        // Fallback: return empty string
+        return '';
+
     } catch (error) {
-        console.error('Error fetching file from S3:', error);
+        console.error('Error fetching file from CloudFront:', error);
+        // Re-throw the error
         throw error;
     }
 }
@@ -57,7 +76,7 @@ interface GetImagesProps {
 
 export default function GetImages({ getNewList, fetchImage, setFetchImage, setImageDimensions }: GetImagesProps) {
     const fileToFetchRef = useRef<string | string[]>([]);
-    const fetchedFilesRef = useRef<{ filename: string, file: string }[]>([]);
+    const fetchedFilesRef = useRef<{ filename: string, file: String }[]>([]);
     const { firstFile, setFirstFile, allFiles, jsonData, setJsonData, setAllFiles, startImage, setStartImage, mealTypeFilters  } = useRecipe();
     
     const shuffleAndSetKeys = (keysArray?: string[]) => {
@@ -121,12 +140,12 @@ export default function GetImages({ getNewList, fetchImage, setFetchImage, setIm
             const files = Array.isArray(fileToFetchRef.current) ? fileToFetchRef.current : [fileToFetchRef.current];
             for (const filePath of files) {
                 if (typeof filePath === 'string' && filePath) {
-                    const file = await fetchFromS3(filePath);
-                    if (file && fetchedFilesRef.current.length < 3) {
-                        const base64String = file.toString('base64');
+                    const fileURL = await fetchFromS3(filePath);
+                    if (fileURL && fetchedFilesRef.current.length < 3) {
+                        
                         fetchedFilesRef.current = [
                             ...fetchedFilesRef.current,
-                            { filename: filePath, file: `data:image/jpeg;base64,${base64String}` }
+                            { filename: filePath, file: fileURL }
                         ];
                     }
                     const parsedFileName = filePath.replace('images/', '').replace('.jpg', '');

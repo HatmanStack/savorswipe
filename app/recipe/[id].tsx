@@ -47,11 +47,11 @@ export default function RecipeDetail() {
           setCurrentRecipe(tempJsonData[glob.id]);
           
           try {
-            const file = await fetchFromS3(recipeFilePath);
-            const base64StringTemp = file.toString('base64');
+            const fileURL = await fetchFromS3(recipeFilePath);
+            
             setFirstFile({ 
               filename: recipeFilePath, 
-              file: `data:image/jpeg;base64,${base64StringTemp}` 
+              file: fileURL 
             });
           } catch (error) {
             console.error('Error fetching image:', error);

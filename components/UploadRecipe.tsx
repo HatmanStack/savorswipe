@@ -1,6 +1,5 @@
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from 'expo-image-manipulator';
-import Constants from 'expo-constants';
 import { useEffect } from 'react';
 
 export const resizeImage = async (uri: string, maxSize: number) => {
@@ -12,37 +11,55 @@ export const resizeImage = async (uri: string, maxSize: number) => {
   return manipulatorResult.base64;
 };
 
-export const callLambdaFunction = async (base64Image: string): Promise<Record<string, any>> => {
-  const AWS = require('aws-sdk');
-  const lambda = new AWS.Lambda({
-    region: Constants.manifest.extra.AWS_REGION_LAMBDA,
-    accessKeyId: Constants.manifest.extra.AWS_ID,
-    secretAccessKey: Constants.manifest.extra.AWS_SECRET
-  });
+const LAMBDA_FUNCTION_URL = process.env.EXPO_PUBLIC_LAMBDA_FUNCTION_URL;
 
-  const params = {
-    FunctionName: Constants.manifest.extra.AWS_LAMBDA_FUNCTION,
-    InvocationType: 'RequestResponse',
-    Payload: JSON.stringify({
-      base64: base64Image
-    })
-  };
+export const callLambdaFunction = async (base64Image: string): Promise<Record<string, any>> => {
+  const payload = { base64: base64Image };
 
   try {
-    const data: AWS.Lambda.InvocationResponse = await lambda.invoke(params).promise();
-    console.log('Uploading To Lambda');
-    const response = JSON.parse(data.Payload as string);
-    if (response.statusCode === 200) {
-      const responseBody = JSON.parse(response.body); 
-      console.log(responseBody)
-      return responseBody;
+    if (!LAMBDA_FUNCTION_URL) {
+      throw new Error("LAMBDA_FUNCTION_URL is not defined in environment variables.");
     }
-    return {returnMessage: "Upload Failed"};
+    const httpResponse = await fetch(LAMBDA_FUNCTION_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!httpResponse.ok) {
+      const errorText = await httpResponse.text();
+      console.error(`Lambda Function URL request failed: ${httpResponse.status}`, errorText);
+      throw new Error(`Request failed with status ${httpResponse.status}`);
+    }
+
+    const lambdaResponse = await httpResponse.json();
+
+    // Logic adapted from your original S3 SDK Invocation response handling:
+    // Assumes Lambda might return a structure like { statusCode: 200, body: "{\"actual\":\"response\"}" }
+    if (lambdaResponse && typeof lambdaResponse.statusCode === 'number') {
+      if (lambdaResponse.statusCode === 200 && lambdaResponse.body) {
+        try {
+          // If body is a stringified JSON, parse it. Otherwise, use as is if already object.
+          return typeof lambdaResponse.body === 'string' ? JSON.parse(lambdaResponse.body) : lambdaResponse.body;
+        } catch (parseError) {
+          console.error('Error parsing Lambda response body:', parseError, lambdaResponse.body);
+          return { returnMessage: "Upload successful, but failed to parse response body" };
+        }
+      } else {
+         // Non-200 statusCode from Lambda's own response structure
+        console.warn(`Lambda returned status ${lambdaResponse.statusCode}:`, lambdaResponse.body);
+        return { returnMessage: `Lambda returned status ${lambdaResponse.statusCode}`, details: lambdaResponse.body || "No details provided" };
+      }
+    } else {
+      // If Lambda returns the JSON payload directly (no statusCode wrapper in the primary response)
+      return lambdaResponse;
+    }
+
   } catch (error) {
-    console.error('Error invoking Lambda function:', error);
-    return {returnMessage: "Upload Failed"};
+    console.error('Error calling Lambda Function URL:', error);
+    return { returnMessage: "Upload Failed", error: error instanceof Error ? error.message : String(error) };
   }
-}
+};
 
 
 const selectAndUploadImage = async (setUploadMessage: (result: Record<string, any> | null) => void, setUploadVisible: (visible: boolean) => void) => {
