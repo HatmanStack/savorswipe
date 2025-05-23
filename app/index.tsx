@@ -90,16 +90,17 @@ export default function HomeScreen() {
         minDist={30}
         minVelocity={0.5}
       >
-        <Animated.View style={{ transform: [{ translateX }] }}>
-            <Image
-              source={firstFile ? { uri: firstFile.file } : holderImg} 
-              style={{
-                width: firstFile ? (isMobile ? imageDimensions.width : 1000) : 200,
-                height: firstFile ? (isMobile ? imageDimensions.height : 700) : 200,
-                alignSelf: 'center',
-                resizeMode: 'cover',
-              }}
-            />
+       <Animated.View style={{ transform: [{ translateX }] }}>
+        
+        <Image
+          source={firstFile ? { uri: firstFile.file } : holderImg} 
+          style={{
+            width: firstFile ? (isMobile ? imageDimensions.width : 1000) : 200,
+            height: firstFile ? (isMobile ? imageDimensions.height : 700) : 200,
+            alignSelf: 'center',
+            resizeMode: 'cover',
+          }}
+        />
           
         </Animated.View>
       </PanGestureHandler>
