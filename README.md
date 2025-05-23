@@ -53,16 +53,10 @@ To get started with the SavorSwipe, follow these steps:
 
 2. **Install dependencies**:
    ```bash
-   npm install -g yarn
-   yarn
+   npm install 
    ```
 
-3. **Start the development server**:
-   ```bash
-   npm start
-   ```
-
-4. **Create the backend Services**
+3. **Create the backend Services**
    - s3 bucket to hold recipes
       - Two folders /images and /jsondata
    - Lambda Function
@@ -76,14 +70,14 @@ To get started with the SavorSwipe, follow these steps:
 
 5. **Add .env File**
    ```bash
-   AWS_REGION_S3=<>
-   AWS_REGION_LAMBDA=<>
-   AWS_ID=<>
-   AWS_SECRET=<>
-   AWS_LAMBDA_FUNCTION=<>
-   AWS_S3_BUCKET=<>
+   EXPO_PUBLIC_CLOUDFRONT_BASE_URL=<cloudfront distro fronting s3 image bucket>
+   EXPO_PUBLIC_LAMBDA_FUNCTION_URL=<lambda url for backend>
    ```
 
+5. **Start the development server**:
+   ```bash
+   npm start
+   ```
 ## Usage
 
 1. Launch the app on your device.
