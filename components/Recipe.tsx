@@ -2,18 +2,12 @@ import React from 'react';
 import { StyleSheet, ScrollView, Dimensions } from 'react-native';
 import { Collapsible } from '@/components/Collapsible';
 import { ThemedView } from '@/components/ThemedView';
-import { ThemedText } from '@/components/ThemedText'; // Adjust the import path as needed
-
-type Recipe = {
-  Title: string;
-  Description?: string | string[];
-  Ingredients?: string | string[] | Record<string, string | string[]>;
-  Directions?: string | string[] | Record<string, string | string[]>;
-};
+import { ThemedText } from '@/components/ThemedText';
+import { Recipe } from '@/types';
 
 const windowWidth = Dimensions.get('window').width;
 
-function RecipeDetails({ currentRecipe }: { currentRecipe: Recipe }) {
+function RecipeDetails({ currentRecipe }: { currentRecipe: Recipe | null }) {
   if (!currentRecipe) {
     return null; // or a fallback UI
   } 

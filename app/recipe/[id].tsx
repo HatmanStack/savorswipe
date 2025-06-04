@@ -1,9 +1,9 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import { Dimensions, Image, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useRecipe } from '@/context/RecipeContext';
 import { ThemedView } from '@/components/ThemedView';
-import { getJsonFromS3, fetchFromS3 } from '@/components/GetImages';
+import { RecipeService, ImageService } from '@/services';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import RecipeDetails from '@/components/Recipe';
 import { ThemedText } from '@/components/ThemedText';
@@ -13,10 +13,15 @@ const holderImg = require('@/assets/images/skillet.png')
 export default function RecipeDetail() {
   const { currentRecipe, setCurrentRecipe, setFirstFile, firstFile, setJsonData, jsonData } = useRecipe();
   const [screenDimensions, setScreenDimensions] = useState({ width: Dimensions.get('window').width, height: Dimensions.get('window').height });
+  const [recipeExists, setRecipeExists] = useState(true);
   const buttonSrc = require('@/assets/images/home_bg.png');
   const router = useRouter();
   const glob = useGlobalSearchParams();
-  const [recipeExists, setRecipeExists] = useState(true);
+  
+  // Check if this is a valid instance - but don't return early
+  const hasValidId = glob.id && glob.id !== 'undefined' && glob.id !== '' && typeof glob.id === 'string';
+  
+
   useEffect(() => {
     const handleResize = () => {
       setScreenDimensions({ width: Dimensions.get('window').width, height: Dimensions.get('window').height });
@@ -30,40 +35,51 @@ export default function RecipeDetail() {
   
 
   useEffect(() => {
-    // Only run this effect if we don't have currentRecipe
-    if (!currentRecipe) {
+    // Only run if we have a valid recipe ID
+    if (!hasValidId) {
+      return;
+    }
+
+    const recipeId = glob.id as string;
+
+    // Only run this effect if we don't have currentRecipe or if the recipe ID doesn't match
+    if (!currentRecipe || currentRecipe.key !== recipeId) {
       const fetchData = async () => {
         try {
-          const tempJsonData = await getJsonFromS3();
-          const recipeFilePath = `images/${glob.id}.jpg`;
           
-          if (!tempJsonData[glob.id]) {
-            console.log('Recipe not found:', glob.id);
-            setRecipeExists(false);
-            return; // Exit early if recipe doesn't exist
+          // Use existing jsonData if available, otherwise fetch it
+          let recipeData = jsonData;
+          if (!recipeData) {
+            recipeData = await RecipeService.getRecipesFromS3();
+            setJsonData(recipeData);
+          } else {
           }
           
-          setJsonData(tempJsonData);
-          setCurrentRecipe(tempJsonData[glob.id]);
+          if (!recipeData[recipeId]) {
+            setRecipeExists(false);
+            return;
+          }
+          
+          setCurrentRecipe({ ...recipeData[recipeId], key: recipeId });
           
           try {
-            const fileURL = await fetchFromS3(recipeFilePath);
+            const recipeFilePath = ImageService.getImageFileName(recipeId);
+            const fileURL = await ImageService.getImageFromS3(recipeFilePath);
             
             setFirstFile({ 
               filename: recipeFilePath, 
               file: fileURL 
             });
           } catch (error) {
-            console.error('Error fetching image:', error);
           }
         } catch (error) {
-          console.error('Error loading data:', error);
         }
       };
       
       fetchData();
+    } else {
     }
-  }, [currentRecipe, glob]);
+  }, [glob.id, hasValidId]);
 
   return (
     <>
@@ -105,7 +121,7 @@ export default function RecipeDetail() {
         >
           <ThemedView style={{ width: screenDimensions.width, height: screenDimensions.height }}>
             {currentRecipe && (
-              <RecipeDetails currentRecipe={jsonData[currentRecipe.key]}/>
+              <RecipeDetails currentRecipe={currentRecipe}/>
             )}
           </ThemedView>
         </ParallaxScrollView>

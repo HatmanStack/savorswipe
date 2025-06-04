@@ -1,34 +1,41 @@
 import 'react-native-gesture-handler';
-import { Linking, Image, View, Animated, Dimensions } from 'react-native';
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'expo-router';
+import { Image, View, Animated } from 'react-native';
+import { useState, useRef, useEffect } from 'react';
 import { PanGestureHandler } from 'react-native-gesture-handler';
+import { useRouter } from 'expo-router';
 import { useRecipe } from '@/context/RecipeContext';
 import GetImages from '@/components/GetImages';
-const holderImg = require('@/assets/images/skillet.png')
+import { useResponsiveLayout } from '@/hooks';
+
+const holderImg = require('@/assets/images/skillet.png');
 
 export default function HomeScreen() {
-  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
   const [fetchImage, setFetchImage] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
   const [getNewList, setGetNewList] = useState(false);
-  const { currentRecipe, setCurrentRecipe, firstFile, allFiles, jsonData, setStartImage } = useRecipe();
+  const { firstFile, allFiles, setStartImage, currentRecipe, setCurrentRecipe, jsonData } = useRecipe();
   const translateX = useRef(new Animated.Value(0)).current;
   const router = useRouter();
+  
+  const { dimensions, isMobile, getImageDimensions } = useResponsiveLayout();
 
-  useEffect(() => {
-    const checkIfMobile = () => {
-      setIsMobile(imageDimensions.width < 768);
-    };
-    checkIfMobile();
-    const onChange = () => checkIfMobile();
-    Dimensions.addEventListener('change', onChange);
+  // Set current recipe when firstFile changes (original logic)
+  useEffect(() => {  
+    if (firstFile && jsonData) {
+      const recipeId = firstFile.filename.split('/').pop()?.split('.')[0];
+      
+      if (recipeId && jsonData[recipeId]) {
+        // Only set if it's different to prevent loops
+        if (!currentRecipe || currentRecipe.key !== recipeId) {
+          setCurrentRecipe({ ...jsonData[recipeId], key: recipeId });
+        }
+      } else {
+      }
+    }     
+  }, [firstFile, jsonData]);
 
-  }, [imageDimensions]);
-
-  const handleSwipe = async (direction: 'left' | 'right') => {
-    setImageDimensions(Dimensions.get('window'));
+  const handleSwipeGesture = (direction: 'left' | 'right') => {
     
+    // Manage image queue based on remaining files
     if (allFiles.length < 3) {
       setGetNewList(prev => !prev); 
     }
@@ -37,29 +44,18 @@ export default function HomeScreen() {
     }
 
     if (direction === 'left') {
-      console.log('Left');
       setStartImage(null);
       setFetchImage(prev => !prev);
     } else if (direction === 'right') {
-      console.log('Right');
-      if (currentRecipe)  {
-        console.log('Navigating to:', `/recipe/${currentRecipe.key}`);
-        router.push(`/recipe/${currentRecipe.key}`);
+      if (currentRecipe?.key) {
+        const url = `/recipe/${currentRecipe.key}`;
+        router.push(url);
+      } else {
       }
     }
   };
 
-  useEffect(() => {  
-      if (firstFile) {
-        const recipeId = firstFile.filename.split('/').pop()?.split('.')[0];
-        if (recipeId && jsonData && jsonData[recipeId]) {
-          setCurrentRecipe(jsonData[recipeId]);
-        }
-        
-      }     
-    
-  }, [firstFile]);
-
+  // Debounce function to prevent rapid swipes
   const debounce = (func: (...args: any[]) => void, delay: number) => {
     let timeout: NodeJS.Timeout; 
     return (...args: any[]) => {
@@ -68,16 +64,17 @@ export default function HomeScreen() {
     };
   };
 
-  const debouncedHandleSwipe = debounce(handleSwipe, 100);
+  const debouncedHandleSwipe = debounce(handleSwipeGesture, 100);
+
+  const imageDimensions = getImageDimensions();
 
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-      
       <GetImages
         getNewList={getNewList}
         fetchImage={fetchImage}
         setFetchImage={setFetchImage}
-        setImageDimensions={setImageDimensions}
+        setImageDimensions={(dims) => {}} // Keep for compatibility
       />
       <PanGestureHandler
         onGestureEvent={(event) => {
@@ -90,21 +87,18 @@ export default function HomeScreen() {
         minDist={30}
         minVelocity={0.5}
       >
-       <Animated.View style={{ transform: [{ translateX }] }}>
-        
-        <Image
-          source={firstFile ? { uri: firstFile.file } : holderImg} 
-          style={{
-            width: firstFile ? (isMobile ? imageDimensions.width : 1000) : 200,
-            height: firstFile ? (isMobile ? imageDimensions.height : 700) : 200,
-            alignSelf: 'center',
-            resizeMode: 'cover',
-          }}
-        />
-          
+        <Animated.View style={{ transform: [{ translateX }] }}>
+          <Image
+            source={firstFile ? { uri: firstFile.file } : holderImg} 
+            style={{
+              width: firstFile ? imageDimensions.width : 200,
+              height: firstFile ? imageDimensions.height : 200,
+              alignSelf: 'center',
+              resizeMode: 'cover',
+            }}
+          />
         </Animated.View>
       </PanGestureHandler>
     </View>
-  )
+  );
 }
-

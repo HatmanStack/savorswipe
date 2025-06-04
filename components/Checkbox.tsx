@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, View, StyleSheet, StyleProp, ViewStyle, Text } from 'react-native';
+import { Pressable, View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 
 interface CheckboxProps {
@@ -38,8 +38,8 @@ export const createCheckbox = (defaultOptions?: Partial<CheckboxProps>) => {
         borderWidth: Math.max(1, size / 10),
         borderColor: disabled ? '#ccc' : borderColor,
         borderRadius: size / 5,
-        justifyContent: 'center',
-        alignItems: 'center',
+        justifyContent: 'center' as const,
+        alignItems: 'center' as const,
         backgroundColor: checked ? (disabled ? '#aaa' : fillColor) : 'transparent',
       },
       style,
@@ -94,8 +94,8 @@ export const SmallCheckbox = createCheckbox({
 
 const styles = StyleSheet.create({
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
   },
   label: {
     fontSize: 16,
