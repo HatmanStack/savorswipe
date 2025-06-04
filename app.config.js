@@ -1,6 +1,4 @@
-import dotenv from 'dotenv';
 
-dotenv.config();
 
 export default {
     // Basic app information
@@ -17,7 +15,7 @@ export default {
       shortName: "SavorSwipe"
     },
     splash: {
-      image: './assets/adaptive-icon.png', // Path to your splash screen image
+      image: './assets/images/adaptive-icon.png', // Path to your splash screen image
       resizeMode: 'contain', // How the splash image should be resized
       backgroundColor: '#ffffff', // Background color of the splash screen
     },
@@ -35,14 +33,5 @@ export default {
         foregroundImage: './assets/images/adaptive-icon.png', // Path to adaptive icon
         backgroundColor: '#FFFFFF', // Background color for adaptive icon
       },
-    },
-    extra: {
-    AWS_SECRET: process.env.AWS_SECRET,
-    AWS_ID: process.env.AWS_ID,
-    AWS_LAMBDA_FUNCTION: process.env.AWS_LAMBDA_FUNCTION,
-    AWS_REGION_S3: process.env.AWS_REGION_S3,
-    AWS_REGION_LAMBDA: process.env.AWS_REGION_LAMBDA,
-    AWS_S3_BUCKET: process.env.AWS_S3_BUCKET
     }
-    
   };
