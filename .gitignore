@@ -18,4 +18,5 @@ components/__tests__/HomeScreen.test.tsx
 components/__tests__/Recipe.test.tsx
 components/__tests__/Menu.test.tsx
 CLAUDE.md
+s3-old
 
