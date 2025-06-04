@@ -2,7 +2,7 @@ import { Stack } from 'expo-router';
 import { useColorScheme } from 'react-native';
 import { ThemeProvider } from '@react-navigation/native';
 import { DefaultTheme, DarkTheme } from '@react-navigation/native';
-import { RecipeProvider } from '@/context/RecipeContext';
+import { AppProvider } from '@/context';
 import Menu from '@/components/Menu';
 
 export default function RootLayout() {
@@ -10,7 +10,7 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <RecipeProvider>
+      <AppProvider useLegacyProvider={true}>
       <Menu />
         <Stack 
           screenOptions={{
@@ -27,7 +27,7 @@ export default function RootLayout() {
           />
           <Stack.Screen name="+not-found" />
         </Stack>
-      </RecipeProvider>
+      </AppProvider>
     </ThemeProvider>
   );
 }
