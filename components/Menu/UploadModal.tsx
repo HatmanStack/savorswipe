@@ -8,16 +8,22 @@ interface UploadModalProps {
   visible: boolean;
   onClose: () => void;
   uploadCount: number;
-  styles: any; // TODO: Create proper style types
+  styles: Record<string, unknown>;
 }
 
-export const UploadModal: React.FC<UploadModalProps> = ({ 
-  visible, 
-  onClose, 
-  uploadCount, 
-  styles 
+interface UploadMessageType {
+  returnMessage: string;
+  jsonData: Record<string, unknown>;
+  encodedImages: string;
+}
+
+export const UploadModal: React.FC<UploadModalProps> = ({
+  visible,
+  onClose,
+  uploadCount,
+  styles
 }) => {
-  const [uploadMessage, setUploadMessage] = useState<Record<string, any> | null>(null);
+  const [uploadMessage, setUploadMessage] = useState<UploadMessageType | null>(null);
   const [uploadText, setUploadText] = useState<string | null>(null);
   
   const { setFirstFile, setAllFiles, jsonData, setJsonData } = useRecipe();
