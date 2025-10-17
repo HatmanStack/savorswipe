@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from 'react';
+import { StyleProp, ViewStyle } from 'react-native';
 import { useRecipe } from '@/context/RecipeContext';
 import UploadImage from '@/components/UploadRecipe';
 import { ThemedText } from '@/components/ThemedText';
 import { ImageService } from '@/services';
+import { Recipe } from '@/types';
 
 interface UploadModalProps {
   visible: boolean;
   onClose: () => void;
   uploadCount: number;
-  styles: Record<string, unknown>;
+  styles: Record<string, StyleProp<ViewStyle>>;
 }
 
 interface UploadMessageType {
   returnMessage: string;
-  jsonData: Record<string, unknown>;
+  jsonData: Record<string, Recipe>;
   encodedImages: string;
 }
 

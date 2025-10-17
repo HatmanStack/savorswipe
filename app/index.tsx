@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { useRecipe } from '@/context/RecipeContext';
 import GetImages from '@/components/GetImages';
 import { useResponsiveLayout } from '@/hooks';
+import { ImageDimensions } from '@/types';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const holderImg = require('@/assets/images/skillet.png');
 
@@ -55,9 +56,9 @@ export default function HomeScreen() {
 
   // Debounce function to prevent rapid swipes
   const debounce = (func: (...args: unknown[]) => void, delay: number) => {
-    let timeout: NodeJS.Timeout;
+    let timeout: NodeJS.Timeout | undefined;
     return (...args: unknown[]) => {
-      clearTimeout(timeout);
+      if (timeout) clearTimeout(timeout);
       timeout = setTimeout(() => func(...args), delay);
     };
   };
@@ -66,13 +67,16 @@ export default function HomeScreen() {
 
   const imageDimensions = getImageDimensions();
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleImageDimensions = (_dims: ImageDimensions) => {}; // Accept but ignore dimensions
+
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
       <GetImages
         getNewList={getNewList}
         fetchImage={fetchImage}
         setFetchImage={setFetchImage}
-        setImageDimensions={() => {}} // Keep for compatibility
+        setImageDimensions={handleImageDimensions}
       />
       <PanGestureHandler
         onGestureEvent={(event) => {

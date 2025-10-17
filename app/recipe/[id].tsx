@@ -71,11 +71,11 @@ export default function RecipeDetail() {
               filename: recipeFilePath,
               file: fileURL
             });
-          } catch {
-            // Silently fail if image cannot be loaded
+          } catch (error) {
+            console.error(`Failed to load image for recipe ${recipeId}:`, error);
           }
-        } catch {
-          // Silently fail if recipe data cannot be loaded
+        } catch (error) {
+          console.error(`Failed to load recipe data for recipe ${recipeId}:`, error);
         }
       };
 
