@@ -52,14 +52,15 @@ describe('GetImages Component', () => {
       setImageDimensions: mockSetImageDimensions
     };
 
-    const result = render(
+    render(
       <RecipeProvider>
         <GetImages {...props} />
       </RecipeProvider>
     );
 
     await waitFor(() => {
-      expect(result).toBeDefined();
+      expect(RecipeService.getRecipesFromS3).toHaveBeenCalledTimes(1);
+      expect(mockSetImageDimensions).toHaveBeenCalled();
     });
   });
 
@@ -84,8 +85,8 @@ describe('GetImages Component', () => {
     await waitFor(() => {
       expect(mockSetImageDimensions).toHaveBeenCalledWith(
         expect.objectContaining({
-          width: expect.any(Number),
-          height: expect.any(Number)
+          width: 375,
+          height: 812
         })
       );
     });

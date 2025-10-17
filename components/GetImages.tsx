@@ -58,8 +58,10 @@ export default function GetImages({ getNewList, fetchImage, setFetchImage, setIm
                     shuffleAndSetKeys(keysArray);
                 }
 
-            } catch {
-                // Silently fail if fetch fails
+            } catch (error) {
+                if (process.env.NODE_ENV !== 'production') {
+                    console.error('Failed to fetch recipe data:', error);
+                }
             }
         };
         fetchFiles();
@@ -89,8 +91,10 @@ export default function GetImages({ getNewList, fetchImage, setFetchImage, setIm
                         if (startImage && fetchedFilesRef.current.length > 0) {
                             setStartImage(fetchedFilesRef.current[0]);
                         }
-                    } catch {
-                        // Silently fail if image fetch fails
+                    } catch (error) {
+                        if (process.env.NODE_ENV !== 'production') {
+                            console.error(`Failed to fetch image ${filePath}:`, error);
+                        }
                     }
                 }
             }
