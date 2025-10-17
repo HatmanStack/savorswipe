@@ -1,12 +1,12 @@
 import 'react-native-gesture-handler';
+import React, { useState, useRef, useEffect } from 'react';
 import { Image, View, Animated } from 'react-native';
-import { useState, useRef, useEffect } from 'react';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
 import { useRecipe } from '@/context/RecipeContext';
 import GetImages from '@/components/GetImages';
 import { useResponsiveLayout } from '@/hooks';
-
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const holderImg = require('@/assets/images/skillet.png');
 
 export default function HomeScreen() {
@@ -16,7 +16,7 @@ export default function HomeScreen() {
   const translateX = useRef(new Animated.Value(0)).current;
   const router = useRouter();
   
-  const { dimensions, isMobile, getImageDimensions } = useResponsiveLayout();
+  const { getImageDimensions } = useResponsiveLayout();
 
   // Set current recipe when firstFile changes (original logic)
   useEffect(() => {  
@@ -28,7 +28,6 @@ export default function HomeScreen() {
         if (!currentRecipe || currentRecipe.key !== recipeId) {
           setCurrentRecipe({ ...jsonData[recipeId], key: recipeId });
         }
-      } else {
       }
     }     
   }, [firstFile, jsonData]);
@@ -50,17 +49,16 @@ export default function HomeScreen() {
       if (currentRecipe?.key) {
         const url = `/recipe/${currentRecipe.key}`;
         router.push(url);
-      } else {
       }
     }
   };
 
   // Debounce function to prevent rapid swipes
-  const debounce = (func: (...args: any[]) => void, delay: number) => {
-    let timeout: NodeJS.Timeout; 
-    return (...args: any[]) => {
+  const debounce = (func: (...args: unknown[]) => void, delay: number) => {
+    let timeout: NodeJS.Timeout;
+    return (...args: unknown[]) => {
       clearTimeout(timeout);
-      timeout = setTimeout(() => func(...args), delay); 
+      timeout = setTimeout(() => func(...args), delay);
     };
   };
 
@@ -74,7 +72,7 @@ export default function HomeScreen() {
         getNewList={getNewList}
         fetchImage={fetchImage}
         setFetchImage={setFetchImage}
-        setImageDimensions={(dims) => {}} // Keep for compatibility
+        setImageDimensions={() => {}} // Keep for compatibility
       />
       <PanGestureHandler
         onGestureEvent={(event) => {

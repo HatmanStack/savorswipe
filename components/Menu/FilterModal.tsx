@@ -6,7 +6,7 @@ import { MealType } from '@/types';
 import { useRecipe } from '@/context/RecipeContext';
 
 interface FilterModalProps {
-  styles: any; // TODO: Create proper style types
+  styles: Record<string, unknown>;
 }
 
 export const FilterModal: React.FC<FilterModalProps> = ({ styles }) => {

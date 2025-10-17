@@ -9,7 +9,7 @@ interface MainMenuModalProps {
   onClose: () => void;
   onInfoPress: () => void;
   onUploadPress: () => void;
-  styles: any; // TODO: Create proper style types
+  styles: Record<string, unknown>;
 }
 
 export const MainMenuModal: React.FC<MainMenuModalProps> = ({

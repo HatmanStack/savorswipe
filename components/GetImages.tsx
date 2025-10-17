@@ -18,7 +18,6 @@ export default function GetImages({ getNewList, fetchImage, setFetchImage, setIm
         }
         
         if (jsonData) {
-            const originalCount = keysArray.length;
             keysArray = RecipeService.filterRecipesByMealType(jsonData, mealTypeFilters);
         }
         const shuffledKeys = RecipeService.shuffleRecipeKeys(keysArray);
@@ -57,10 +56,10 @@ export default function GetImages({ getNewList, fetchImage, setFetchImage, setIm
                     }
                     fileToFetchRef.current = holderFilesToFetch;
                     shuffleAndSetKeys(keysArray);
-                } else {
                 }
-                 
-            } catch (error) {
+
+            } catch {
+                // Silently fail if fetch fails
             }
         };
         fetchFiles();
@@ -90,7 +89,8 @@ export default function GetImages({ getNewList, fetchImage, setFetchImage, setIm
                         if (startImage && fetchedFilesRef.current.length > 0) {
                             setStartImage(fetchedFilesRef.current[0]);
                         }
-                    } catch (error) {
+                    } catch {
+                        // Silently fail if image fetch fails
                     }
                 }
             }
