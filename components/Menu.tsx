@@ -16,22 +16,23 @@ type Recipe = {
 
 interface RecipeContext {
   currentRecipe: Recipe | null | string;
-  setFirstFile: (file: { filename: string; file: string } | null) => void; // Updated type
+  setFirstFile: (file: { filename: string; file: string } | null) => void;
   setAllFiles: (files: string[]) => void;
-  jsonData: Record<string, any>;
-  setJsonData: (data: Record<string, any>) => void;
+  jsonData: Record<string, Recipe>;
+  setJsonData: (data: Record<string, Recipe>) => void;
   mealTypeFilters: string[];
-  setMealTypeFilters: (filters: string[]) => void; // Fixed function name
+  setMealTypeFilters: (filters: string[]) => void;
 }
 
 export default function Menu() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [infoVisible, setInfoVisible] = useState(false);
   const [uploadVisible, setUploadVisible] = useState(false);
-  const [uploadMessage, setUploadMessage] = useState<Record<
-    string,
-    any
-  > | null>(null);
+  const [uploadMessage, setUploadMessage] = useState<{
+    returnMessage: string;
+    jsonData: Record<string, Recipe>;
+    encodedImages: string;
+  } | null>(null);
   const [uploadCount, setUploadCount] = useState(0);
   const [mealTypeExpanded, setMealTypeExpanded] = useState(false);
   const [uploadText, setUploadText] = useState<string | null>(null);
@@ -43,6 +44,7 @@ export default function Menu() {
     mealTypeFilters,
     setMealTypeFilters,
   } = useRecipe() as RecipeContext;
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const buttonSrc = require("@/assets/images/hamburger_bg.png");
 
   const mealTypes: MealType[] = [

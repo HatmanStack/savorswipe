@@ -1,107 +1,94 @@
 // GetImages.test.tsx
-import { render } from '@testing-library/react-native';
-import GetImages, { getJsonFromS3, fetchFromS3 } from '../GetImages';
-import { S3 } from 'aws-sdk';
+import React from 'react';
+import { render, waitFor } from '@testing-library/react-native';
+import { Dimensions } from 'react-native';
+import GetImages from '../GetImages';
 import { RecipeProvider } from '@/context/RecipeContext';
+import { RecipeService } from '@/services';
 
-// Mock dependencies
-jest.mock('aws-sdk');
-jest.mock('expo-constants', () => ({
-  expoConfig: {
-    extra: {
-      AWS_S3_BUCKET: 'test-bucket',
-      AWS_REGION_S3: 'test-region',
-      AWS_ID: 'test-id',
-      AWS_SECRET: 'test-secret'
-    }
+// Mock the services
+jest.mock('@/services', () => ({
+  RecipeService: {
+    getRecipesFromS3: jest.fn(),
+    filterRecipesByMealType: jest.fn(),
+    shuffleRecipeKeys: jest.fn()
+  },
+  ImageService: {
+    getImageFromS3: jest.fn(),
+    getImageFileName: jest.fn(),
+    getRecipeKeyFromFileName: jest.fn()
   }
 }));
 
-describe('getJsonFromS3', () => {
-  it('should successfully fetch and parse JSON from S3', async () => {
-    const mockData = { test: 'data' };
-    const mockGetObject = jest.fn().mockReturnValue({
-      promise: () => Promise.resolve({
-        Body: Buffer.from(JSON.stringify(mockData))
-      })
+// Mock Dimensions.get
+jest.spyOn(Dimensions, 'get').mockReturnValue({ width: 375, height: 812, scale: 2, fontScale: 1 });
+
+describe('GetImages Component', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+
+    // Setup default mock implementations
+    (RecipeService.getRecipesFromS3 as jest.Mock).mockResolvedValue({
+      '1': { key: '1', Title: 'Test Recipe 1' },
+      '2': { key: '2', Title: 'Test Recipe 2' },
+      '3': { key: '3', Title: 'Test Recipe 3' }
     });
 
-    (S3 as jest.Mock).mockImplementation(() => ({
-      getObject: mockGetObject
-    }));
+    (RecipeService.filterRecipesByMealType as jest.Mock).mockImplementation((data) =>
+      Object.keys(data)
+    );
 
-    const result = await getJsonFromS3();
-    expect(result).toEqual(mockData);
-    expect(mockGetObject).toHaveBeenCalledWith({
-      Bucket: 'test-bucket',
-      Key: 'jsondata/combined_data.json'
+    (RecipeService.shuffleRecipeKeys as jest.Mock).mockImplementation((keys) => keys);
+  });
+
+  it('should render without crashing', async () => {
+    const mockSetImageDimensions = jest.fn();
+    const mockSetFetchImage = jest.fn();
+
+    const props = {
+      getNewList: false,
+      fetchImage: false,
+      setFetchImage: mockSetFetchImage,
+      setImageDimensions: mockSetImageDimensions
+    };
+
+    render(
+      <RecipeProvider>
+        <GetImages {...props} />
+      </RecipeProvider>
+    );
+
+    await waitFor(() => {
+      expect(RecipeService.getRecipesFromS3).toHaveBeenCalledTimes(1);
+      expect(mockSetImageDimensions).toHaveBeenCalled();
     });
   });
 
-  it('should handle S3 errors and throw them', async () => {
-    const mockError = new Error('S3 access denied');
-    const mockGetObject = jest.fn().mockReturnValue({
-      promise: () => Promise.reject(mockError)
-    });
+  it('should call setImageDimensions with window dimensions on mount', async () => {
+    const mockSetImageDimensions = jest.fn();
+    const mockSetFetchImage = jest.fn();
 
-    (S3 as jest.Mock).mockImplementation(() => ({
-      getObject: mockGetObject
-    }));
+    const props = {
+      getNewList: false,
+      fetchImage: false,
+      setFetchImage: mockSetFetchImage,
+      setImageDimensions: mockSetImageDimensions
+    };
 
-    await expect(getJsonFromS3()).rejects.toThrow('S3 access denied');
-    expect(mockGetObject).toHaveBeenCalled();
-  });
+    render(
+      <RecipeProvider>
+        <GetImages {...props} />
+      </RecipeProvider>
+    );
 
-  describe('fetchFromS3', () => {
-    it('should successfully fetch a file from S3', async () => {
-      const mockFileContent = Buffer.from('mock image data');
-      const mockGetObject = jest.fn().mockReturnValue({
-        promise: () => Promise.resolve({
-          Body: mockFileContent
-        })
-      });
-
-      (S3 as jest.Mock).mockImplementation(() => ({
-        getObject: mockGetObject
-      }));
-
-      const fileName = 'test-image.jpg';
-      const result = await fetchFromS3(fileName);
-
-      expect(result).toEqual(mockFileContent);
-      expect(mockGetObject).toHaveBeenCalledWith({
-        Bucket: 'test-bucket',
-        Key: fileName
-      });
-    });
-  });
-
-  describe('GetImages Component', () => {
-    it('should initialize correctly and fetch initial data', () => {
-      const mockSetImageDimensions = jest.fn();
-      const mockSetFetchImage = jest.fn();
-      
-      const props = {
-        getNewList: false,
-        fetchImage: false,
-        setFetchImage: mockSetFetchImage,
-        setImageDimensions: mockSetImageDimensions
-      };
-  
-      render(
-        <RecipeProvider>
-          <GetImages {...props} />
-        </RecipeProvider>
-      );
-  
-      // Check if setImageDimensions was called with window dimensions
+    // Wait for async state updates to complete
+    await waitFor(() => {
       expect(mockSetImageDimensions).toHaveBeenCalledWith(
         expect.objectContaining({
-          width: expect.any(Number),
-          height: expect.any(Number)
+          width: 375,
+          height: 812
         })
       );
     });
   });
-
 });

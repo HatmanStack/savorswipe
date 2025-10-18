@@ -1,3 +1,4 @@
+import React from 'react';
 import { Stack } from 'expo-router';
 import { useColorScheme } from 'react-native';
 import { ThemeProvider } from '@react-navigation/native';

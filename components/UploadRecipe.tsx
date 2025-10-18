@@ -1,6 +1,6 @@
+import React, { useEffect } from 'react';
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from 'expo-image-manipulator';
-import { useEffect } from 'react';
 
 export const resizeImage = async (uri: string, maxSize: number) => {
   const manipulatorResult = await ImageManipulator.manipulateAsync(
@@ -11,12 +11,21 @@ export const resizeImage = async (uri: string, maxSize: number) => {
   return manipulatorResult.base64;
 };
 
-const LAMBDA_FUNCTION_URL = process.env.EXPO_PUBLIC_LAMBDA_FUNCTION_URL;
+interface LambdaResponse {
+  returnMessage?: string;
+  jsonData?: Record<string, unknown>;
+  encodedImages?: string;
+  details?: string;
+  error?: string;
+  statusCode?: number;
+  body?: string | Record<string, unknown>;
+}
 
-export const callLambdaFunction = async (base64Image: string): Promise<Record<string, any>> => {
+export const callLambdaFunction = async (base64Image: string): Promise<LambdaResponse> => {
   const payload = { base64: base64Image };
 
   try {
+    const LAMBDA_FUNCTION_URL = process.env.EXPO_PUBLIC_LAMBDA_FUNCTION_URL;
     if (!LAMBDA_FUNCTION_URL) {
       throw new Error("LAMBDA_FUNCTION_URL is not defined in environment variables.");
     }
@@ -62,7 +71,7 @@ export const callLambdaFunction = async (base64Image: string): Promise<Record<st
 };
 
 
-const selectAndUploadImage = async (setUploadMessage: (result: Record<string, any> | null) => void, setUploadVisible: (visible: boolean) => void) => {
+const selectAndUploadImage = async (setUploadMessage: (result: LambdaResponse | null) => void, setUploadVisible: (visible: boolean) => void) => {
   const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (status !== "granted") {
     alert("Sorry, we need media library permissions to select an image.");
@@ -99,18 +108,18 @@ const selectAndUploadImage = async (setUploadMessage: (result: Record<string, an
 };
 
 type UploadImageProps = {
-  setUploadMessage: (message: Record<string, any> | null) => void; 
+  setUploadMessage: (message: LambdaResponse | null) => void;
   setUploadVisible: (visible: boolean) => void;
 };
 
-const UploadImage: React.FC<UploadImageProps> = ({ setUploadMessage, setUploadVisible }) => { // Added a comma between props
+const UploadImage: React.FC<UploadImageProps> = ({ setUploadMessage, setUploadVisible }) => {
 
   useEffect(() => {
     const initiateUpload = async () => {
       await selectAndUploadImage(setUploadMessage, setUploadVisible);
     };
     initiateUpload();
-  }, []);
+  }, [setUploadMessage, setUploadVisible]);
   return null;
 
 };

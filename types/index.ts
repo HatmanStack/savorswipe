@@ -97,8 +97,8 @@ export interface LegacyRecipeContextType {
   setCurrentRecipe: (recipe: string | null) => void;
   allFiles: string[];
   setAllFiles: (files: string[]) => void;
-  jsonData: Record<string, any> | null;
-  setJsonData: (data: Record<string, any> | null) => void;
+  jsonData: Record<string, Recipe> | null;
+  setJsonData: (data: Record<string, Recipe> | null) => void;
   firstFile: ImageFile | null;
   setFirstFile: (file: ImageFile | null) => void;
   startImage: ImageFile | null;

@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect} from 'react';
 import { Dimensions, Image, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useRecipe } from '@/context/RecipeContext';
@@ -8,12 +8,14 @@ import ParallaxScrollView from '@/components/ParallaxScrollView';
 import RecipeDetails from '@/components/Recipe';
 import { ThemedText } from '@/components/ThemedText';
 import { useGlobalSearchParams} from 'expo-router';
-const holderImg = require('@/assets/images/skillet.png')
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const holderImg = require('@/assets/images/skillet.png');
 
 export default function RecipeDetail() {
   const { currentRecipe, setCurrentRecipe, setFirstFile, firstFile, setJsonData, jsonData } = useRecipe();
   const [screenDimensions, setScreenDimensions] = useState({ width: Dimensions.get('window').width, height: Dimensions.get('window').height });
   const [recipeExists, setRecipeExists] = useState(true);
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const buttonSrc = require('@/assets/images/home_bg.png');
   const router = useRouter();
   const glob = useGlobalSearchParams();
@@ -52,7 +54,6 @@ export default function RecipeDetail() {
           if (!recipeData) {
             recipeData = await RecipeService.getRecipesFromS3();
             setJsonData(recipeData);
-          } else {
           }
           
           if (!recipeData[recipeId]) {
@@ -65,19 +66,20 @@ export default function RecipeDetail() {
           try {
             const recipeFilePath = ImageService.getImageFileName(recipeId);
             const fileURL = await ImageService.getImageFromS3(recipeFilePath);
-            
-            setFirstFile({ 
-              filename: recipeFilePath, 
-              file: fileURL 
+
+            setFirstFile({
+              filename: recipeFilePath,
+              file: fileURL
             });
           } catch (error) {
+            console.error(`Failed to load image for recipe ${recipeId}:`, error);
           }
         } catch (error) {
+          console.error(`Failed to load recipe data for recipe ${recipeId}:`, error);
         }
       };
-      
+
       fetchData();
-    } else {
     }
   }, [glob.id, hasValidId]);
 
@@ -100,7 +102,7 @@ export default function RecipeDetail() {
             Recipe Not Found
           </ThemedText>
           <ThemedText style={{ textAlign: 'center', marginBottom: 20 }}>
-            The recipe you're looking for doesn't exist or is no longer available.
+            The recipe you&apos;re looking for doesn&apos;t exist or is no longer available.
           </ThemedText>
         </ThemedView>
       ) : (

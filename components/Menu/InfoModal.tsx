@@ -1,12 +1,12 @@
 import React from 'react';
-import { Modal, View, Pressable } from 'react-native';
+import { Modal, View, Pressable, StyleProp, ViewStyle } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
 interface InfoModalProps {
   visible: boolean;
   onClose: () => void;
-  styles: any; // TODO: Create proper style types
+  styles: Record<string, StyleProp<ViewStyle>>;
 }
 
 export const InfoModal: React.FC<InfoModalProps> = ({ visible, onClose, styles }) => {
