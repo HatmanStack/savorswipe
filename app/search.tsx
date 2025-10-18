@@ -53,10 +53,16 @@ export default function SearchScreen() {
 
     // Save to recent searches only if results were found
     if (searchResults.length > 0) {
-      SearchStorageService.addRecentSearch(query).then(() => {
-        // Refresh recent searches list
-        SearchStorageService.getRecentSearches().then(setRecentSearches);
-      });
+      SearchStorageService.addRecentSearch(query)
+        .then(() => {
+          // Refresh recent searches list
+          return SearchStorageService.getRecentSearches();
+        })
+        .then(setRecentSearches)
+        .catch(err => {
+          console.warn('Failed to update recent searches:', err);
+          // UI continues to work, recent searches just won't update
+        });
     }
   }, [query, jsonData]);
 
@@ -69,9 +75,14 @@ export default function SearchScreen() {
   };
 
   const handleClearAll = () => {
-    SearchStorageService.clearRecentSearches().then(() => {
-      setRecentSearches([]);
-    });
+    SearchStorageService.clearRecentSearches()
+      .then(() => {
+        setRecentSearches([]);
+      })
+      .catch(err => {
+        console.warn('Failed to clear recent searches:', err);
+        // Optionally show a user-facing error message
+      });
   };
 
   const handleSuggestionPress = (suggestion: string) => {
