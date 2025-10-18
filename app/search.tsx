@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -26,7 +26,13 @@ export default function SearchScreen() {
 
   // Load recent searches on mount
   useEffect(() => {
-    SearchStorageService.getRecentSearches().then(setRecentSearches);
+    SearchStorageService.getRecentSearches()
+      .then(setRecentSearches)
+      .catch(err => {
+        console.warn('Failed to load recent searches:', err);
+        // Still set empty array so UI doesn't break
+        setRecentSearches([]);
+      });
   }, []);
 
   // Search when query changes

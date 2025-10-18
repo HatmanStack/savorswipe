@@ -115,7 +115,12 @@ export default function Menu() {
       >
         <View style={styles.modalOverlay}>
           <ThemedView style={styles.menuContent}>
-            <Pressable style={styles.menuItem} onPress={handleSearchPress}>
+            <Pressable
+              style={styles.menuItem}
+              onPress={handleSearchPress}
+              accessibilityRole="button"
+              accessibilityLabel="Search recipes"
+            >
               <View style={styles.menuItemContent}>
                 <Ionicons name="search" size={20} color={iconColor} style={styles.menuIcon} />
                 <ThemedText>Search Recipes</ThemedText>

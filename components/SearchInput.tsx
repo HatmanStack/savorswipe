@@ -30,7 +30,7 @@ export function SearchInput({
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [inputValue]);
+  }, [inputValue, onChangeText]);
 
   // Sync with external value changes
   useEffect(() => {
@@ -59,7 +59,7 @@ export function SearchInput({
       />
 
       {inputValue.length > 0 && (
-        <Pressable onPress={handleClear} style={styles.clearButton}>
+        <Pressable onPress={handleClear} style={styles.clearButton} testID="clear-button">
           <Ionicons name="close-circle" size={20} color={iconColor} />
         </Pressable>
       )}

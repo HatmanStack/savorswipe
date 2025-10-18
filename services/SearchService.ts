@@ -19,9 +19,7 @@ export class SearchService {
     const results: Recipe[] = [];
 
     // Search through all recipes
-    for (const key in jsonData) {
-      const recipe = jsonData[key];
-
+    for (const recipe of Object.values(jsonData)) {
       if (
         this.matchesTitle(recipe, normalizedQuery) ||
         this.matchesIngredients(recipe, normalizedQuery)
@@ -74,9 +72,7 @@ export class SearchService {
     if (typeof ingredients === 'object' && ingredients !== null) {
       // Handle both flat objects and nested objects
       let text = '';
-      for (const key in ingredients) {
-        const value = ingredients[key];
-
+      for (const [key, value] of Object.entries(ingredients)) {
         // Add the key (ingredient name or section name)
         text += key + ' ';
 
@@ -89,7 +85,7 @@ export class SearchService {
           text += this.extractIngredientsText(value as string | string[] | Record<string, unknown>) + ' ';
         }
       }
-      return text;
+      return text.trim();
     }
 
     return '';
