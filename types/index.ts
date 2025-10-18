@@ -106,3 +106,6 @@ export interface LegacyRecipeContextType {
   mealTypeFilters: MealType[];
   setMealTypeFilters: (filters: MealType[]) => void;
 }
+
+// Search types
+export * from './search';
