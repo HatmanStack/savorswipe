@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { Pressable } from 'react-native';
 import { SearchInput } from '@/components/SearchInput';
 
 describe('SearchInput', () => {
@@ -29,7 +30,7 @@ describe('SearchInput', () => {
   });
 
   it('shows clear button when text is present', () => {
-    const { getByTestId, queryByTestId, rerender } = render(
+    const { queryByTestId, rerender } = render(
       <SearchInput value="" onChangeText={jest.fn()} />
     );
 
@@ -54,7 +55,7 @@ describe('SearchInput', () => {
     expect(input.props.value).toBe('chocolate');
 
     // Find and press clear button (it's a Pressable component)
-    const pressables = UNSAFE_getByType(require('react-native').Pressable);
+    const pressables = UNSAFE_getByType(Pressable);
     fireEvent.press(pressables);
 
     // Should clear the input
