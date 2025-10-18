@@ -24,15 +24,19 @@
 <h1 align="center">
   <img width="400" src="banner.jpg" alt="savorswipe-app icon">
 </h1>
-<p>Swipe left to discover mouthwatering food photos 
-and right to reveal the complete recipe—ingredients with directions. 
+<p>Swipe left to discover mouthwatering food photos
+and right to reveal the complete recipe—ingredients with directions.
+Search for recipes by name or ingredients to find exactly what you're craving.
 Upload a picture of your own directions, ingredients or recipe to join it to the swipe list. </p>
 </div>
             
 ## Features
 
 - **Swipe Navigation**: Easily browse through recipes by swiping left to discard or right to select.
+- **Recipe Search**: Find recipes by title or ingredients with real-time filtering and recent search history.
 - **Recipe Details**: View detailed information about each recipe, including ingredients and cooking instructions.
+- **Recipe Upload**: Upload photos of recipes for OCR processing and automatic recipe extraction.
+- **Meal Type Filters**: Filter recipes by category (main dish, dessert, appetizer, etc.).
 
 ## Technologies Used
 
@@ -80,9 +84,26 @@ To get started with the SavorSwipe, follow these steps:
    ```
 ## Usage
 
+### Discovering Recipes
+
 1. Launch the app on your device.
 2. Swipe right to select a recipe or swipe left to discard it.
 3. Tap on a recipe to view its details, including ingredients and cooking instructions.
+
+### Searching for Recipes
+
+1. Tap the hamburger menu (top-left corner).
+2. Select **"Search Recipes"**.
+3. Type a recipe name or ingredient (e.g., "chocolate", "chicken", "garlic").
+4. Browse results and tap any recipe to view full details.
+5. Recent searches are saved for quick access.
+
+**Search Tips**:
+- Search by recipe title: "chocolate cake", "pasta primavera"
+- Search by ingredient: "garlic", "chicken", "flour"
+- Partial matches work: "choc" finds "chocolate"
+- Case-insensitive searches
+- Clear recent searches using the "Clear All" button
 
 ## License
 

@@ -1,36 +1,23 @@
 import React, { useState, useEffect } from "react";
 import { StyleSheet, Image, Modal, View, Pressable } from "react-native";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { StandardCheckbox } from "@/components/Checkbox";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useRecipe, MealType } from "@/context/RecipeContext";
 import UploadImage from "@/components/UploadRecipe";
-
-type Recipe = {
-  Title: string;
-  Description: string | string[];
-  Ingredients: string | string[];
-  Directions: string | string[];
-  key: number;
-};
-
-interface RecipeContext {
-  currentRecipe: Recipe | null | string;
-  setFirstFile: (file: { filename: string; file: string } | null) => void;
-  setAllFiles: (files: string[]) => void;
-  jsonData: Record<string, Recipe>;
-  setJsonData: (data: Record<string, Recipe>) => void;
-  mealTypeFilters: string[];
-  setMealTypeFilters: (filters: string[]) => void;
-}
+import { useThemeColor } from "@/hooks/useThemeColor";
 
 export default function Menu() {
+  const router = useRouter();
+  const iconColor = useThemeColor({}, 'icon');
   const [menuVisible, setMenuVisible] = useState(false);
   const [infoVisible, setInfoVisible] = useState(false);
   const [uploadVisible, setUploadVisible] = useState(false);
   const [uploadMessage, setUploadMessage] = useState<{
     returnMessage: string;
-    jsonData: Record<string, Recipe>;
+    jsonData: any;
     encodedImages: string;
   } | null>(null);
   const [uploadCount, setUploadCount] = useState(0);
@@ -43,7 +30,7 @@ export default function Menu() {
     setJsonData,
     mealTypeFilters,
     setMealTypeFilters,
-  } = useRecipe() as RecipeContext;
+  } = useRecipe();
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const buttonSrc = require("@/assets/images/hamburger_bg.png");
 
@@ -75,6 +62,11 @@ export default function Menu() {
     setMenuVisible(false);
     setUploadCount((prevCount) => prevCount + 1);
     setUploadVisible(true);
+  };
+
+  const handleSearchPress = () => {
+    setMenuVisible(false);
+    router.push('/search');
   };
 
   useEffect(() => {
@@ -123,6 +115,17 @@ export default function Menu() {
       >
         <View style={styles.modalOverlay}>
           <ThemedView style={styles.menuContent}>
+            <Pressable
+              style={styles.menuItem}
+              onPress={handleSearchPress}
+              accessibilityRole="button"
+              accessibilityLabel="Search recipes"
+            >
+              <View style={styles.menuItemContent}>
+                <Ionicons name="search" size={20} color={iconColor} style={styles.menuIcon} />
+                <ThemedText>Search Recipes</ThemedText>
+              </View>
+            </Pressable>
             <Pressable style={styles.menuItem} onPress={handleInfoPress}>
               <ThemedText>About App</ThemedText>
             </Pressable>
@@ -260,6 +263,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#ccc",
   },
+  menuItemContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  menuIcon: {
+    marginRight: 12,
+  },
   modalTitle: {
     fontSize: 20,
     fontWeight: "bold",
@@ -306,5 +316,3 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
-
-export default Menu;
