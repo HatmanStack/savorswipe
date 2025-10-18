@@ -27,7 +27,11 @@ export function RecentSearches({ searches, onSearchSelect, onClearAll }: RecentS
       {/* Header with Clear All button */}
       <View style={styles.header}>
         <ThemedText style={styles.headerText}>Recent Searches</ThemedText>
-        <Pressable onPress={onClearAll}>
+        <Pressable
+          onPress={onClearAll}
+          accessibilityRole="button"
+          accessibilityLabel="Clear all recent searches"
+        >
           <ThemedText style={styles.clearAllText}>Clear All</ThemedText>
         </Pressable>
       </View>
@@ -38,6 +42,9 @@ export function RecentSearches({ searches, onSearchSelect, onClearAll }: RecentS
           key={search.timestamp}
           onPress={() => onSearchSelect(search.query)}
           style={[styles.searchItem, { backgroundColor: itemBgColor, borderBottomColor: borderColor }]}
+          accessibilityRole="button"
+          accessibilityLabel={`Search for ${search.query}`}
+          accessibilityHint="Double tap to search again"
         >
           <Ionicons name="search" size={18} color={iconColor} style={styles.searchIcon} />
           <ThemedText style={styles.searchText}>{search.query}</ThemedText>

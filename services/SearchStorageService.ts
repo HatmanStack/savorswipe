@@ -17,10 +17,25 @@ export class SearchStorageService {
         return [];
       }
 
-      const searches: RecentSearch[] = JSON.parse(data);
+      const searches = JSON.parse(data);
+
+      // Validate structure
+      if (!Array.isArray(searches)) {
+        console.warn('Invalid recent searches format, resetting');
+        return [];
+      }
+
+      // Filter out invalid entries
+      const validSearches = searches.filter(
+        (s): s is RecentSearch =>
+          typeof s === 'object' &&
+          s !== null &&
+          typeof s.query === 'string' &&
+          typeof s.timestamp === 'number'
+      );
 
       // Sort by timestamp descending (most recent first)
-      return searches.sort((a, b) => b.timestamp - a.timestamp);
+      return validSearches.sort((a, b) => b.timestamp - a.timestamp);
     } catch (error) {
       console.error('Error loading recent searches:', error);
       return [];

@@ -17,8 +17,13 @@ export function SearchResultItem({ recipe, onPress }: SearchResultItemProps) {
   const borderColor = useThemeColor({ light: '#E0E0E0', dark: '#333' }, 'icon');
   const CLOUDFRONT_BASE_URL = process.env.EXPO_PUBLIC_CLOUDFRONT_BASE_URL;
 
-  // Construct image URL
-  const imageUrl = `${CLOUDFRONT_BASE_URL}/${ImageService.getImageFileName(recipe.key)}`;
+  // Construct image URL with validation
+  let imageUrl = '';
+  if (!CLOUDFRONT_BASE_URL) {
+    console.error('SearchResultItem: EXPO_PUBLIC_CLOUDFRONT_BASE_URL is not defined for recipe', recipe.key);
+  } else {
+    imageUrl = `${CLOUDFRONT_BASE_URL}/${ImageService.getImageFileName(recipe.key)}`;
+  }
 
   // Extract brief info from description or ingredients
   const getBriefInfo = (): string => {
@@ -55,7 +60,7 @@ export function SearchResultItem({ recipe, onPress }: SearchResultItemProps) {
     <Pressable onPress={onPress}>
       <ThemedView style={[styles.container, { borderBottomColor: borderColor }]}>
         <Image
-          source={imageError ? fallbackImage : { uri: imageUrl }}
+          source={imageError || !imageUrl ? fallbackImage : { uri: imageUrl }}
           style={styles.image}
           onError={() => setImageError(true)}
           resizeMode="cover"
