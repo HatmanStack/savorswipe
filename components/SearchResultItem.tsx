@@ -13,7 +13,7 @@ interface SearchResultItemProps {
 
 export function SearchResultItem({ recipe, onPress }: SearchResultItemProps) {
   const [imageError, setImageError] = useState(false);
-  const borderColor = useThemeColor({ light: '#E0E0E0', dark: '#333' }, 'border');
+  const borderColor = useThemeColor({ light: '#E0E0E0', dark: '#333' }, 'icon');
   const CLOUDFRONT_BASE_URL = process.env.EXPO_PUBLIC_CLOUDFRONT_BASE_URL;
 
   // Construct image URL
