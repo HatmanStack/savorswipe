@@ -86,7 +86,7 @@ export class SearchService {
         } else if (Array.isArray(value)) {
           text += value.join(' ') + ' ';
         } else if (typeof value === 'object' && value !== null) {
-          text += this.extractIngredientsText(value) + ' ';
+          text += this.extractIngredientsText(value as string | string[] | Record<string, unknown>) + ' ';
         }
       }
       return text;
