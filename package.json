@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",
+    "@modelcontextprotocol/sdk": "^1.20.1",
     "@react-navigation/native": "^6.0.2",
     "aws-sdk": "^2.1691.0",
     "dotenv": "^16.4.5",
