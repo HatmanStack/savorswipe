@@ -21,7 +21,6 @@ const POPULAR_SUGGESTIONS = [
 
 export function SearchEmptyState({ query, onSuggestionPress }: SearchEmptyStateProps) {
   const iconColor = useThemeColor({}, 'icon');
-  const textColor = useThemeColor({}, 'text');
   const chipBg = useThemeColor({ light: '#E8F5E9', dark: '#1B3A1F' }, 'background');
   const chipBorder = useThemeColor({ light: '#4CAF50', dark: '#4CAF50' }, 'tint');
   const chipTextColor = useThemeColor({ light: '#2E7D32', dark: '#81C784' }, 'text');
@@ -31,12 +30,12 @@ export function SearchEmptyState({ query, onSuggestionPress }: SearchEmptyStateP
       <Ionicons name="search" size={64} color={iconColor} style={styles.icon} />
 
       <ThemedText style={styles.title}>No recipes found</ThemedText>
-      <ThemedText lightColor="#666" darkColor="#999" style={styles.queryText}>for "{query}"</ThemedText>
+      <ThemedText lightColor="#666" darkColor="#999" style={styles.queryText}>for &quot;{query}&quot;</ThemedText>
 
       <View style={styles.suggestionsContainer}>
         <ThemedText style={styles.suggestionsTitle}>Suggestions:</ThemedText>
         <ThemedText lightColor="#666" darkColor="#999" style={styles.suggestionItem}>
-          • Try searching for single ingredients like "chocolate"
+          • Try searching for single ingredients like &quot;chocolate&quot;
         </ThemedText>
         <ThemedText lightColor="#666" darkColor="#999" style={styles.suggestionItem}>
           • Check your spelling

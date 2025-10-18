@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TextInput, StyleSheet, Pressable, View } from 'react-native';
+import { TextInput, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedView } from '@/components/ThemedView';
 import { useThemeColor } from '@/hooks/useThemeColor';

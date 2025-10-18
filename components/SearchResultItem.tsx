@@ -6,6 +6,8 @@ import { Recipe } from '@/types';
 import { ImageService } from '@/services/ImageService';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
+const fallbackImage = require('@/assets/images/adaptive-icon.png');
+
 interface SearchResultItemProps {
   recipe: Recipe;
   onPress: () => void;
@@ -18,7 +20,6 @@ export function SearchResultItem({ recipe, onPress }: SearchResultItemProps) {
 
   // Construct image URL
   const imageUrl = `${CLOUDFRONT_BASE_URL}/${ImageService.getImageFileName(recipe.key)}`;
-  const fallbackImage = require('@/assets/images/adaptive-icon.png');
 
   // Extract brief info from description or ingredients
   const getBriefInfo = (): string => {
