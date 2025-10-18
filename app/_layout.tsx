@@ -11,17 +11,23 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AppProvider useLegacyProvider={true}>
+      <AppProvider>
       <Menu />
-        <Stack 
+        <Stack
           screenOptions={{
             headerShown: false,
             contentStyle: { backgroundColor: colorScheme === 'dark' ? '#151718' : '#fff' }
           }}
         >
           <Stack.Screen name="index" />
-          <Stack.Screen 
-            name="recipe/[id]" 
+          <Stack.Screen
+            name="search"
+            options={{
+              animation: 'slide_from_bottom',
+            }}
+          />
+          <Stack.Screen
+            name="recipe/[id]"
             options={{
               animation: 'slide_from_right',
             }}
