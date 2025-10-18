@@ -14,7 +14,7 @@ interface RecentSearchesProps {
 
 export function RecentSearches({ searches, onSearchSelect, onClearAll }: RecentSearchesProps) {
   const iconColor = useThemeColor({ light: '#666', dark: '#999' }, 'icon');
-  const borderColor = useThemeColor({ light: '#E0E0E0', dark: '#333' }, 'border');
+  const borderColor = useThemeColor({ light: '#E0E0E0', dark: '#333' }, 'icon');
   const itemBgColor = useThemeColor({ light: '#F5F5F5', dark: '#2A2A2A' }, 'background');
 
   // Don't render if no searches

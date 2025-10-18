@@ -20,8 +20,8 @@ export function SearchInput({
   const [inputValue, setInputValue] = useState(value);
   const textColor = useThemeColor({}, 'text');
   const iconColor = useThemeColor({}, 'icon');
-  const borderColor = useThemeColor({ light: '#E0E0E0', dark: '#333' }, 'border');
-  const placeholderColor = useThemeColor({ light: '#999', dark: '#666' }, 'text');
+  const borderColor = useThemeColor({ light: '#E0E0E0', dark: '#333' }, 'icon');
+  const placeholderColor = useThemeColor({ light: '#999', dark: '#666' }, 'icon');
 
   // Debounce the input by 300ms
   useEffect(() => {
