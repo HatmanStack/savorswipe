@@ -1,0 +1,16 @@
+# Build and dependency directories
+node_modules/
+.expo/
+.expo-shared/
+dist/
+build/
+
+# Config files that use CommonJS
+babel.config.js
+.eslintrc.js
+
+# Scripts using Node.js CommonJS
+scripts/
+
+# Test setup
+jest.setup.js

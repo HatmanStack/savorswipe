@@ -18,7 +18,6 @@ export default function GetImages({ getNewList, fetchImage, setFetchImage, setIm
         }
         
         if (jsonData) {
-            const originalCount = keysArray.length;
             keysArray = RecipeService.filterRecipesByMealType(jsonData, mealTypeFilters);
         }
         const shuffledKeys = RecipeService.shuffleRecipeKeys(keysArray);
@@ -57,10 +56,12 @@ export default function GetImages({ getNewList, fetchImage, setFetchImage, setIm
                     }
                     fileToFetchRef.current = holderFilesToFetch;
                     shuffleAndSetKeys(keysArray);
-                } else {
                 }
-                 
+
             } catch (error) {
+                if (process.env.NODE_ENV !== 'production') {
+                    console.error('Failed to fetch recipe data:', error);
+                }
             }
         };
         fetchFiles();
@@ -91,6 +92,9 @@ export default function GetImages({ getNewList, fetchImage, setFetchImage, setIm
                             setStartImage(fetchedFilesRef.current[0]);
                         }
                     } catch (error) {
+                        if (process.env.NODE_ENV !== 'production') {
+                            console.error(`Failed to fetch image ${filePath}:`, error);
+                        }
                     }
                 }
             }

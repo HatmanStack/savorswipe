@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { View, Pressable } from 'react-native';
+import { View, Pressable, StyleProp, ViewStyle } from 'react-native';
 import { StandardCheckbox } from '@/components/Checkbox';
 import { ThemedText } from '@/components/ThemedText';
 import { MealType } from '@/types';
 import { useRecipe } from '@/context/RecipeContext';
 
 interface FilterModalProps {
-  styles: any; // TODO: Create proper style types
+  styles: Record<string, StyleProp<ViewStyle>>;
 }
 
 export const FilterModal: React.FC<FilterModalProps> = ({ styles }) => {

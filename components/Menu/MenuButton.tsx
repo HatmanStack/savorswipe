@@ -6,6 +6,7 @@ interface MenuButtonProps {
 }
 
 export const MenuButton: React.FC<MenuButtonProps> = ({ onPress }) => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const buttonSrc = require('@/assets/images/hamburger_bg.png');
 
   return (
