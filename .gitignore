@@ -20,3 +20,4 @@ components/__tests__/Menu.test.tsx
 CLAUDE.md
 s3-old
 
+.worktrees/
