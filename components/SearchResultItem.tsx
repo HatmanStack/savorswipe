@@ -5,8 +5,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { Recipe } from '@/types';
 import { ImageService } from '@/services/ImageService';
 import { useThemeColor } from '@/hooks/useThemeColor';
-
-const fallbackImage = require('@/assets/images/adaptive-icon.png');
+import fallbackImage from '@/assets/images/adaptive-icon.png';
 
 interface SearchResultItemProps {
   recipe: Recipe;
