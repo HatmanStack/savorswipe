@@ -27,7 +27,7 @@ export function ServingSizeControl({
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#333' }, 'background');
   const textColor = useThemeColor({}, 'text');
   const iconColor = useThemeColor({}, 'icon');
-  const buttonColor = useThemeColor({ light: '#007AFF', dark: '#0A84FF' }, 'tint');
+  const buttonColor = '#DD9236'; // Match home/hamburger button color
   const disabledColor = useThemeColor({ light: '#ccc', dark: '#555' }, 'icon');
 
   const handleIncrement = () => {
@@ -44,19 +44,32 @@ export function ServingSizeControl({
     setIsExpanded(!isExpanded);
   };
 
+  // Use different container based on expanded state to avoid nested buttons
+  const ContainerComponent = isExpanded ? View : Pressable;
+  const containerProps = isExpanded
+    ? {
+        testID: 'serving-size-badge',
+        style: [
+          styles.container,
+          styles.expanded,
+          { backgroundColor },
+        ],
+      }
+    : {
+        testID: 'serving-size-badge',
+        onPress: toggleExpanded,
+        accessibilityLabel: 'Adjust serving size',
+        accessibilityHint: 'Double tap to show serving size adjustment controls',
+        accessibilityRole: 'button' as const,
+        style: [
+          styles.container,
+          styles.collapsed,
+          { backgroundColor },
+        ],
+      };
+
   return (
-    <Pressable
-      testID="serving-size-badge"
-      onPress={toggleExpanded}
-      accessibilityLabel={isExpanded ? 'Collapse serving size control' : 'Adjust serving size'}
-      accessibilityHint={isExpanded ? 'Double tap to hide controls' : 'Double tap to show serving size adjustment controls'}
-      accessibilityRole="button"
-      style={[
-        styles.container,
-        isExpanded ? styles.expanded : styles.collapsed,
-        { backgroundColor },
-      ]}
-    >
+    <ContainerComponent {...containerProps}>
       {isExpanded ? (
         <View
           style={styles.controlsContainer}
@@ -99,6 +112,18 @@ export function ServingSizeControl({
           >
             <Text style={styles.buttonText}>+</Text>
           </Pressable>
+
+          {/* Collapse button when expanded */}
+          <Pressable
+            testID="collapse-button"
+            onPress={toggleExpanded}
+            accessibilityLabel="Collapse serving size control"
+            accessibilityHint="Double tap to hide controls"
+            accessibilityRole="button"
+            style={styles.collapseButton}
+          >
+            <Ionicons name="close" size={20} color={iconColor} />
+          </Pressable>
         </View>
       ) : (
         <View testID="serving-size-icon">
@@ -110,15 +135,15 @@ export function ServingSizeControl({
           />
         </View>
       )}
-    </Pressable>
+    </ContainerComponent>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    bottom: 20,
-    right: 20,
+    top: 20,
+    right: 50,
     borderRadius: 30,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -159,5 +184,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     minWidth: 30,
     textAlign: 'center',
+  },
+  collapseButton: {
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 4,
   },
 });

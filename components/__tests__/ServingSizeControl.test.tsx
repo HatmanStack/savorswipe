@@ -98,7 +98,7 @@ describe('ServingSizeControl', () => {
     expect(decrementButton.props.accessibilityState?.disabled).toBe(true);
   });
 
-  it('should collapse when tapped again in expanded state', () => {
+  it('should collapse when close button pressed', () => {
     const { getByTestId, queryByTestId } = render(
       <ServingSizeControl
         currentServings={4}
@@ -106,14 +106,12 @@ describe('ServingSizeControl', () => {
       />
     );
 
-    const badge = getByTestId('serving-size-badge');
-
     // Expand
-    fireEvent.press(badge);
+    fireEvent.press(getByTestId('serving-size-badge'));
     expect(queryByTestId('increment-button')).toBeTruthy();
 
-    // Collapse
-    fireEvent.press(badge);
+    // Collapse using close button
+    fireEvent.press(getByTestId('collapse-button'));
     expect(queryByTestId('increment-button')).toBeNull();
   });
 
