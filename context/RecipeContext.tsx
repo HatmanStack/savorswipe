@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useMemo, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect, ReactNode } from 'react';
 import { Recipe, S3JsonData, MealType } from '@/types';
+import { RecipeService } from '@/services/RecipeService';
 
 // Define the type for the context value
 interface RecipeContextType {
@@ -29,6 +30,22 @@ export const RecipeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     'side dish',
     'beverage'
   ]);
+
+  // Load recipe JSON data from S3 on mount
+  useEffect(() => {
+    const loadRecipeData = async () => {
+      try {
+        const combinedJsonData = await RecipeService.getRecipesFromS3();
+        setJsonData(combinedJsonData);
+      } catch (error) {
+        if (__DEV__) {
+          console.error('Failed to fetch recipe data:', error);
+        }
+      }
+    };
+
+    loadRecipeData();
+  }, []);
 
   // Memoize provider value to prevent unnecessary re-renders
   const value = useMemo(() => ({

@@ -45,25 +45,30 @@ export default function RecipeDetail() {
 
     const recipeId = glob.id as string;
 
-    // Only run this effect if we don't have currentRecipe or if the recipe ID doesn't match
-    if (!currentRecipe || currentRecipe.key !== recipeId) {
+    // Reset recipe image when navigating to a different recipe
+    if (currentRecipe && currentRecipe.key !== recipeId) {
+      setRecipeImage(null);
+    }
+
+    // Only run this effect if we don't have currentRecipe, recipe ID doesn't match, or we don't have the image
+    if (!currentRecipe || currentRecipe.key !== recipeId || !recipeImage) {
       const fetchData = async () => {
         try {
-          
+
           // Use existing jsonData if available, otherwise fetch it
           let recipeData = jsonData;
           if (!recipeData) {
             recipeData = await RecipeService.getRecipesFromS3();
             setJsonData(recipeData);
           }
-          
+
           if (!recipeData[recipeId]) {
             setRecipeExists(false);
             return;
           }
-          
+
           setCurrentRecipe({ ...recipeData[recipeId], key: recipeId });
-          
+
           try {
             const recipeFilePath = ImageService.getImageFileName(recipeId);
             const fileURL = await ImageService.getImageFromS3(recipeFilePath);

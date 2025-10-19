@@ -104,8 +104,21 @@ export function useImageQueue(): ImageQueueHook {
 
   // Refill queue in background
   const refillQueue = useCallback(async () => {
-    // Don't refill if already refilling or no keys left
-    if (isRefillingRef.current || recipeKeyPoolRef.current.length === 0) {
+    // Don't refill if already refilling
+    if (isRefillingRef.current) {
+      return;
+    }
+
+    // If pool is empty, reshuffle to create a new pool
+    if (recipeKeyPoolRef.current.length === 0 && jsonData) {
+      if (__DEV__) {
+        console.log('Recipe pool exhausted, reshuffling...');
+      }
+      recipeKeyPoolRef.current = ImageQueueService.createRecipeKeyPool(jsonData, mealTypeFilters);
+    }
+
+    // If still no keys available (no recipes match filters), return
+    if (recipeKeyPoolRef.current.length === 0) {
       return;
     }
 
@@ -135,7 +148,7 @@ export function useImageQueue(): ImageQueueHook {
     } finally {
       isRefillingRef.current = false;
     }
-  }, []);
+  }, [jsonData, mealTypeFilters]);
 
   // Advance to next image in queue
   const advanceQueue = useCallback(() => {
@@ -222,8 +235,7 @@ export function useImageQueue(): ImageQueueHook {
   useEffect(() => {
     if (
       ImageQueueService.shouldRefillQueue(queue.length) &&
-      !isRefillingRef.current &&
-      recipeKeyPoolRef.current.length > 0
+      !isRefillingRef.current
     ) {
       refillQueue();
     }
