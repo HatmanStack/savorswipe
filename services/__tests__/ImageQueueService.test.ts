@@ -8,6 +8,16 @@ jest.mock('../ImageService');
 jest.mock('../RecipeService');
 
 describe('ImageQueueService', () => {
+  // Stabilize test environment for RN globals
+  beforeAll(() => {
+    // RN global used in service logging paths
+    (global as { __DEV__?: boolean }).__DEV__ = false;
+    // Ensure revokeObjectURL exists in jsdom
+    if (!('revokeObjectURL' in URL)) {
+      Object.defineProperty(URL, 'revokeObjectURL', { value: jest.fn() });
+    }
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
   });

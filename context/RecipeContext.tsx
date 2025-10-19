@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useMemo, ReactNode } from 'react';
 import { Recipe, S3JsonData, MealType } from '@/types';
 
 // Define the type for the context value
@@ -30,15 +30,18 @@ export const RecipeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     'beverage'
   ]);
 
+  // Memoize provider value to prevent unnecessary re-renders
+  const value = useMemo(() => ({
+    currentRecipe,
+    setCurrentRecipe,
+    jsonData,
+    setJsonData,
+    mealTypeFilters,
+    setMealTypeFilters
+  }), [currentRecipe, jsonData, mealTypeFilters]);
+
   return (
-    <RecipeContext.Provider value={{
-      currentRecipe,
-      setCurrentRecipe,
-      jsonData,
-      setJsonData,
-      mealTypeFilters,
-      setMealTypeFilters
-    }}>
+    <RecipeContext.Provider value={value}>
       {children}
     </RecipeContext.Provider>
   );

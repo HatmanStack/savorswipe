@@ -16,9 +16,16 @@ export function useImageQueue(): ImageQueueHook {
   const recipeKeyPoolRef = useRef<string[]>([]);
   const isRefillingRef = useRef(false);
   const isMountedRef = useRef(true);
+  const isInitializingRef = useRef(false);
+  const queueRef = useRef<ImageFile[]>([]); // Track latest queue for cleanup
 
   // Context
   const { jsonData, setCurrentRecipe, mealTypeFilters } = useRecipe();
+
+  // Keep queueRef in sync with queue state
+  useEffect(() => {
+    queueRef.current = queue;
+  }, [queue]);
 
   // Internal helper to update current recipe in context
   const updateCurrentRecipe = useCallback((image: ImageFile) => {
@@ -36,6 +43,10 @@ export function useImageQueue(): ImageQueueHook {
   const initializeQueue = useCallback(async () => {
     if (!jsonData) return;
 
+    // Prevent double initialization
+    if (isInitializingRef.current) return;
+
+    isInitializingRef.current = true;
     setIsLoading(true);
 
     try {
@@ -84,6 +95,7 @@ export function useImageQueue(): ImageQueueHook {
         console.error('Error initializing image queue:', error);
       }
     } finally {
+      isInitializingRef.current = false;
       if (isMountedRef.current) {
         setIsLoading(false);
       }
@@ -127,37 +139,41 @@ export function useImageQueue(): ImageQueueHook {
 
   // Advance to next image in queue
   const advanceQueue = useCallback(() => {
-    // Don't advance if queue is empty or has only 1 item
-    if (queue.length <= 0) {
-      return;
-    }
+    // Use functional state update to avoid stale closure
+    setQueue(prev => {
+      // Don't advance if queue is empty
+      if (prev.length <= 0) {
+        return prev;
+      }
 
-    // Clean up current image blob URL
-    if (queue[0]) {
-      ImageQueueService.cleanupImages([queue[0]]);
-    }
+      // Clean up current image blob URL
+      if (prev[0]) {
+        ImageQueueService.cleanupImages([prev[0]]);
+      }
 
-    // Shift queue
-    const newQueue = queue.slice(1);
-    setQueue(newQueue);
+      // Shift queue
+      const newQueue = prev.slice(1);
 
-    // Update current and next images with null fallbacks
-    const newCurrent = newQueue[0] || null;
-    const newNext = newQueue[1] || null;
+      // Update current and next images with null fallbacks
+      const newCurrent = newQueue[0] || null;
+      const newNext = newQueue[1] || null;
 
-    setCurrentImage(newCurrent);
-    setNextImage(newNext);
+      setCurrentImage(newCurrent);
+      setNextImage(newNext);
 
-    // Update recipe in context if new current image exists
-    if (newCurrent) {
-      updateCurrentRecipe(newCurrent);
-    }
-  }, [queue, updateCurrentRecipe]);
+      // Update recipe in context if new current image exists
+      if (newCurrent) {
+        updateCurrentRecipe(newCurrent);
+      }
+
+      return newQueue;
+    });
+  }, [updateCurrentRecipe]);
 
   // Reset queue (called on filter change)
   const resetQueue = useCallback(async () => {
-    // Clean up existing queue
-    ImageQueueService.cleanupImages(queue);
+    // Clean up existing queue using ref to avoid stale closure
+    ImageQueueService.cleanupImages(queueRef.current);
 
     // Clear state
     setQueue([]);
@@ -167,7 +183,7 @@ export function useImageQueue(): ImageQueueHook {
 
     // Reinitialize
     await initializeQueue();
-  }, [queue, initializeQueue]);
+  }, [initializeQueue]);
 
   // Effect: Initialize queue on mount
   useEffect(() => {
@@ -177,10 +193,10 @@ export function useImageQueue(): ImageQueueHook {
       initializeQueue();
     }
 
-    // Cleanup on unmount
+    // Cleanup on unmount - use queueRef to avoid stale closure
     return () => {
       isMountedRef.current = false;
-      ImageQueueService.cleanupImages(queue);
+      ImageQueueService.cleanupImages(queueRef.current);
     };
   }, [jsonData]); // Only run when jsonData is available
 

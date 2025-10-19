@@ -31,8 +31,8 @@ export class ImageQueueService {
       return { images: [], failedKeys: [] };
     }
 
-    // Create promises for each image fetch
-    const fetchPromises = keysToFetch.map(async (key) => {
+    // Create promises for each image fetch with explicit typing
+    const fetchPromises: Promise<{ filename: string; file: string; key: string }>[] = keysToFetch.map(async (key) => {
       const filename = ImageService.getImageFileName(key);
       const fileUrl = await ImageService.getImageFromS3(filename);
       return {
@@ -43,7 +43,7 @@ export class ImageQueueService {
     });
 
     // Use Promise.allSettled to handle partial failures
-    const results = await Promise.allSettled(fetchPromises);
+    const results = await Promise.allSettled<{ filename: string; file: string; key: string }>(fetchPromises);
 
     // Separate successful fetches from failures
     const images: ImageFile[] = [];
