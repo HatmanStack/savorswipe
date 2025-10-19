@@ -73,19 +73,31 @@ export default function Menu() {
     if (uploadMessage) {
       setUploadText(uploadMessage.returnMessage);
       if (uploadMessage.returnMessage.includes("success")) {
-        const existingKeys = new Set(Object.keys(jsonData));
-        const newKeys = new Set(Object.keys(uploadMessage.jsonData));
-        const difference = [...newKeys].filter((key) => !existingKeys.has(key));
-        const sortedDifference = difference.sort(
-          (a, b) => Number(b) - Number(a)
-        );
-        console.log(sortedDifference);
-        setAllFiles(sortedDifference);
-        setJsonData(uploadMessage.jsonData);
-        setFirstFile({
-          filename: `image/${sortedDifference[0]}.jpg`,
-          file: `data:image/jpeg;base64,${uploadMessage.encodedImages}`,
-        });
+        // Type guard: ensure uploadMessage.jsonData is a valid object
+        if (
+          uploadMessage.jsonData &&
+          typeof uploadMessage.jsonData === 'object' &&
+          !Array.isArray(uploadMessage.jsonData)
+        ) {
+          const existingKeys = new Set(Object.keys(jsonData || {}));
+          const newKeys = new Set(Object.keys(uploadMessage.jsonData));
+          const difference = [...newKeys].filter((key) => !existingKeys.has(key));
+          const sortedDifference = difference.sort(
+            (a, b) => Number(b) - Number(a)
+          );
+          console.log(sortedDifference);
+          setAllFiles(sortedDifference);
+          setJsonData(uploadMessage.jsonData);
+          setFirstFile({
+            filename: `image/${sortedDifference[0]}.jpg`,
+            file: `data:image/jpeg;base64,${uploadMessage.encodedImages}`,
+          });
+        } else {
+          // Handle invalid jsonData
+          if (__DEV__) {
+            console.error('Invalid jsonData in upload response:', uploadMessage.jsonData);
+          }
+        }
       }
       const timer = setTimeout(() => {
         setUploadText(null);

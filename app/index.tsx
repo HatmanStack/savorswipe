@@ -1,5 +1,5 @@
 import 'react-native-gesture-handler';
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { Image, View, Animated } from 'react-native';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
@@ -8,6 +8,9 @@ import { useImageQueue } from '@/hooks/useImageQueue';
 import { useResponsiveLayout } from '@/hooks';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const holderImg = require('@/assets/images/skillet.png');
+
+// Shared animation duration constant
+const ANIM_DURATION = 100;
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -19,12 +22,16 @@ export default function HomeScreen() {
   // Animation values
   const currentImageTranslateX = useRef(new Animated.Value(0)).current;
   const nextImageTranslateX = useRef(new Animated.Value(400)).current; // Start off-screen right
+  const isAnimatingRef = useRef(false); // Prevent overlapping animations
 
   const { getImageDimensions } = useResponsiveLayout();
   const imageDimensions = getImageDimensions();
 
   // Handle swipe gestures
   const handleSwipe = (direction: 'left' | 'right') => {
+    // Prevent overlapping animations
+    if (isAnimatingRef.current) return;
+
     if (direction === 'left') {
       // Swipe left: advance to next recipe
       animateSwipe(() => advanceQueue());
@@ -38,18 +45,21 @@ export default function HomeScreen() {
 
   // Animate slide transition
   const animateSwipe = (onComplete: () => void) => {
+    // Set animating flag to prevent concurrent animations
+    isAnimatingRef.current = true;
+
     // Run both animations in parallel for smooth transition
     Animated.parallel([
       // Slide current image out to left
       Animated.timing(currentImageTranslateX, {
         toValue: -400,
-        duration: 100,
+        duration: ANIM_DURATION,
         useNativeDriver: true,
       }),
       // Slide next image in from right
       Animated.timing(nextImageTranslateX, {
         toValue: 0,
-        duration: 100,
+        duration: ANIM_DURATION,
         useNativeDriver: true,
       })
     ]).start(() => {
@@ -59,6 +69,9 @@ export default function HomeScreen() {
       // Reset animation values for next swipe
       currentImageTranslateX.setValue(0);
       nextImageTranslateX.setValue(400);
+
+      // Reset animating flag
+      isAnimatingRef.current = false;
     });
   };
 
@@ -71,7 +84,8 @@ export default function HomeScreen() {
     };
   };
 
-  const debouncedHandleSwipe = debounce(handleSwipe, 100);
+  // Memoize debounced handler for stable instance
+  const debouncedHandleSwipe = useMemo(() => debounce(handleSwipe, 100), []);
 
   // Show loading state
   if (isLoading || !currentImage) {
