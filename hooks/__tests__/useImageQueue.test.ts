@@ -264,7 +264,7 @@ describe('useImageQueue', () => {
     });
 
     it('should reinitialize queue with new filters', async () => {
-      const { result, rerender } = renderHook(() => useImageQueue());
+      const { result } = renderHook(() => useImageQueue());
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
