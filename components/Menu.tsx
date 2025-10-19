@@ -17,7 +17,7 @@ export default function Menu() {
   const [uploadVisible, setUploadVisible] = useState(false);
   const [uploadMessage, setUploadMessage] = useState<{
     returnMessage: string;
-    jsonData: any;
+    jsonData: unknown;
     encodedImages: string;
   } | null>(null);
   const [uploadCount, setUploadCount] = useState(0);

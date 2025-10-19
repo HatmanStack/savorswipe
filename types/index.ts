@@ -59,53 +59,6 @@ export interface RecipeDetailsProps {
   currentRecipe: Recipe;
 }
 
-export interface GetImagesProps {
-  getNewList: boolean;
-  fetchImage: boolean;
-  setFetchImage: (data: boolean) => void;
-  setImageDimensions: (data: ImageDimensions) => void;
-}
-
-// Context Types - will be split into focused contexts later
-export interface RecipeDataContextType {
-  recipes: S3JsonData | null;
-  currentRecipe: Recipe | null;
-  setCurrentRecipe: (recipe: Recipe | null) => void;
-  loadRecipes: () => Promise<void>;
-}
-
-export interface ImageContextType {
-  currentImage: ImageFile | null;
-  imageQueue: ImageFile[];
-  allFiles: string[];
-  setAllFiles: (files: string[]) => void;
-  firstFile: ImageFile | null;
-  setFirstFile: (file: ImageFile | null) => void;
-  startImage: ImageFile | null;
-  setStartImage: (file: ImageFile | null) => void;
-  loadNextImage: () => void;
-}
-
-export interface FilterContextType {
-  mealTypeFilters: MealType[];
-  setMealTypeFilters: (filters: MealType[]) => void;
-}
-
-// Temporary interface to maintain backwards compatibility during refactor
-export interface LegacyRecipeContextType {
-  currentRecipe: string | null;
-  setCurrentRecipe: (recipe: string | null) => void;
-  allFiles: string[];
-  setAllFiles: (files: string[]) => void;
-  jsonData: Record<string, Recipe> | null;
-  setJsonData: (data: Record<string, Recipe> | null) => void;
-  firstFile: ImageFile | null;
-  setFirstFile: (file: ImageFile | null) => void;
-  startImage: ImageFile | null;
-  setStartImage: (file: ImageFile | null) => void;
-  mealTypeFilters: MealType[];
-  setMealTypeFilters: (filters: MealType[]) => void;
-}
 
 // Search types
 export * from './search';
