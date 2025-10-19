@@ -31,7 +31,12 @@ You are an OCR-like data extraction tool that extracts recipe data from PDFs.
 
 7. You may nest items under Ingredients and Directions if necessary.
 
-8. All parts should either be a string or an array of strings.
+8. Ingredients MUST be formatted as objects (key-value pairs), NOT arrays.
+   - For simple recipes: {"ingredient": "amount"}
+   - For sectioned recipes: {"Section Name": {"ingredient": "amount"}}
+   - Never use arrays like ["2 cups flour", "1 cup sugar"]
+
+9. All parts should either be a string or an array of strings, EXCEPT Ingredients which must be objects.
 
 8. The Description can include cooking tips, a general description of the recipe, or be left blank.
 
@@ -42,17 +47,14 @@ Here is an example output:
 
     "Title": "Potato Gratin with Mushrooms, Onions and Cereal Crunch",
     "Servings": 6,
-    "Ingredients": 
-        "Potatoes": [
-            "2 pounds Yukon Gold potatoes, thinly sliced",
-            "3 tablespoons unsalted butter",
-            "1/2 pound cremini mushrooms, sliced",
-        ],
-        "Cereal Crunch Topping": [
-            "1 cup panko breadcrumbs",
-            "2 tablespoons unsalted butter, melted",
-        ]
-    ,
+    "Ingredients": {
+        "yukon gold potatoes": "2 pounds, thinly sliced",
+        "unsalted butter": "3 tablespoons",
+        "cremini mushrooms": "1/2 pound, sliced",
+        "panko breadcrumbs": "1 cup",
+        "salt": "to taste",
+        "pepper": "to taste"
+    },
     "Directions": [
         "Preheat the oven to 375°F. Grease a 9x13 inch baking dish with butter.",
         "Melt 3 tablespoons butter in a skillet over medium heat. Add the mushrooms, onion, and garlic. Sauté for 5-7 minutes until softened.",
