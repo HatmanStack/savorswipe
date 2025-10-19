@@ -1,0 +1,224 @@
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useRecipe } from '@/context/RecipeContext';
+import { ImageQueueService } from '@/services/ImageQueueService';
+import { ImageService } from '@/services/ImageService';
+import { ImageFile } from '@/types';
+import { ImageQueueHook } from '@/types/queue';
+
+export function useImageQueue(): ImageQueueHook {
+  // Local state
+  const [queue, setQueue] = useState<ImageFile[]>([]);
+  const [currentImage, setCurrentImage] = useState<ImageFile | null>(null);
+  const [nextImage, setNextImage] = useState<ImageFile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Recipe key pool (mutable ref, doesn't trigger re-renders)
+  const recipeKeyPoolRef = useRef<string[]>([]);
+  const isRefillingRef = useRef(false);
+  const isMountedRef = useRef(true);
+
+  // Context
+  const { jsonData, setCurrentRecipe, mealTypeFilters } = useRecipe();
+
+  // Internal helper to update current recipe in context
+  const updateCurrentRecipe = useCallback((image: ImageFile) => {
+    if (!jsonData) return;
+
+    const recipeKey = ImageService.getRecipeKeyFromFileName(image.filename);
+    const recipe = jsonData[recipeKey];
+
+    if (recipe) {
+      setCurrentRecipe({ ...recipe, key: recipeKey });
+    }
+  }, [jsonData, setCurrentRecipe]);
+
+  // Initialize queue on first load
+  const initializeQueue = useCallback(async () => {
+    if (!jsonData) return;
+
+    setIsLoading(true);
+
+    try {
+      // Create shuffled recipe key pool
+      const recipeKeyPool = ImageQueueService.createRecipeKeyPool(jsonData, mealTypeFilters);
+      recipeKeyPoolRef.current = recipeKeyPool;
+
+      // Calculate batch sizes for initial load
+      const totalRecipes = recipeKeyPool.length;
+      const targetSize = Math.min(ImageQueueService.CONFIG.INITIAL_QUEUE_SIZE, totalRecipes);
+      const batchSize = Math.min(ImageQueueService.CONFIG.BATCH_SIZE, Math.ceil(targetSize / 3));
+
+      // Fetch initial batches in parallel for faster initialization
+      const [batch1, batch2, batch3] = await Promise.all([
+        ImageQueueService.fetchBatch(recipeKeyPool.slice(0, batchSize), batchSize),
+        ImageQueueService.fetchBatch(recipeKeyPool.slice(batchSize, batchSize * 2), batchSize),
+        ImageQueueService.fetchBatch(recipeKeyPool.slice(batchSize * 2, batchSize * 3), batchSize),
+      ]);
+
+      // Combine all successfully fetched images
+      const allImages = [...batch1.images, ...batch2.images, ...batch3.images];
+
+      // Only update state if component is still mounted
+      if (!isMountedRef.current) return;
+
+      // Update queue
+      setQueue(allImages);
+
+      // Remove fetched keys from pool (including failed ones to avoid retrying)
+      const fetchedCount = batch1.images.length + batch1.failedKeys.length +
+                          batch2.images.length + batch2.failedKeys.length +
+                          batch3.images.length + batch3.failedKeys.length;
+      recipeKeyPoolRef.current = recipeKeyPool.slice(fetchedCount);
+
+      // Set current and next images
+      if (allImages[0]) {
+        setCurrentImage(allImages[0]);
+        updateCurrentRecipe(allImages[0]);
+      }
+
+      if (allImages[1]) {
+        setNextImage(allImages[1]);
+      }
+    } catch (error) {
+      if (__DEV__) {
+        console.error('Error initializing image queue:', error);
+      }
+    } finally {
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
+    }
+  }, [jsonData, mealTypeFilters, updateCurrentRecipe]);
+
+  // Refill queue in background
+  const refillQueue = useCallback(async () => {
+    // Don't refill if already refilling or no keys left
+    if (isRefillingRef.current || recipeKeyPoolRef.current.length === 0) {
+      return;
+    }
+
+    isRefillingRef.current = true;
+
+    try {
+      const result = await ImageQueueService.fetchBatch(
+        recipeKeyPoolRef.current,
+        ImageQueueService.CONFIG.BATCH_SIZE
+      );
+
+      // Only update if component is still mounted
+      if (!isMountedRef.current) return;
+
+      // Append new images to queue
+      if (result.images.length > 0) {
+        setQueue(prev => [...prev, ...result.images]);
+      }
+
+      // Remove fetched keys from pool
+      const fetchedCount = result.images.length + result.failedKeys.length;
+      recipeKeyPoolRef.current = recipeKeyPoolRef.current.slice(fetchedCount);
+    } catch (error) {
+      if (__DEV__) {
+        console.error('Error refilling queue:', error);
+      }
+    } finally {
+      isRefillingRef.current = false;
+    }
+  }, []);
+
+  // Advance to next image in queue
+  const advanceQueue = useCallback(() => {
+    // Don't advance if queue is empty or has only 1 item
+    if (queue.length <= 0) {
+      return;
+    }
+
+    // Clean up current image blob URL
+    if (queue[0]) {
+      ImageQueueService.cleanupImages([queue[0]]);
+    }
+
+    // Shift queue
+    const newQueue = queue.slice(1);
+    setQueue(newQueue);
+
+    // Update current and next images with null fallbacks
+    const newCurrent = newQueue[0] || null;
+    const newNext = newQueue[1] || null;
+
+    setCurrentImage(newCurrent);
+    setNextImage(newNext);
+
+    // Update recipe in context if new current image exists
+    if (newCurrent) {
+      updateCurrentRecipe(newCurrent);
+    }
+  }, [queue, updateCurrentRecipe]);
+
+  // Reset queue (called on filter change)
+  const resetQueue = useCallback(async () => {
+    // Clean up existing queue
+    ImageQueueService.cleanupImages(queue);
+
+    // Clear state
+    setQueue([]);
+    setCurrentImage(null);
+    setNextImage(null);
+    setIsLoading(true);
+
+    // Reinitialize
+    await initializeQueue();
+  }, [queue, initializeQueue]);
+
+  // Effect: Initialize queue on mount
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    if (jsonData && queue.length === 0 && !isLoading) {
+      initializeQueue();
+    }
+
+    // Cleanup on unmount
+    return () => {
+      isMountedRef.current = false;
+      ImageQueueService.cleanupImages(queue);
+    };
+  }, [jsonData]); // Only run when jsonData is available
+
+  // Effect: Auto-initialize when jsonData becomes available
+  useEffect(() => {
+    if (jsonData && queue.length === 0 && isLoading) {
+      initializeQueue();
+    }
+  }, [jsonData, queue.length, isLoading, initializeQueue]);
+
+  // Effect: Reset queue when filters change
+  useEffect(() => {
+    // Skip on initial mount (jsonData will be null)
+    if (!jsonData) return;
+
+    // Only reset if we already have a queue (avoid double initialization)
+    if (queue.length > 0 || currentImage !== null) {
+      resetQueue();
+    }
+  }, [mealTypeFilters]); // Only depend on filters, not the functions
+
+  // Effect: Check if queue needs refilling
+  useEffect(() => {
+    if (
+      ImageQueueService.shouldRefillQueue(queue.length) &&
+      !isRefillingRef.current &&
+      recipeKeyPoolRef.current.length > 0
+    ) {
+      refillQueue();
+    }
+  }, [queue.length, refillQueue]);
+
+  return {
+    currentImage,
+    nextImage,
+    isLoading,
+    queueLength: queue.length,
+    advanceQueue,
+    resetQueue,
+  };
+}
