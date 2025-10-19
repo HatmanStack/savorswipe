@@ -12,9 +12,10 @@ import { useGlobalSearchParams} from 'expo-router';
 const holderImg = require('@/assets/images/skillet.png');
 
 export default function RecipeDetail() {
-  const { currentRecipe, setCurrentRecipe, setFirstFile, firstFile, setJsonData, jsonData } = useRecipe();
+  const { currentRecipe, setCurrentRecipe, setJsonData, jsonData } = useRecipe();
   const [screenDimensions, setScreenDimensions] = useState({ width: Dimensions.get('window').width, height: Dimensions.get('window').height });
   const [recipeExists, setRecipeExists] = useState(true);
+  const [recipeImage, setRecipeImage] = useState<{ filename: string; file: string } | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const buttonSrc = require('@/assets/images/home_bg.png');
   const router = useRouter();
@@ -67,7 +68,7 @@ export default function RecipeDetail() {
             const recipeFilePath = ImageService.getImageFileName(recipeId);
             const fileURL = await ImageService.getImageFromS3(recipeFilePath);
 
-            setFirstFile({
+            setRecipeImage({
               filename: recipeFilePath,
               file: fileURL
             });
@@ -110,7 +111,7 @@ export default function RecipeDetail() {
           headerBackgroundColor={{ light: "#bfaeba", dark: "#60465a" }}
           headerImage={
             <Image
-              source={firstFile ? { uri: firstFile.file } : holderImg} 
+              source={recipeImage ? { uri: recipeImage.file } : holderImg}
               style={{
                 width: screenDimensions.width > 1000 ? 1000 : screenDimensions.width,
                 height: screenDimensions.height > 700 ? 700 : screenDimensions.height,
@@ -119,7 +120,7 @@ export default function RecipeDetail() {
               }}
             />
           }
-          headerText={<></>} 
+          headerText={<></>}
         >
           <ThemedView style={{ width: screenDimensions.width, height: screenDimensions.height }}>
             {currentRecipe && (
