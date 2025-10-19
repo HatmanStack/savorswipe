@@ -1,60 +1,68 @@
 import 'react-native-gesture-handler';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import { Image, View, Animated } from 'react-native';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
 import { useRecipe } from '@/context/RecipeContext';
-import GetImages from '@/components/GetImages';
+import { useImageQueue } from '@/hooks/useImageQueue';
 import { useResponsiveLayout } from '@/hooks';
-import { ImageDimensions } from '@/types';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const holderImg = require('@/assets/images/skillet.png');
 
 export default function HomeScreen() {
-  const [fetchImage, setFetchImage] = useState(false);
-  const [getNewList, setGetNewList] = useState(false);
-  const { firstFile, allFiles, setStartImage, currentRecipe, setCurrentRecipe, jsonData } = useRecipe();
-  const translateX = useRef(new Animated.Value(0)).current;
   const router = useRouter();
-  
+  const { currentRecipe } = useRecipe();
+
+  // Use new queue hook
+  const { currentImage, nextImage, advanceQueue, isLoading } = useImageQueue();
+
+  // Animation values
+  const currentImageTranslateX = useRef(new Animated.Value(0)).current;
+  const nextImageTranslateX = useRef(new Animated.Value(400)).current; // Start off-screen right
+
   const { getImageDimensions } = useResponsiveLayout();
+  const imageDimensions = getImageDimensions();
 
-  // Set current recipe when firstFile changes (original logic)
-  useEffect(() => {  
-    if (firstFile && jsonData) {
-      const recipeId = firstFile.filename.split('/').pop()?.split('.')[0];
-      
-      if (recipeId && jsonData[recipeId]) {
-        // Only set if it's different to prevent loops
-        if (!currentRecipe || currentRecipe.key !== recipeId) {
-          setCurrentRecipe({ ...jsonData[recipeId], key: recipeId });
-        }
-      }
-    }     
-  }, [firstFile, jsonData]);
-
-  const handleSwipeGesture = (direction: 'left' | 'right') => {
-    
-    // Manage image queue based on remaining files
-    if (allFiles.length < 3) {
-      setGetNewList(prev => !prev); 
-    }
-    if (allFiles.length > 40) {
-      setGetNewList(false);
-    }
-
+  // Handle swipe gestures
+  const handleSwipe = (direction: 'left' | 'right') => {
     if (direction === 'left') {
-      setStartImage(null);
-      setFetchImage(prev => !prev);
+      // Swipe left: advance to next recipe
+      animateSwipe(() => advanceQueue());
     } else if (direction === 'right') {
+      // Swipe right: navigate to recipe detail
       if (currentRecipe?.key) {
-        const url = `/recipe/${currentRecipe.key}`;
-        router.push(url);
+        router.push(`/recipe/${currentRecipe.key}`);
       }
     }
   };
 
-  // Debounce function to prevent rapid swipes
+  // Animate slide transition
+  const animateSwipe = (onComplete: () => void) => {
+    // Run both animations in parallel for smooth transition
+    Animated.parallel([
+      // Slide current image out to left
+      Animated.timing(currentImageTranslateX, {
+        toValue: -400,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      // Slide next image in from right
+      Animated.timing(nextImageTranslateX, {
+        toValue: 0,
+        duration: 100,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      // After animation completes, update queue
+      onComplete();
+
+      // Reset animation values for next swipe
+      currentImageTranslateX.setValue(0);
+      nextImageTranslateX.setValue(400);
+    });
+  };
+
+  // Debounce function (keep existing)
   const debounce = (func: (...args: unknown[]) => void, delay: number) => {
     let timeout: NodeJS.Timeout | undefined;
     return (...args: unknown[]) => {
@@ -63,21 +71,22 @@ export default function HomeScreen() {
     };
   };
 
-  const debouncedHandleSwipe = debounce(handleSwipeGesture, 100);
+  const debouncedHandleSwipe = debounce(handleSwipe, 100);
 
-  const imageDimensions = getImageDimensions();
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleImageDimensions = (_dims: ImageDimensions) => {}; // Accept but ignore dimensions
+  // Show loading state
+  if (isLoading || !currentImage) {
+    return (
+      <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+        <Image
+          source={holderImg}
+          style={{ width: 200, height: 200 }}
+        />
+      </View>
+    );
+  }
 
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-      <GetImages
-        getNewList={getNewList}
-        fetchImage={fetchImage}
-        setFetchImage={setFetchImage}
-        setImageDimensions={handleImageDimensions}
-      />
       <PanGestureHandler
         onGestureEvent={(event) => {
           if (event.nativeEvent.translationX < -30) {
@@ -89,17 +98,53 @@ export default function HomeScreen() {
         minDist={30}
         minVelocity={0.5}
       >
-        <Animated.View style={{ transform: [{ translateX }] }}>
-          <Image
-            source={firstFile ? { uri: firstFile.file } : holderImg} 
+        <View style={{
+          position: 'relative',
+          width: imageDimensions.width,
+          height: imageDimensions.height,
+        }}>
+          {/* Current image layer - on top initially */}
+          <Animated.View
             style={{
-              width: firstFile ? imageDimensions.width : 200,
-              height: firstFile ? imageDimensions.height : 200,
-              alignSelf: 'center',
-              resizeMode: 'cover',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              zIndex: 2,
+              transform: [{ translateX: currentImageTranslateX }],
             }}
-          />
-        </Animated.View>
+          >
+            <Image
+              source={{ uri: currentImage.file }}
+              style={{
+                width: imageDimensions.width,
+                height: imageDimensions.height,
+                resizeMode: 'cover',
+              }}
+            />
+          </Animated.View>
+
+          {/* Next image layer - beneath current, slides in */}
+          {nextImage && (
+            <Animated.View
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                zIndex: 1,
+                transform: [{ translateX: nextImageTranslateX }],
+              }}
+            >
+              <Image
+                source={{ uri: nextImage.file }}
+                style={{
+                  width: imageDimensions.width,
+                  height: imageDimensions.height,
+                  resizeMode: 'cover',
+                }}
+              />
+            </Animated.View>
+          )}
+        </View>
       </PanGestureHandler>
     </View>
   );
