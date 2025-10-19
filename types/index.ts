@@ -6,6 +6,12 @@ export interface Recipe {
   Ingredients?: RecipeIngredients;
   Directions?: RecipeDirections;
   Type?: MealType | MealType[];
+  /**
+   * Number of servings this recipe makes in its original form.
+   * Used as the baseline for ingredient scaling.
+   * Defaults to 4 if not specified.
+   */
+  Servings?: number;
 }
 
 // Recipe Ingredients can be:
