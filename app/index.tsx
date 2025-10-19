@@ -1,16 +1,17 @@
 import 'react-native-gesture-handler';
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useCallback, useEffect } from 'react';
 import { Image, View, Animated } from 'react-native';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
 import { useRecipe } from '@/context/RecipeContext';
 import { useImageQueue } from '@/hooks/useImageQueue';
 import { useResponsiveLayout } from '@/hooks';
+import { ImageQueueService } from '@/services/ImageQueueService';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const holderImg = require('@/assets/images/skillet.png');
 
-// Shared animation duration constant
-const ANIM_DURATION = 100;
+// Use shared animation duration from service config
+const ANIM_DURATION = ImageQueueService.CONFIG.ANIMATION_DURATION;
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -21,38 +22,31 @@ export default function HomeScreen() {
 
   // Animation values
   const currentImageTranslateX = useRef(new Animated.Value(0)).current;
-  const nextImageTranslateX = useRef(new Animated.Value(400)).current; // Start off-screen right
+  const nextImageTranslateX = useRef(new Animated.Value(0)).current; // Will be set to width on mount
   const isAnimatingRef = useRef(false); // Prevent overlapping animations
 
   const { getImageDimensions } = useResponsiveLayout();
   const imageDimensions = getImageDimensions();
 
-  // Handle swipe gestures
-  const handleSwipe = (direction: 'left' | 'right') => {
-    // Prevent overlapping animations
-    if (isAnimatingRef.current) return;
+  // Update animation positions when dimensions change (responsive)
+  useEffect(() => {
+    // Set nextImage to start off-screen right
+    nextImageTranslateX.setValue(imageDimensions.width);
+  }, [imageDimensions.width, nextImageTranslateX]);
 
-    if (direction === 'left') {
-      // Swipe left: advance to next recipe
-      animateSwipe(() => advanceQueue());
-    } else if (direction === 'right') {
-      // Swipe right: navigate to recipe detail
-      if (currentRecipe?.key) {
-        router.push(`/recipe/${currentRecipe.key}`);
-      }
-    }
-  };
-
-  // Animate slide transition
-  const animateSwipe = (onComplete: () => void) => {
+  // Animate slide transition (memoized with responsive width)
+  const animateSwipe = useCallback((onComplete: () => void) => {
     // Set animating flag to prevent concurrent animations
     isAnimatingRef.current = true;
+
+    // Use responsive width for animations
+    const offScreenWidth = imageDimensions.width;
 
     // Run both animations in parallel for smooth transition
     Animated.parallel([
       // Slide current image out to left
       Animated.timing(currentImageTranslateX, {
-        toValue: -400,
+        toValue: -offScreenWidth,
         duration: ANIM_DURATION,
         useNativeDriver: true,
       }),
@@ -66,14 +60,30 @@ export default function HomeScreen() {
       // After animation completes, update queue
       onComplete();
 
-      // Reset animation values for next swipe
+      // Reset animation values for next swipe using responsive width
       currentImageTranslateX.setValue(0);
-      nextImageTranslateX.setValue(400);
+      nextImageTranslateX.setValue(offScreenWidth);
 
       // Reset animating flag
       isAnimatingRef.current = false;
     });
-  };
+  }, [imageDimensions.width, currentImageTranslateX, nextImageTranslateX]);
+
+  // Handle swipe gestures (memoized to avoid stale closure)
+  const handleSwipe = useCallback((direction: 'left' | 'right') => {
+    // Prevent overlapping animations
+    if (isAnimatingRef.current) return;
+
+    if (direction === 'left') {
+      // Swipe left: advance to next recipe
+      animateSwipe(() => advanceQueue());
+    } else if (direction === 'right') {
+      // Swipe right: navigate to recipe detail
+      if (currentRecipe?.key) {
+        router.push(`/recipe/${currentRecipe.key}`);
+      }
+    }
+  }, [animateSwipe, advanceQueue, currentRecipe?.key, router]);
 
   // Debounce function (keep existing)
   const debounce = (func: (...args: unknown[]) => void, delay: number) => {
@@ -84,8 +94,8 @@ export default function HomeScreen() {
     };
   };
 
-  // Memoize debounced handler for stable instance
-  const debouncedHandleSwipe = useMemo(() => debounce(handleSwipe, 100), []);
+  // Memoize debounced handler, recreating when handleSwipe changes
+  const debouncedHandleSwipe = useMemo(() => debounce(handleSwipe, 100), [handleSwipe]);
 
   // Show loading state
   if (isLoading || !currentImage) {

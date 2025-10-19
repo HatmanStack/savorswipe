@@ -8,6 +8,11 @@ import { ThemedView } from "@/components/ThemedView";
 import { useRecipe, MealType } from "@/context/RecipeContext";
 import UploadImage from "@/components/UploadRecipe";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import type { S3JsonData } from "@/types";
+
+// Type guard to validate S3JsonData
+const isS3JsonData = (v: unknown): v is S3JsonData =>
+  typeof v === "object" && v !== null && !Array.isArray(v);
 
 export default function Menu() {
   const router = useRouter();
@@ -73,19 +78,14 @@ export default function Menu() {
     if (uploadMessage) {
       setUploadText(uploadMessage.returnMessage);
       if (uploadMessage.returnMessage.includes("success")) {
-        // Type guard: ensure uploadMessage.jsonData is a valid object
-        if (
-          uploadMessage.jsonData &&
-          typeof uploadMessage.jsonData === 'object' &&
-          !Array.isArray(uploadMessage.jsonData)
-        ) {
+        // Type guard: ensure uploadMessage.jsonData is a valid S3JsonData object
+        if (isS3JsonData(uploadMessage.jsonData)) {
           const existingKeys = new Set(Object.keys(jsonData || {}));
           const newKeys = new Set(Object.keys(uploadMessage.jsonData));
           const difference = [...newKeys].filter((key) => !existingKeys.has(key));
           const sortedDifference = difference.sort(
             (a, b) => Number(b) - Number(a)
           );
-          console.log(sortedDifference);
           setAllFiles(sortedDifference);
           setJsonData(uploadMessage.jsonData);
           setFirstFile({
@@ -101,7 +101,7 @@ export default function Menu() {
       }
       const timer = setTimeout(() => {
         setUploadText(null);
-      }, 2000); // 1 second
+      }, 2000);
 
       return () => clearTimeout(timer);
     }
