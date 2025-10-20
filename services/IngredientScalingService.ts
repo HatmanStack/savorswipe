@@ -53,7 +53,7 @@ export class IngredientScalingService {
       const rest = mixedMatch[4];
       const value = whole + numerator / denominator;
 
-      const unitMatch = rest.match(/^(\w+)/);
+      const unitMatch = rest.match(/^(\w+\.?)/);
       const unit = unitMatch ? unitMatch[1] : '';
 
       return { value, unit, restOfText: rest.replace(unit, '').trim() };
@@ -67,7 +67,7 @@ export class IngredientScalingService {
       const rest = fractionMatch[3];
       const value = numerator / denominator;
 
-      const unitMatch = rest.match(/^(\w+)/);
+      const unitMatch = rest.match(/^(\w+\.?)/);
       const unit = unitMatch ? unitMatch[1] : '';
 
       return { value, unit, restOfText: rest.replace(unit, '').trim() };
@@ -80,7 +80,7 @@ export class IngredientScalingService {
       const maxValue = parseFloat(rangeMatch[2]);
       const rest = rangeMatch[3];
 
-      const unitMatch = rest.match(/^(\w+)/);
+      const unitMatch = rest.match(/^(\w+\.?)/);
       const unit = unitMatch ? unitMatch[1] : '';
 
       return { value, maxValue, unit, restOfText: rest.replace(unit, '').trim() };
@@ -92,7 +92,7 @@ export class IngredientScalingService {
       const value = parseFloat(simpleMatch[1]);
       const rest = simpleMatch[2];
 
-      const unitMatch = rest.match(/^(\w+)/);
+      const unitMatch = rest.match(/^(\w+\.?)/);
       const unit = unitMatch ? unitMatch[1] : '';
 
       return { value, unit, restOfText: rest.replace(unit, '').trim() };
