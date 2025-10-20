@@ -43,14 +43,31 @@ export default function RecipeDetail() {
 
   // Load preferred serving size from storage
   useEffect(() => {
+    let isMounted = true;
+
     const loadPreferredServings = async () => {
-      setIsLoadingServings(true);
-      const preferred = await ServingSizeStorageService.getPreferredServings();
-      setCurrentServings(preferred);
-      setIsLoadingServings(false);
+      try {
+        if (isMounted) setIsLoadingServings(true);
+        const preferred = await ServingSizeStorageService.getPreferredServings();
+        if (isMounted) {
+          setCurrentServings(preferred);
+        }
+      } catch (error) {
+        console.error('Failed to load preferred servings:', error);
+        // Fall back to default if storage fails
+        if (isMounted) {
+          setCurrentServings(4);
+        }
+      } finally {
+        if (isMounted) setIsLoadingServings(false);
+      }
     };
 
     loadPreferredServings();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Scale recipe when currentRecipe or currentServings changes
@@ -61,6 +78,9 @@ export default function RecipeDetail() {
         currentServings
       );
       setScaledRecipe(scaled);
+    } else {
+      // Clear scaled recipe when currentRecipe is cleared to avoid stale data
+      setScaledRecipe(null);
     }
   }, [currentRecipe, currentServings]);
 
