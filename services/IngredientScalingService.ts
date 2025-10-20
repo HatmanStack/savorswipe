@@ -35,16 +35,18 @@ export class IngredientScalingService {
    * Returns null if no amount can be parsed (e.g., "to taste").
    */
   static parseIngredientAmount(text: string): ParsedAmount | null {
-    const trimmed = text.trim().toLowerCase();
+    const trimmed = text.trim();
+    const trimmedLower = trimmed.toLowerCase();
 
-    // Check for non-scalable phrases
+    // Check for non-scalable phrases (case-insensitive)
     for (const phrase of this.NON_SCALABLE_PHRASES) {
-      if (trimmed.includes(phrase)) {
+      if (trimmedLower.includes(phrase)) {
         return null;
       }
     }
 
     // Try to match mixed number (e.g., "1 1/2 cups")
+    // Match on original to preserve case
     const mixedMatch = trimmed.match(/^(\d+)\s+(\d+)\/(\d+)\s*(.*)/);
     if (mixedMatch) {
       const whole = parseInt(mixedMatch[1]);
@@ -105,7 +107,7 @@ export class IngredientScalingService {
    * Round a value to the nearest standard baking fraction.
    * Applies to all measurements to ensure clean fractions.
    */
-  private static normalizeToStandardFraction(value: number, unit: string): number {
+  private static normalizeToStandardFraction(value: number): number {
     // For values less than 1/8, keep as-is (very small amounts)
     if (value < 0.125) {
       return value;
@@ -220,9 +222,9 @@ export class IngredientScalingService {
     let scaledMax = parsed.maxValue ? parsed.maxValue * scaleFactor : undefined;
 
     // Normalize to standard baking fractions for common units
-    scaledValue = this.normalizeToStandardFraction(scaledValue, parsed.unit);
+    scaledValue = this.normalizeToStandardFraction(scaledValue);
     if (scaledMax) {
-      scaledMax = this.normalizeToStandardFraction(scaledMax, parsed.unit);
+      scaledMax = this.normalizeToStandardFraction(scaledMax);
     }
 
     // Format the scaled value
@@ -297,13 +299,13 @@ export class IngredientScalingService {
 
     // Object format
     if (typeof ingredients === 'object') {
-      const scaled: Record<string, any> = {};
+      const scaled: Record<string, unknown> = {};
 
       for (const [key, value] of Object.entries(ingredients)) {
         // Check if value is a nested object (sectioned ingredients)
         if (typeof value === 'object' && !Array.isArray(value)) {
           // Recursively scale nested section
-          scaled[key] = this.scaleIngredients(value as any, scaleFactor);
+          scaled[key] = this.scaleIngredients(value as RecipeIngredients, scaleFactor);
         } else if (typeof value === 'string') {
           // Scale the amount string
           scaled[key] = this.scaleAmount(value, scaleFactor);

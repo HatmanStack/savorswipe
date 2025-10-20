@@ -1,5 +1,5 @@
 import 'react-native-gesture-handler';
-import React, { useRef, useMemo, useCallback, useEffect } from 'react';
+import React, { useRef, useMemo, useCallback } from 'react';
 import { Image, View, Animated } from 'react-native';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';

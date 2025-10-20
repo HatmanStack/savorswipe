@@ -5,7 +5,29 @@ import pluginReact from "eslint-plugin-react";
 import { defineConfig } from "eslint/config";
 
 export default defineConfig([
+  // Ignore patterns (migrated from .eslintignore)
+  {
+    ignores: [
+      "node_modules/",
+      ".expo/",
+      ".expo-shared/",
+      "dist/",
+      "build/",
+      "babel.config.js",
+      ".eslintrc.js",
+      "scripts/",
+      "jest.setup.js",
+    ],
+  },
   { files: ["**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"], plugins: { js }, extends: ["js/recommended"], languageOptions: { globals: globals.browser } },
   tseslint.configs.recommended,
   pluginReact.configs.flat.recommended,
+  // React settings
+  {
+    settings: {
+      react: {
+        version: "detect",
+      },
+    },
+  },
 ]);

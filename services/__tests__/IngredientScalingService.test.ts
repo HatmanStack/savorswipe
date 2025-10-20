@@ -222,9 +222,9 @@ describe('IngredientScalingService', () => {
 
   describe('Fraction Normalization', () => {
     it('should normalize odd fractions to standard baking measurements for cups', () => {
-      // 4 × (4/13) = 16/13 ≈ 1.2308 should round to 1 1/4 cup (1.25)
+      // 4 × (4/13) = 16/13 ≈ 1.2308 should round to 1 1/4 cups (1.25)
       const result = IngredientScalingService.scaleAmount('4 cups', 4 / 13);
-      expect(result).toBe('1 1/4 cup');
+      expect(result).toBe('1 1/4 cups');
     });
 
     it('should normalize 9/13 cup to 2/3 cup', () => {
@@ -247,9 +247,9 @@ describe('IngredientScalingService', () => {
 
     it('should normalize all units with fractions', () => {
       // Pounds should also be normalized to standard fractions
-      // 4 × (4/13) = 16/13 ≈ 1.2308 should round to 1 1/4 pound (1.25)
+      // 4 × (4/13) = 16/13 ≈ 1.2308 should round to 1 1/4 pounds (1.25)
       const result = IngredientScalingService.scaleAmount('4 pounds', 4 / 13);
-      expect(result).toBe('1 1/4 pound');
+      expect(result).toBe('1 1/4 pounds');
     });
 
     it('should handle mixed numbers with normalization', () => {
