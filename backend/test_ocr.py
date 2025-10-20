@@ -15,13 +15,12 @@ import os
 import sys
 from ocr import extract_recipe_data
 
-def test_recipe_image(image_path, expected_features):
+def test_recipe_image(image_path):
     """
     Test a recipe image and verify the output.
 
     Args:
         image_path: Path to the recipe image
-        expected_features: Dict with expected characteristics
     """
     print(f"\n{'='*60}")
     print(f"Testing: {image_path}")
@@ -183,7 +182,7 @@ def main():
     results = []
     for i, test in enumerate(test_cases, 1):
         print(f"\n\n🧪 TEST {i}/{len(test_cases)}: {test['description']}")
-        result = test_recipe_image(test['path'], test['expected'])
+        result = test_recipe_image(test['path'])
         results.append(result)
 
     # Summary
