@@ -3,11 +3,13 @@ import { Dimensions, Image, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useRecipe } from '@/context/RecipeContext';
 import { ThemedView } from '@/components/ThemedView';
-import { RecipeService, ImageService } from '@/services';
+import { RecipeService, ImageService, ServingSizeStorageService, IngredientScalingService } from '@/services';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import RecipeDetails from '@/components/Recipe';
 import { ThemedText } from '@/components/ThemedText';
+import { ServingSizeControl } from '@/components/ServingSizeControl';
 import { useGlobalSearchParams} from 'expo-router';
+import type { Recipe } from '@/types';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const holderImg = require('@/assets/images/skillet.png');
 
@@ -16,6 +18,9 @@ export default function RecipeDetail() {
   const [screenDimensions, setScreenDimensions] = useState({ width: Dimensions.get('window').width, height: Dimensions.get('window').height });
   const [recipeExists, setRecipeExists] = useState(true);
   const [recipeImage, setRecipeImage] = useState<{ filename: string; file: string } | null>(null);
+  const [currentServings, setCurrentServings] = useState<number>(4);
+  const [scaledRecipe, setScaledRecipe] = useState<Recipe | null>(null);
+  const [isLoadingServings, setIsLoadingServings] = useState(true);
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const buttonSrc = require('@/assets/images/home_bg.png');
   const router = useRouter();
@@ -35,7 +40,56 @@ export default function RecipeDetail() {
       subscription?.remove();
     };
   }, []);
-  
+
+  // Load preferred serving size from storage
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadPreferredServings = async () => {
+      try {
+        if (isMounted) setIsLoadingServings(true);
+        const preferred = await ServingSizeStorageService.getPreferredServings();
+        if (isMounted) {
+          setCurrentServings(preferred);
+        }
+      } catch (error) {
+        console.error('Failed to load preferred servings:', error);
+        // Fall back to default if storage fails
+        if (isMounted) {
+          setCurrentServings(4);
+        }
+      } finally {
+        if (isMounted) setIsLoadingServings(false);
+      }
+    };
+
+    loadPreferredServings();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Scale recipe when currentRecipe or currentServings changes
+  useEffect(() => {
+    if (currentRecipe) {
+      const scaled = IngredientScalingService.scaleRecipeIngredients(
+        currentRecipe,
+        currentServings
+      );
+      setScaledRecipe(scaled);
+    } else {
+      // Clear scaled recipe when currentRecipe is cleared to avoid stale data
+      setScaledRecipe(null);
+    }
+  }, [currentRecipe, currentServings]);
+
+  // Handle serving size change
+  const handleServingsChange = async (newServings: number) => {
+    setCurrentServings(newServings);
+    await ServingSizeStorageService.setPreferredServings(newServings);
+  };
+
 
   useEffect(() => {
     // Only run if we have a valid recipe ID
@@ -128,8 +182,16 @@ export default function RecipeDetail() {
           headerText={<></>}
         >
           <ThemedView style={{ width: screenDimensions.width, height: screenDimensions.height }}>
-            {currentRecipe && (
-              <RecipeDetails currentRecipe={currentRecipe}/>
+            {scaledRecipe && (
+              <>
+                <RecipeDetails currentRecipe={scaledRecipe}/>
+                {!isLoadingServings && (
+                  <ServingSizeControl
+                    currentServings={currentServings}
+                    onServingsChange={handleServingsChange}
+                  />
+                )}
+              </>
             )}
           </ThemedView>
         </ParallaxScrollView>
