@@ -1,6 +1,7 @@
 from openai import OpenAI
 import os
 import json
+from fix_ingredients import normalize_recipe
 
 client = OpenAI(api_key=os.getenv('API_KEY'))
 
@@ -95,7 +96,18 @@ Here is an example output:
         ],
         temperature=0.0,
     )
-    return response.choices[0].message.content
+
+    # Parse the LLM response and normalize the recipe
+    recipe_json = response.choices[0].message.content
+    try:
+        recipe_data = json.loads(recipe_json)
+        # Normalize to fix special characters, unicode fractions, and abbreviations
+        normalized_recipe = normalize_recipe(recipe_data)
+        return json.dumps(normalized_recipe, ensure_ascii=False)
+    except json.JSONDecodeError as e:
+        print(f'Warning: Failed to parse recipe JSON for normalization: {e}')
+        # Return original if parsing fails
+        return recipe_json
 
 def parseJSON(recipes):
     parse_prompt = f"""
@@ -176,7 +188,7 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
     response = client.chat.completions.create(
         model="gpt-4o",
         response_format={ "type": "json_object" },
-        
+
         messages=[
             {
                 "role": "system",
@@ -189,4 +201,15 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
         ],
         temperature=0.0,
     )
-    return response.choices[0].message.content
+
+    # Parse the LLM response and normalize the recipe
+    recipe_json = response.choices[0].message.content
+    try:
+        recipe_data = json.loads(recipe_json)
+        # Normalize to fix special characters, unicode fractions, and abbreviations
+        normalized_recipe = normalize_recipe(recipe_data)
+        return json.dumps(normalized_recipe, ensure_ascii=False)
+    except json.JSONDecodeError as e:
+        print(f'Warning: Failed to parse combined recipe JSON for normalization: {e}')
+        # Return original if parsing fails
+        return recipe_json
