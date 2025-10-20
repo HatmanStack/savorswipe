@@ -36,7 +36,13 @@ You are an OCR-like data extraction tool that extracts recipe data from PDFs.
    - For sectioned recipes: {"Section Name": {"ingredient": "amount"}}
    - Never use arrays like ["2 cups flour", "1 cup sugar"]
    - Preserve fractional notation (use "1/2 cup" not "0.5 cups")
-   - Keep original units (cups, grams, oz, tbsp, tsp, etc.)
+   - Normalize units to standard full words (no abbreviations):
+     * Use "cup" or "cups" (not "c", "c.", "C")
+     * Use "tablespoon" or "tablespoons" (not "T", "T.", "tbsp", "Tbsp")
+     * Use "teaspoon" or "teaspoons" (not "t", "t.", "tsp")
+     * Use "ounce" or "ounces" (not "oz", "oz.")
+     * Use "pound" or "pounds" (not "lb", "lb.", "lbs")
+     * Use "gram" or "grams" (not "g", "g.")
    - For items without amounts, use phrases like "to taste", "as needed"
 
 9. All parts should either be a string or an array of strings, EXCEPT Ingredients which must be objects.
@@ -55,6 +61,10 @@ Here is an example output:
         "unsalted butter": "3 tablespoons",
         "cremini mushrooms": "1/2 pound, sliced",
         "panko breadcrumbs": "1 cup",
+        "heavy cream": "1 cup",
+        "gruyere cheese, grated": "1/2 cup",
+        "parmesan cheese, freshly grated": "1/4 cup",
+        "fresh thyme, chopped": "2 tablespoons",
         "salt": "to taste",
         "pepper": "to taste"
     },

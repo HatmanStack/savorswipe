@@ -17,6 +17,11 @@ export class IngredientScalingService {
     '0.75': '3/4',
   };
 
+  // Standard baking fractions (for cups, tbsp, tsp)
+  private static readonly STANDARD_FRACTIONS = [
+    1/8, 1/4, 1/3, 1/2, 2/3, 3/4, 1,
+  ];
+
   private static readonly NON_SCALABLE_PHRASES = [
     'to taste',
     'as needed',
@@ -97,6 +102,39 @@ export class IngredientScalingService {
   }
 
   /**
+   * Round a value to the nearest standard baking fraction.
+   * Applies to all measurements to ensure clean fractions.
+   */
+  private static normalizeToStandardFraction(value: number, unit: string): number {
+    // For values less than 1/8, keep as-is (very small amounts)
+    if (value < 0.125) {
+      return value;
+    }
+
+    const whole = Math.floor(value);
+    const fractional = value - whole;
+
+    // If already a whole number, no normalization needed
+    if (fractional === 0) {
+      return value;
+    }
+
+    // Find nearest standard fraction
+    let nearest = this.STANDARD_FRACTIONS[0];
+    let minDiff = Math.abs(fractional - nearest);
+
+    for (const frac of this.STANDARD_FRACTIONS) {
+      const diff = Math.abs(fractional - frac);
+      if (diff < minDiff) {
+        minDiff = diff;
+        nearest = frac;
+      }
+    }
+
+    return whole + nearest;
+  }
+
+  /**
    * Convert a decimal to a fraction string.
    * Uses common fractions lookup and GCD-based algorithm for simple fractions.
    */
@@ -142,6 +180,16 @@ export class IngredientScalingService {
   private static pluralizeUnit(unit: string, amount: number): string {
     if (!unit) return unit;
 
+    // Don't pluralize abbreviations (c., T., tsp., oz., lb., etc.)
+    if (unit.includes('.')) {
+      return unit;
+    }
+
+    // Don't pluralize single-letter units
+    if (unit.length === 1) {
+      return unit;
+    }
+
     // If amount is 1 or less, make singular; otherwise make plural
     const needsSingular = amount <= 1;
     const isPlural = unit.endsWith('s');
@@ -168,8 +216,14 @@ export class IngredientScalingService {
       return amountText;
     }
 
-    const scaledValue = parsed.value * scaleFactor;
-    const scaledMax = parsed.maxValue ? parsed.maxValue * scaleFactor : undefined;
+    let scaledValue = parsed.value * scaleFactor;
+    let scaledMax = parsed.maxValue ? parsed.maxValue * scaleFactor : undefined;
+
+    // Normalize to standard baking fractions for common units
+    scaledValue = this.normalizeToStandardFraction(scaledValue, parsed.unit);
+    if (scaledMax) {
+      scaledMax = this.normalizeToStandardFraction(scaledMax, parsed.unit);
+    }
 
     // Format the scaled value
     let scaledAmount: string;
