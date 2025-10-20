@@ -219,4 +219,75 @@ describe('IngredientScalingService', () => {
       expect(scaled).toEqual(recipe);
     });
   });
+
+  describe('Fraction Normalization', () => {
+    it('should normalize odd fractions to standard baking measurements for cups', () => {
+      // 4/13 cup (≈0.308) should round to 1/3 cup (≈0.333)
+      const result = IngredientScalingService.scaleAmount('4 cups', 4 / 13);
+      expect(result).toBe('1/3 cup');
+    });
+
+    it('should normalize 9/13 cup to 2/3 cup', () => {
+      // 9/13 (≈0.692) should round to 2/3 (≈0.667)
+      const result = IngredientScalingService.scaleAmount('9 cups', 1 / 13);
+      expect(result).toBe('2/3 cup');
+    });
+
+    it('should normalize to nearest standard fraction for tablespoons', () => {
+      // 5/13 tbsp (≈0.385) should round to 1/3 (≈0.333)
+      const result = IngredientScalingService.scaleAmount('5 tbsp', 1 / 13);
+      expect(result).toBe('1/3 tbsp');
+    });
+
+    it('should normalize to nearest standard fraction for teaspoons', () => {
+      // 7/13 tsp (≈0.538) should round to 1/2 (0.5)
+      const result = IngredientScalingService.scaleAmount('7 tsp', 1 / 13);
+      expect(result).toBe('1/2 tsp');
+    });
+
+    it('should normalize all units with fractions', () => {
+      // Pounds should also be normalized to standard fractions
+      const result = IngredientScalingService.scaleAmount('4 pounds', 4 / 13);
+      expect(result).toBe('1/3 pound'); // 1.23 pounds rounds to 1/3
+    });
+
+    it('should handle mixed numbers with normalization', () => {
+      // 1.69 cups (1 9/13) should normalize to 1 2/3 cups
+      const result = IngredientScalingService.scaleAmount('1 9/13 cups', 1);
+      expect(result).toBe('1 2/3 cups');
+    });
+
+    it('should keep values under 1/8 as-is', () => {
+      // Very small amounts shouldn't be normalized
+      const result = IngredientScalingService.scaleAmount('1 cup', 0.05);
+      expect(result).toBe('0.05 cup');
+    });
+  });
+
+  describe('Abbreviation Handling', () => {
+    it('should not pluralize abbreviated units with periods', () => {
+      const result = IngredientScalingService.scaleAmount('1 c.', 2);
+      expect(result).toBe('2 c.');
+    });
+
+    it('should not pluralize single-letter units', () => {
+      const result = IngredientScalingService.scaleAmount('1 c', 3);
+      expect(result).toBe('3 c');
+    });
+
+    it('should not pluralize T. (tablespoon abbreviation)', () => {
+      const result = IngredientScalingService.scaleAmount('1 T.', 2);
+      expect(result).toBe('2 T.');
+    });
+
+    it('should not pluralize oz.', () => {
+      const result = IngredientScalingService.scaleAmount('8 oz.', 0.5);
+      expect(result).toBe('4 oz.');
+    });
+
+    it('should still pluralize full words', () => {
+      const result = IngredientScalingService.scaleAmount('1 cup', 2);
+      expect(result).toBe('2 cups');
+    });
+  });
 });
