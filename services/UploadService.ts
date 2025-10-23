@@ -14,6 +14,7 @@ import {
   ChunkInfo,
   UploadError,
 } from '@/types/upload'
+import { UploadPersistence } from './UploadPersistence'
 
 export class UploadService {
   private static BATCH_SIZE: number = 10
@@ -284,6 +285,13 @@ export class UploadService {
         callback(jobCopy)
       } catch (error) {
         console.error('Error in subscriber callback:', error)
+      }
+    })
+
+    // Persist queue state to AsyncStorage
+    UploadPersistence.saveQueue(this.jobQueue).catch(error => {
+      if (__DEV__) {
+        console.warn('Failed to persist upload queue:', error)
       }
     })
   }
