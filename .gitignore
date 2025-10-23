@@ -23,3 +23,10 @@ docs/
 
 .worktrees/
 lambda-deploy/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
