@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleProp, ViewStyle, TouchableOpacity } from 'react-native';
+import { StyleProp, ViewStyle } from 'react-native';
 import { useRecipe } from '@/context/RecipeContext';
 import UploadImage from '@/components/UploadRecipe';
 import { ThemedText } from '@/components/ThemedText';
@@ -8,7 +8,7 @@ import { Recipe } from '@/types';
 import { UploadService } from '@/services/UploadService';
 import { UploadJob, UploadError } from '@/types/upload';
 import { ErrorDetailModal } from '@/components/ErrorDetailModal';
-import { Toast } from '@/components/Toast';
+import { ToastQueue } from '@/components/Toast';
 
 interface UploadModalProps {
   visible: boolean;
@@ -114,6 +114,17 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     }
   };
 
+  // Show toast imperatively when toastMessage changes
+  useEffect(() => {
+    if (toastMessage) {
+      ToastQueue.show(toastMessage, {
+        onTap: handleToastTap,
+        tappable: errorDetails.length > 0,
+      });
+      setToastMessage(null); // Clear after showing
+    }
+  }, [toastMessage, errorDetails.length]);
+
   if (!visible) return null;
 
   return (
@@ -129,15 +140,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({
           Uploading... {uploadStatus.progress.completed}/{uploadStatus.progress.total}
         </ThemedText>
       )}
-
-      {/* Toast notification for completion */}
-      <Toast>
-        {toastMessage && (
-          <TouchableOpacity onPress={handleToastTap}>
-            <ThemedText>{toastMessage}</ThemedText>
-          </TouchableOpacity>
-        )}
-      </Toast>
 
       {/* Error detail modal */}
       <ErrorDetailModal

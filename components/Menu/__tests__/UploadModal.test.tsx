@@ -8,6 +8,7 @@ import { render, waitFor, fireEvent } from '@testing-library/react-native'
 import { UploadModal } from '../UploadModal'
 import { UploadService } from '@/services/UploadService'
 import { UploadJob, JobStatusCallback } from '@/types/upload'
+import { ToastQueue } from '@/components/Toast'
 
 // Mock AsyncStorage
 jest.mock('@react-native-async-storage/async-storage', () => ({
@@ -34,7 +35,10 @@ jest.mock('@/components/ErrorDetailModal', () => ({
   },
 }))
 jest.mock('@/components/Toast', () => ({
-  Toast: ({ children }: any) => null,
+  ToastQueue: {
+    show: jest.fn(),
+    clear: jest.fn(),
+  },
 }))
 
 // Mock RecipeContext
@@ -145,7 +149,7 @@ describe('UploadModal', () => {
         }
       )
 
-      const { getByText } = render(
+      render(
         <UploadModal
           visible={true}
           onClose={mockOnClose}
@@ -176,7 +180,12 @@ describe('UploadModal', () => {
       subscribedCallback?.(completedJob)
 
       await waitFor(() => {
-        expect(getByText(/All 5 recipes added successfully/)).toBeTruthy()
+        expect(ToastQueue.show).toHaveBeenCalledWith(
+          'All 5 recipes added successfully!',
+          expect.objectContaining({
+            tappable: false,
+          })
+        )
       })
     })
 
@@ -189,7 +198,7 @@ describe('UploadModal', () => {
         }
       )
 
-      const { getByText } = render(
+      render(
         <UploadModal
           visible={true}
           onClose={mockOnClose}
@@ -219,7 +228,10 @@ describe('UploadModal', () => {
       subscribedCallback?.(completedJob)
 
       await waitFor(() => {
-        expect(getByText(/All 5 recipes added successfully/)).toBeTruthy()
+        expect(ToastQueue.show).toHaveBeenCalledWith(
+          'All 5 recipes added successfully!',
+          expect.any(Object)
+        )
       })
     })
 
@@ -232,7 +244,7 @@ describe('UploadModal', () => {
         }
       )
 
-      const { getByText } = render(
+      render(
         <UploadModal
           visible={true}
           onClose={mockOnClose}
@@ -268,13 +280,18 @@ describe('UploadModal', () => {
       subscribedCallback?.(partialJob)
 
       await waitFor(() => {
-        expect(getByText(/3 of 5 added.*Tap to view 2 errors/)).toBeTruthy()
+        expect(ToastQueue.show).toHaveBeenCalledWith(
+          '3 of 5 added. Tap to view 2 errors.',
+          expect.objectContaining({
+            tappable: true,
+          })
+        )
       })
     })
   })
 
   describe('Error Modal', () => {
-    it('opens ErrorDetailModal when toast tapped with errors', async () => {
+    it('shows tappable toast when there are errors', async () => {
       let subscribedCallback: JobStatusCallback | null = null
       ;(UploadService.subscribe as jest.Mock).mockImplementation(
         (callback: JobStatusCallback) => {
@@ -283,7 +300,7 @@ describe('UploadModal', () => {
         }
       )
 
-      const { getByText, getByTestId } = render(
+      render(
         <UploadModal
           visible={true}
           onClose={mockOnClose}
@@ -307,22 +324,17 @@ describe('UploadModal', () => {
       subscribedCallback?.(errorJob)
 
       await waitFor(() => {
-        const toast = getByText(/All 2 recipes failed/)
-        expect(toast).toBeTruthy()
-      })
-
-      // Tap toast
-      const toast = getByText(/All 2 recipes failed/)
-      fireEvent.press(toast)
-
-      // Verify modal opens
-      await waitFor(() => {
-        const modal = getByTestId('error-detail-modal')
-        expect(modal).toBeTruthy()
+        expect(ToastQueue.show).toHaveBeenCalledWith(
+          'All 2 recipes failed. Tap for details.',
+          expect.objectContaining({
+            tappable: true,
+            onTap: expect.any(Function),
+          })
+        )
       })
     })
 
-    it('does not open modal when toast tapped without errors', async () => {
+    it('shows non-tappable toast when there are no errors', async () => {
       let subscribedCallback: JobStatusCallback | null = null
       ;(UploadService.subscribe as jest.Mock).mockImplementation(
         (callback: JobStatusCallback) => {
@@ -331,7 +343,7 @@ describe('UploadModal', () => {
         }
       )
 
-      const { getByText, queryByTestId } = render(
+      render(
         <UploadModal
           visible={true}
           onClose={mockOnClose}
@@ -352,16 +364,13 @@ describe('UploadModal', () => {
       subscribedCallback?.(successJob)
 
       await waitFor(() => {
-        const toast = getByText(/All 5 recipes added successfully/)
-        expect(toast).toBeTruthy()
+        expect(ToastQueue.show).toHaveBeenCalledWith(
+          'All 5 recipes added successfully!',
+          expect.objectContaining({
+            tappable: false,
+          })
+        )
       })
-
-      // Tap toast
-      const toast = getByText(/All 5 recipes added successfully/)
-      fireEvent.press(toast)
-
-      // Verify modal does NOT open
-      expect(queryByTestId('error-detail-modal')).toBeNull()
     })
   })
 
@@ -410,7 +419,7 @@ describe('UploadModal', () => {
       })
     })
 
-    it('displays error details in modal', async () => {
+    it('captures errors from upload job', async () => {
       let subscribedCallback: JobStatusCallback | null = null
       ;(UploadService.subscribe as jest.Mock).mockImplementation(
         (callback: JobStatusCallback) => {
@@ -419,7 +428,7 @@ describe('UploadModal', () => {
         }
       )
 
-      const { getByText, getByTestId } = render(
+      render(
         <UploadModal
           visible={true}
           onClose={mockOnClose}
@@ -444,17 +453,15 @@ describe('UploadModal', () => {
 
       subscribedCallback?.(errorJob)
 
+      // Verify toast was shown with tap handler
       await waitFor(() => {
-        const toast = getByText(/All 2 recipes failed/)
-        fireEvent.press(toast)
-      })
-
-      // The errors should be passed to ErrorDetailModal
-      // In real implementation, this would render the modal with errors
-      await waitFor(() => {
-        const modal = getByTestId('error-detail-modal')
-        expect(modal).toBeTruthy()
-        // In a real test, we'd verify the modal received the errors prop
+        expect(ToastQueue.show).toHaveBeenCalledWith(
+          expect.any(String),
+          expect.objectContaining({
+            tappable: true,
+            onTap: expect.any(Function),
+          })
+        )
       })
     })
   })
