@@ -3,15 +3,7 @@
  * Multi-file upload with PDF chunking and size validation
  */
 
-import React from 'react'
-import { Alert } from 'react-native'
-import { render, waitFor } from '@testing-library/react-native'
-import * as ImagePicker from 'expo-image-picker'
-import * as DocumentPicker from 'expo-document-picker'
-import * as FileSystem from 'expo-file-system'
-import { PDFDocument } from 'pdf-lib'
-
-// Mock modules
+// Mock modules FIRST, before any imports
 jest.mock('expo-image-picker')
 jest.mock('expo-document-picker')
 jest.mock('expo-file-system', () => ({
@@ -26,7 +18,14 @@ jest.mock('expo-image-manipulator', () => ({
   SaveFormat: { JPEG: 'jpeg' },
 }))
 
-// Import after mocking
+// Now import modules
+import React from 'react'
+import { Alert } from 'react-native'
+import { render, waitFor } from '@testing-library/react-native'
+import * as ImagePicker from 'expo-image-picker'
+import * as DocumentPicker from 'expo-document-picker'
+import * as FileSystem from 'expo-file-system'
+import { PDFDocument } from 'pdf-lib'
 import * as ImageManipulator from 'expo-image-manipulator'
 import UploadRecipe, { selectAndUploadImage, splitPDFIntoChunks, resizeImage } from '../UploadRecipe'
 import { UploadService } from '@/services/UploadService'
