@@ -83,6 +83,12 @@ export const Toast: React.FC<ToastProps> = ({ duration = 5000 }) => {
       useNativeDriver: true,
     }).start()
 
+    // Clear any existing timer before setting a new one
+    if (timerRef.current) {
+      clearTimeout(timerRef.current)
+      timerRef.current = null
+    }
+
     // Set auto-hide timer
     timerRef.current = setTimeout(() => {
       // Fade out animation
@@ -97,15 +103,17 @@ export const Toast: React.FC<ToastProps> = ({ duration = 5000 }) => {
         setInternalQueue([...toastQueue])
       })
     }, duration)
+  }, [currentToast, internalQueue, duration, fadeAnim])
 
-    // Cleanup timer on unmount
+  // Cleanup timer on unmount only
+  useEffect(() => {
     return () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current)
         timerRef.current = null
       }
     }
-  }, [currentToast, internalQueue, duration, fadeAnim])
+  }, [])
 
   if (!currentToast) {
     return null

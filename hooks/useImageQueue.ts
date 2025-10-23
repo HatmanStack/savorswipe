@@ -339,6 +339,13 @@ export function useImageQueue(): ImageQueueHook {
     // Get previous keys
     const previousKeys = prevJsonDataKeysRef.current;
 
+    // Skip injection on first mount (prevJsonDataKeysRef is empty Set)
+    if (previousKeys.size === 0) {
+      // Just initialize the ref without injecting (queue already initialized)
+      prevJsonDataKeysRef.current = currentKeys;
+      return;
+    }
+
     // Find new keys
     const newKeys = Array.from(currentKeys).filter(key => !previousKeys.has(key));
 

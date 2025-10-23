@@ -26,10 +26,14 @@ def google_search_image(title: str, count: int = 10) -> List[str]:
     }
 
     try:
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params, timeout=10)  # 10 second timeout
 
         if response.status_code == 200:
-            search_results = response.json()
+            try:
+                search_results = response.json()
+            except ValueError as json_err:
+                print(f"Error parsing JSON response: {json_err}")
+                return []
 
             # Extract image URLs from results
             if 'items' in search_results and len(search_results['items']) > 0:
@@ -39,11 +43,14 @@ def google_search_image(title: str, count: int = 10) -> List[str]:
                 print("No image results found.")
                 return []
         else:
-            print(f"Error: {response.status_code}")
+            print(f"Error: {response.status_code} - {response.text[:200]}")
             return []
 
-    except Exception as e:
-        print(f"Error searching images: {e}")
+    except requests.exceptions.Timeout:
+        print("Error: Request timed out after 10 seconds")
+        return []
+    except requests.exceptions.RequestException as e:
+        print(f"Error making request: {e}")
         return []
 
 

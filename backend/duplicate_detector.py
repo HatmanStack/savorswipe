@@ -35,7 +35,17 @@ class DuplicateDetector:
 
         Returns:
             Cosine similarity score
+
+        Raises:
+            ValueError: If vectors have different lengths
         """
+        # Guard against length mismatch
+        if len(vec1) != len(vec2):
+            raise ValueError(
+                f"Vector length mismatch: vec1 has {len(vec1)} dimensions, "
+                f"vec2 has {len(vec2)} dimensions. Vectors must have equal length."
+            )
+
         # Calculate dot product
         dot_product = sum(a * b for a, b in zip(vec1, vec2))
 

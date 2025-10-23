@@ -142,7 +142,13 @@ def lambda_handler(event, context):
 
     for file_idx, file_data in enumerate(files):
         try:
-            file_content = file_data.get('base64', '')
+            # Get file data and type from frontend payload
+            file_content = file_data.get('data', '')
+            file_type = file_data.get('type', '').lower()
+
+            # Strip data URI prefix if present (e.g., "data:image/jpeg;base64,...")
+            if file_content.startswith('data:'):
+                file_content = file_content.split(',', 1)[1] if ',' in file_content else file_content
 
             # Upload user file for records
             try:
@@ -151,8 +157,8 @@ def lambda_handler(event, context):
                 print(f"Warning: Failed to upload user data: {upload_err}")
                 app_time = int(time.time())
 
-            # Detect if PDF
-            is_pdf = 'pdf' in file_content[0:25].lower()
+            # Detect if PDF from MIME type
+            is_pdf = 'pdf' in file_type or file_type == 'application/pdf'
 
             if is_pdf:
                 # Extract images from PDF
@@ -273,7 +279,12 @@ def lambda_handler(event, context):
             try:
                 response = s3_client.get_object(Bucket=bucket_name, Key='jsondata/combined_data.json')
                 json_data = json.loads(response['Body'].read())
-            except:
+            except s3_client.exceptions.NoSuchKey:
+                # File doesn't exist yet - first upload
+                json_data = {}
+            except Exception as e:
+                # Other errors should be logged/raised
+                print(f"Error loading combined_data.json: {e}")
                 json_data = {}
 
             # Extract used URLs
@@ -291,7 +302,7 @@ def lambda_handler(event, context):
                     unique_search_results.append({'items': []})
 
             # Batch upload
-            json_data, success_keys, upload_errors = batch_to_s3_atomic(
+            json_data, success_keys, position_to_key, upload_errors = batch_to_s3_atomic(
                 unique_recipes,
                 unique_search_results
             )
@@ -299,11 +310,12 @@ def lambda_handler(event, context):
             # Merge upload errors into file_errors
             file_errors.extend(upload_errors)
 
-            # Map position-based embeddings to actual recipe keys
+            # Map position-based embeddings to actual recipe keys using position_to_key mapping
             keyed_embeddings = {}
             for position, embedding in new_embeddings.items():
-                if position < len(success_keys):
-                    recipe_key = success_keys[position]
+                # Use the position_to_key mapping to get the correct recipe key
+                if position in position_to_key:
+                    recipe_key = position_to_key[position]
                     keyed_embeddings[recipe_key] = embedding
 
             # Save embeddings atomically

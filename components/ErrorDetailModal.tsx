@@ -52,6 +52,8 @@ export const ErrorDetailModal: React.FC<ErrorDetailModalProps> = ({
               style={styles.closeIconButton}
               onPress={onClose}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityLabel="Close error dialog"
+              accessibilityRole="button"
             >
               <Text style={styles.closeIconText}>✕</Text>
             </TouchableOpacity>
@@ -65,7 +67,7 @@ export const ErrorDetailModal: React.FC<ErrorDetailModalProps> = ({
           ) : (
             <FlatList
               data={errors}
-              keyExtractor={(item, index) => `error-${index}`}
+              keyExtractor={(item) => `error-${item.file}-${item.title}`}
               renderItem={({ item }) => (
                 <View style={styles.errorItem}>
                   <Text style={styles.errorText}>

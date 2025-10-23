@@ -79,11 +79,11 @@ def upload_image(search_results, bucket_name, highest_key):
     return None  # Return None instead of False    
     
 
-def upload_user_data(prefix, content, type, data, app_time = None):    
+def upload_user_data(prefix, content, file_type, data, app_time=None):
     s3_client = boto3.client('s3')
     if not app_time:
         app_time = int(time.time())
-    if type=='jpg':
+    if file_type == 'jpg':
         try:
             data = base64.b64decode(data)
             image = Image.open(io.BytesIO(data))
@@ -93,7 +93,7 @@ def upload_user_data(prefix, content, type, data, app_time = None):
         except Exception as e:
             print(f"Error converting image to JPEG: {e}")
             return
-    image_key = f'{prefix}/{app_time}.{type}'
+    image_key = f'{prefix}/{app_time}.{file_type}'
     try:
         s3_client.put_object(
             Bucket=bucket_name,  # Replace with your bucket name
@@ -128,7 +128,7 @@ def normalize_title(title: str) -> str:
 def batch_to_s3_atomic(
     recipes: List[Dict],
     search_results_list: List[Dict]
-) -> Tuple[Dict, List[str], List[Dict]]:
+) -> Tuple[Dict, List[str], Dict[int, str], List[Dict]]:
     """
     Batch upload recipes to S3 with atomic writes using optimistic locking.
 
@@ -140,9 +140,10 @@ def batch_to_s3_atomic(
         search_results_list: List of Google Image Search results for each recipe
 
     Returns:
-        Tuple of (updated_jsonData, success_keys, errors)
+        Tuple of (updated_jsonData, success_keys, position_to_key, errors)
         - updated_jsonData: Full recipe data after successful write
         - success_keys: List of recipe keys that were successfully added
+        - position_to_key: Dict mapping position in recipes list to recipe key
         - errors: List of error dicts with 'file', 'title', 'reason'
 
     Raises:
@@ -172,6 +173,7 @@ def batch_to_s3_atomic(
 
         # Process each recipe
         success_keys = []
+        position_to_key = {}  # Map position in recipes list to recipe key
         errors = []
         next_key = highest_key + 1
         images_to_upload = []
@@ -206,6 +208,7 @@ def batch_to_s3_atomic(
                 recipe['image_url'] = image_url  # Save the source image URL
                 existing_data[str(next_key)] = recipe
                 success_keys.append(str(next_key))
+                position_to_key[file_idx] = str(next_key)  # Track position mapping
                 images_to_upload.append(str(next_key))
                 next_key += 1
             else:
@@ -234,7 +237,7 @@ def batch_to_s3_atomic(
                 s3_client.put_object(**params)
 
                 # Success!
-                return existing_data, success_keys, errors
+                return existing_data, success_keys, position_to_key, errors
 
             except ClientError as e:
                 if e.response['Error']['Code'] == 'PreconditionFailed':
@@ -258,7 +261,7 @@ def batch_to_s3_atomic(
                     raise
         else:
             # No successful recipes to upload
-            return existing_data, success_keys, errors
+            return existing_data, success_keys, position_to_key, errors
 
     # Max retries exhausted
     raise Exception("Race condition: max retries exceeded after {} attempts".format(MAX_RETRIES))

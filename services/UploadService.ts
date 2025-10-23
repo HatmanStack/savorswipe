@@ -211,13 +211,16 @@ export class UploadService {
       } catch (error) {
         // Batch failed - mark all files as failed
         job.progress.failed += batch.length
+        aggregatedResult.failCount += batch.length  // Update aggregated count
 
         const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-        job.errors.push({
+        const batchError = {
           file: batchStart,
           title: `Batch ${i + 1}/${totalBatches}`,
           reason: errorMessage,
-        })
+        }
+        job.errors.push(batchError)
+        aggregatedResult.errors.push(batchError)  // Add to aggregated errors
 
         // Notify subscribers of error
         this.notifySubscribers(job)

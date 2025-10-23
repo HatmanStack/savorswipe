@@ -68,15 +68,23 @@ class EmbeddingGenerator:
             response.raise_for_status()
 
             # Extract embedding from response
-            data = response.json()
+            try:
+                data = response.json()
+            except ValueError as json_err:
+                raise Exception(f'Failed to parse OpenAI response as JSON: {json_err}') from json_err
+
+            # Validate response structure
+            if 'data' not in data or not data['data'] or 'embedding' not in data['data'][0]:
+                raise Exception(f'Invalid OpenAI response structure. Got: {list(data.keys())}')
+
             embedding = data['data'][0]['embedding']
 
             return embedding
 
-        except requests.Timeout:
-            raise Exception('OpenAI API timeout after 30 seconds')
-        except requests.RequestException as e:
-            raise Exception(f'OpenAI API error: {str(e)}')
+        except requests.exceptions.Timeout as timeout_err:
+            raise Exception(f'OpenAI API timeout after {self.TIMEOUT} seconds') from timeout_err
+        except requests.exceptions.RequestException as req_err:
+            raise Exception(f'OpenAI API request error: {str(req_err)}') from req_err
 
     @staticmethod
     def recipe_to_text(recipe: Dict) -> str:

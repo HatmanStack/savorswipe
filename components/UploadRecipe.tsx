@@ -15,8 +15,8 @@ import { UploadFile } from '@/types/upload'
 export const resizeImage = async (uri: string, maxSize: number): Promise<string | undefined> => {
   const manipulatorResult = await ImageManipulator.manipulateAsync(
     uri,
-    [{ resize: { width: maxSize, height: maxSize } }],
-    { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+    [{ resize: { width: maxSize } }],  // Preserve aspect ratio
+    { base64: true, compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
   )
   return manipulatorResult.base64
 }
