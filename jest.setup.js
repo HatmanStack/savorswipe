@@ -26,3 +26,17 @@ jest.mock('expo-constants', () => ({
 jest.mock('react-native/Libraries/Utilities/Dimensions', () => ({
   get: jest.fn().mockReturnValue({ width: 375, height: 812 })
 }));
+
+// Mock AsyncStorage
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  setItem: jest.fn(() => Promise.resolve()),
+  getItem: jest.fn(() => Promise.resolve(null)),
+  removeItem: jest.fn(() => Promise.resolve()),
+  multiGet: jest.fn(() => Promise.resolve([])),
+  multiSet: jest.fn(() => Promise.resolve()),
+  multiRemove: jest.fn(() => Promise.resolve()),
+  clear: jest.fn(() => Promise.resolve()),
+  getAllKeys: jest.fn(() => Promise.resolve([])),
+  mergeItem: jest.fn(() => Promise.resolve()),
+  multiMerge: jest.fn(() => Promise.resolve()),
+}));

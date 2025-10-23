@@ -33,11 +33,28 @@ export const ErrorDetailModal: React.FC<ErrorDetailModalProps> = ({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
-        <View style={styles.contentCard}>
-          {/* Header */}
+      {/* Overlay with tap-to-dismiss */}
+      <TouchableOpacity
+        style={styles.overlay}
+        activeOpacity={1}
+        onPress={onClose}
+      >
+        {/* Content card - prevent tap propagation */}
+        <TouchableOpacity
+          style={styles.contentCard}
+          activeOpacity={1}
+          onPress={(e) => e.stopPropagation()}
+        >
+          {/* Header with X close button */}
           <View style={styles.header}>
             <Text style={styles.title}>Upload Errors</Text>
+            <TouchableOpacity
+              style={styles.closeIconButton}
+              onPress={onClose}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Text style={styles.closeIconText}>✕</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Error List */}
@@ -62,13 +79,8 @@ export const ErrorDetailModal: React.FC<ErrorDetailModalProps> = ({
               ItemSeparatorComponent={() => <View style={styles.separator} />}
             />
           )}
-
-          {/* Close Button */}
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Text style={styles.closeButtonText}>Close</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+        </TouchableOpacity>
+      </TouchableOpacity>
     </Modal>
   )
 }
@@ -105,9 +117,20 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
   },
+  closeIconButton: {
+    padding: 4,
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeIconText: {
+    fontSize: 24,
+    color: '#666',
+    fontWeight: '300',
+  },
   errorList: {
     flex: 1,
-    marginBottom: 16,
   },
   errorItem: {
     paddingVertical: 12,
@@ -139,17 +162,5 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 14,
     color: '#999',
-  },
-  closeButton: {
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-  },
-  closeButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
   },
 })

@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker'
 import * as ImageManipulator from 'expo-image-manipulator'
 import * as DocumentPicker from 'expo-document-picker'
 import * as FileSystem from 'expo-file-system'
+import { EncodingType } from 'expo-file-system'
 import { PDFDocument } from 'pdf-lib'
 import { UploadService } from '@/services/UploadService'
 import { UploadFile } from '@/types/upload'
@@ -34,7 +35,7 @@ export const splitPDFIntoChunks = async (
 
   // Read PDF file as base64
   const base64 = await FileSystem.readAsStringAsync(pdfUri, {
-    encoding: FileSystem.EncodingType.Base64,
+    encoding: EncodingType.Base64,
   })
 
   // Convert base64 to ArrayBuffer

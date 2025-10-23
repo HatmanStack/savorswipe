@@ -1163,17 +1163,17 @@ chore(backend): initialize recipe embeddings storage
 
 ## PHASE 2: FRONTEND IMPLEMENTATION
 
-**Status**: 🔄 **IN PROGRESS** (5 of 8 tasks completed as of October 23, 2025)
+**Status**: ✅ **COMPLETED** (8 of 8 tasks completed as of October 23, 2025)
 
 **Completion Summary:**
 - ✅ Task 2.1: Upload Service Types - Completed
 - ✅ Task 2.2: Upload Queue Service - Completed (14/14 tests passing)
 - ✅ Task 2.3: Update Image Picker for Multi-Select - Completed (16/17 tests passing, 1 skipped)
 - ✅ Task 2.4: Error Detail Modal Component - Completed (7/7 tests passing)
-- ⏳ Task 2.5: Update UploadModal - Pending
-- ⏳ Task 2.6: Queue Injection with Retry Logic - Pending
+- ✅ Task 2.5: Update UploadModal - Completed (10/10 tests passing)
+- ✅ Task 2.6: Queue Injection with Retry Logic - Completed (10 additional tests passing)
 - ✅ Task 2.7: Toast Notification Component - Completed (6/10 tests passing, 4 skipped)
-- ⏳ Task 2.8: Upload Queue Persistence - Pending
+- ✅ Task 2.8: Upload Queue Persistence - Completed (10/10 tests passing)
 
 **Key Deliverables Completed:**
 1. **Upload Types** (`types/upload.ts`) - Job-based queue system type definitions
@@ -1182,6 +1182,9 @@ chore(backend): initialize recipe embeddings storage
 4. **Multi-File Upload** (`components/UploadRecipe.tsx`) - Multi-select with PDF chunking, size validation
 5. **Error Detail Modal** (`components/ErrorDetailModal.tsx`) - Display detailed upload errors
 6. **Toast Notifications** (`components/Toast.tsx`) - Sequential toast display with queue management
+7. **UploadModal with Background Processing** (`components/Menu/UploadModal.tsx`) - UploadService subscription, progress display, toast notifications
+8. **Queue Injection with Retry** (`hooks/useImageQueue.ts`) - Recipe injection with S3 eventual consistency retry logic
+9. **Upload Persistence Service** (`services/UploadPersistence.ts`) - AsyncStorage persistence with S3 completion flag checking
 
 **Implementation Notes:**
 - Followed TDD approach: tests written before implementation
@@ -1192,6 +1195,12 @@ chore(backend): initialize recipe embeddings storage
 - PDF chunking supports up to 20 pages per chunk for large cookbook uploads
 - Image size validation (10MB max) with user warnings
 - Toast component has internal queue for sequential display
+- Toast component rendered in root layout (app/_layout.tsx) for global visibility
+- Imperative Toast API pattern (ToastQueue.show()) used throughout
+- Recipe injection with exponential backoff retry (3 attempts, 1s base delay)
+- Max queue size enforcement (30 images) with cleanup
+- AsyncStorage persistence keeps 10 recent completed jobs + all pending
+- S3 completion flags at `upload-status/{jobId}.json` for offline detection
 - Some tests skipped due to test environment limitations (Animated callbacks with fake timers)
 - Mock declarations moved before imports to ensure proper test setup
 - All critical tests passing ✅
