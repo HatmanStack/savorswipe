@@ -5,6 +5,7 @@ import { ThemeProvider } from '@react-navigation/native';
 import { DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { AppProvider } from '@/context';
 import Menu from '@/components/Menu';
+import { Toast } from '@/components/Toast';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -34,6 +35,7 @@ export default function RootLayout() {
           />
           <Stack.Screen name="+not-found" />
         </Stack>
+        <Toast />
       </AppProvider>
     </ThemeProvider>
   );
