@@ -30,10 +30,12 @@ def to_s3(recipe, search_results, jsonData = None):
         existing_data_json = {}
         highest_key = 1  # Start with 1 if no existing data
 
-    if upload_image(search_results, bucket_name, highest_key):
+    image_url = upload_image(search_results, bucket_name, highest_key)
+    if image_url:
         recipe['key'] = highest_key
+        recipe['image_url'] = image_url  # Save the source image URL
         existing_data_json[str(highest_key)] = recipe
-        updated_data_json = json.dumps(existing_data_json)    
+        updated_data_json = json.dumps(existing_data_json)
         s3_client.put_object(Bucket=bucket_name, Key=combined_data_key, Body=updated_data_json, ContentType='application/json')
         return True, existing_data_json
     else:
@@ -48,7 +50,7 @@ def upload_image(search_results, bucket_name, highest_key):
 
         if image_response.status_code == 200:
             if 'image' in image_response.headers['Content-Type']:
-                
+
                 image_data = image_response.content
                 image_key = images_prefix + str(highest_key) + '.jpg'
 
@@ -62,19 +64,19 @@ def upload_image(search_results, bucket_name, highest_key):
                         Bucket=bucket_name,  # Replace with your bucket name
                         Key=image_key,
                         Body=image_data,
-                        ContentType='image/jpeg'  
+                        ContentType='image/jpeg'
                     )
                     print('Image uploaded successfully.')
-                    return True
-                    
+                    return image_url  # Return the URL instead of True
+
                 except Exception as e:
                     print(f"Error uploading image to S3: {e}")
-                    return False
+                    return None
             else:
                 print("The fetched content is not an image.")
         else:
             print(f"Error fetching image: {image_response.status_code}")
-    return False    
+    return None  # Return None instead of False    
     
 
 def upload_user_data(prefix, content, type, data, app_time = None):    
@@ -197,9 +199,11 @@ def batch_to_s3_atomic(
             # Upload image for this recipe
             search_results = search_results_list[file_idx] if file_idx < len(search_results_list) else {'items': []}
 
-            if upload_image(search_results, bucket_name, next_key):
+            image_url = upload_image(search_results, bucket_name, next_key)
+            if image_url:
                 # Add recipe to data
                 recipe['key'] = next_key
+                recipe['image_url'] = image_url  # Save the source image URL
                 existing_data[str(next_key)] = recipe
                 success_keys.append(str(next_key))
                 images_to_upload.append(str(next_key))

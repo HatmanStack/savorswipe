@@ -70,8 +70,8 @@ class TestUploadModule(unittest.TestCase):
         }
         mock_s3.get_object.return_value = mock_response
 
-        # Mock successful image uploads
-        mock_upload_image.return_value = True
+        # Mock successful image uploads (returns URL)
+        mock_upload_image.return_value = 'https://example.com/image.jpg'
 
         # Mock search results
         search_results_list = [
@@ -102,7 +102,7 @@ class TestUploadModule(unittest.TestCase):
             'ETag': '"etag123"'
         }
         mock_s3.get_object.return_value = mock_response
-        mock_upload_image.return_value = True
+        mock_upload_image.return_value = 'https://example.com/image.jpg'
 
         search_results_list = [{'items': [{'link': 'url1'}]}]
 
@@ -154,7 +154,7 @@ class TestUploadModule(unittest.TestCase):
         mock_s3.get_object.return_value = mock_response
 
         # Mock failed image upload
-        mock_upload_image.return_value = False
+        mock_upload_image.return_value = None
 
         search_results_list = [{'items': [{'link': 'url1'}]}]
 
@@ -181,7 +181,7 @@ class TestUploadModule(unittest.TestCase):
             'ETag': '"etag123"'
         }
         mock_s3.get_object.return_value = mock_response
-        mock_upload_image.return_value = True
+        mock_upload_image.return_value = 'https://example.com/image.jpg'
 
         # First put_object fails with PreconditionFailed, second succeeds
         error_response = {'Error': {'Code': 'PreconditionFailed'}}
@@ -215,7 +215,7 @@ class TestUploadModule(unittest.TestCase):
             'ETag': '"etag123"'
         }
         mock_s3.get_object.return_value = mock_response
-        mock_upload_image.return_value = True
+        mock_upload_image.return_value = 'https://example.com/image.jpg'
 
         # First attempt fails with conflict
         error_response = {'Error': {'Code': 'PreconditionFailed'}}
@@ -244,7 +244,7 @@ class TestUploadModule(unittest.TestCase):
             'ETag': '"etag123"'
         }
         mock_s3.get_object.return_value = mock_response
-        mock_upload_image.return_value = True
+        mock_upload_image.return_value = 'https://example.com/image.jpg'
 
         # All put_object attempts fail
         error_response = {'Error': {'Code': 'PreconditionFailed'}}
@@ -270,7 +270,7 @@ class TestUploadModule(unittest.TestCase):
         mock_s3.get_object.return_value = mock_response
 
         # Mock image upload failure
-        mock_upload_image.return_value = False
+        mock_upload_image.return_value = None
 
         search_results_list = [{'items': [{'link': 'url1'}]}]
 
@@ -285,6 +285,38 @@ class TestUploadModule(unittest.TestCase):
         self.assertIn('file', errors[0])
         self.assertNotIn('index', errors[0])
         self.assertIsInstance(errors[0]['file'], int)
+
+    @patch('upload.s3_client')
+    @patch('upload.upload_image')
+    def test_batch_to_s3_saves_image_url(self, mock_upload_image, mock_s3):
+        """Test that image URL is saved to recipe data for deduplication."""
+        # Mock existing data
+        mock_response = {
+            'Body': MagicMock(read=lambda: json.dumps(self.existing_data).encode()),
+            'ETag': '"etag123"'
+        }
+        mock_s3.get_object.return_value = mock_response
+
+        # Mock successful image upload with specific URL
+        test_image_url = 'https://example.com/cookie-image.jpg'
+        mock_upload_image.return_value = test_image_url
+
+        search_results_list = [{'items': [{'link': test_image_url}]}]
+
+        # Test
+        result_data, success_keys, errors = batch_to_s3_atomic(
+            self.test_recipes[:1],
+            search_results_list
+        )
+
+        # Verify recipe was added with image_url field
+        self.assertEqual(len(success_keys), 1)
+        added_key = success_keys[0]
+        added_recipe = result_data[added_key]
+
+        # Critical assertion: image_url must be saved for deduplication
+        self.assertIn('image_url', added_recipe)
+        self.assertEqual(added_recipe['image_url'], test_image_url)
 
 
 if __name__ == '__main__':
