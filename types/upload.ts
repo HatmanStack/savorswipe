@@ -8,6 +8,8 @@
  * - Detailed error reporting
  */
 
+import { Recipe } from './index'
+
 export type UploadState = 'pending' | 'processing' | 'completed' | 'error'
 export type JobStatus = 'pending' | 'processing' | 'completed' | 'error'
 
@@ -61,7 +63,7 @@ export interface UploadResult {
   returnMessage: string
   successCount: number
   failCount: number
-  jsonData: Record<string, any>
+  jsonData: Record<string, Recipe>
   newRecipeKeys: string[]
   errors: UploadError[]
   encodedImages?: string    // Legacy support for single uploads

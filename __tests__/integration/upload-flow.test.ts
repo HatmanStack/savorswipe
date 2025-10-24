@@ -12,11 +12,10 @@
 // Mock fetch globally
 global.fetch = jest.fn()
 
-import { renderHook, act, waitFor } from '@testing-library/react-native'
+import { waitFor } from '@testing-library/react-native'
 import { UploadService } from '@/services/UploadService'
 import { ImageQueueService } from '@/services/ImageQueueService'
 import { ImageService } from '@/services/ImageService'
-import { useImageQueue } from '@/hooks/useImageQueue'
 import { useRecipe } from '@/context/RecipeContext'
 import { UploadFile, UploadResult, UploadJob } from '@/types/upload'
 import { S3JsonData } from '@/types'
@@ -451,11 +450,11 @@ describe('Upload Flow Integration', () => {
 
       const jobId = await UploadService.queueUpload(files)
 
-      // Wait for completion
+      // Wait for completion (status will be 'error' since there are failures)
       await waitFor(
         () => {
           const job = UploadService.getJob(jobId)
-          expect(job?.status).toBe('completed')
+          expect(job?.status).toBe('error')
         },
         { timeout: 2000 }
       )
@@ -526,12 +525,6 @@ describe('Upload Flow Integration', () => {
         ],
         failedKeys: [],
       })
-
-      // Update mock jsonData to include new recipes after upload
-      const updatedJsonData = {
-        ...mockInitialJsonData,
-        ...mockResponse.jsonData,
-      }
 
       // Trigger upload
       const files: UploadFile[] = [

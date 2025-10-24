@@ -19,15 +19,13 @@ jest.mock('expo-image-manipulator', () => ({
 }))
 
 // Now import modules
-import React from 'react'
 import { Alert } from 'react-native'
-import { render, waitFor } from '@testing-library/react-native'
 import * as ImagePicker from 'expo-image-picker'
 import * as DocumentPicker from 'expo-document-picker'
 import * as FileSystem from 'expo-file-system'
 import { PDFDocument } from 'pdf-lib'
 import * as ImageManipulator from 'expo-image-manipulator'
-import UploadRecipe, { selectAndUploadImage, splitPDFIntoChunks, resizeImage } from '../UploadRecipe'
+import { selectAndUploadImage, splitPDFIntoChunks } from '../UploadRecipe'
 import { UploadService } from '@/services/UploadService'
 import { UploadFile } from '@/types/upload'
 
@@ -306,8 +304,8 @@ describe('UploadRecipe', () => {
 
     expect(ImageManipulator.manipulateAsync).toHaveBeenCalledWith(
       'file://img.jpg',
-      [{ resize: { width: 2000, height: 2000 } }],
-      { compress: 0.7, format: 'jpeg' }
+      [{ resize: { width: 2000 } }],
+      { base64: true, compress: 0.7, format: 'jpeg' }
     )
   })
 

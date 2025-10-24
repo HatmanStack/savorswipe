@@ -4,7 +4,7 @@
  */
 
 import React from 'react'
-import { render, waitFor, fireEvent, act } from '@testing-library/react-native'
+import { render, waitFor, act } from '@testing-library/react-native'
 import { UploadModal } from '../UploadModal'
 import { UploadService } from '@/services/UploadService'
 import { UploadJob, JobStatusCallback } from '@/types/upload'
@@ -24,12 +24,12 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 jest.mock('@/services/UploadService')
 jest.mock('@/components/UploadRecipe', () => ({
   __esModule: true,
-  default: ({ setUploadVisible }: any) => {
+  default: () => {
     return null
   },
 }))
 jest.mock('@/components/ErrorDetailModal', () => ({
-  ErrorDetailModal: ({ visible, errors }: any) => {
+  ErrorDetailModal: ({ visible }: { visible: boolean }) => {
     if (!visible) return null
     return null
   },

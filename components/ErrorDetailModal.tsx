@@ -11,7 +11,6 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
-  ScrollView,
 } from 'react-native'
 import { UploadError } from '@/types/upload'
 

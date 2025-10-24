@@ -5,14 +5,13 @@
  * Manages multiple upload jobs, tracks progress, and notifies subscribers.
  */
 
-import { v4 as uuidv4 } from 'uuid'
+import * as Crypto from 'expo-crypto'
 import {
   UploadJob,
   UploadFile,
   UploadResult,
   JobStatusCallback,
   ChunkInfo,
-  UploadError,
 } from '@/types/upload'
 import { UploadPersistence } from './UploadPersistence'
 
@@ -303,6 +302,6 @@ export class UploadService {
    * Generate unique job ID
    */
   private static generateJobId(): string {
-    return uuidv4()
+    return Crypto.randomUUID()
   }
 }

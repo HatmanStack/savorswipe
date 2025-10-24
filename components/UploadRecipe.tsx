@@ -86,7 +86,7 @@ export const splitPDFIntoChunks = async (
  * Handles file validation, PDF chunking, and background upload
  */
 export const selectAndUploadImage = async (
-  setUploadMessage: (result: any) => void,
+  setUploadMessage: (result: { returnMessage: string; jsonData: unknown; encodedImages: string } | null) => void,
   setUploadVisible: (visible: boolean) => void
 ): Promise<void> => {
   // Constants
@@ -217,7 +217,7 @@ export const selectAndUploadImage = async (
 }
 
 type UploadFilesProps = {
-  setUploadMessage: (message: any) => void
+  setUploadMessage: (message: { returnMessage: string; jsonData: unknown; encodedImages: string } | null) => void
   setUploadVisible: (visible: boolean) => void
 }
 

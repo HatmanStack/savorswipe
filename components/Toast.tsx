@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react'
-import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { Animated, StyleSheet, Text, TouchableOpacity } from 'react-native'
 
 interface ToastMessage {
   id: string
@@ -19,7 +19,7 @@ interface ToastProps {
 
 // Internal queue management
 let toastQueue: ToastMessage[] = []
-let queueUpdateListeners: Set<() => void> = new Set()
+const queueUpdateListeners: Set<() => void> = new Set()
 
 const notifyQueueUpdate = () => {
   queueUpdateListeners.forEach((listener) => listener())

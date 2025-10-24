@@ -6,9 +6,17 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { UploadJob } from '@/types/upload'
+import { UploadJob, UploadError } from '@/types/upload'
 
 const CLOUDFRONT_BASE_URL = process.env.EXPO_PUBLIC_CLOUDFRONT_BASE_URL
+
+interface CompletionFlag {
+  timestamp: number
+  successCount: number
+  failCount: number
+  newRecipeKeys: string[]
+  errors: UploadError[]
+}
 
 export class UploadPersistence {
   private static STORAGE_KEY = 'upload_queue_state'
@@ -78,8 +86,8 @@ export class UploadPersistence {
    * Fetch completion flags from S3 for given job IDs
    * Returns map of jobId → completion data
    */
-  static async getCompletionFlags(jobIds: string[]): Promise<Map<string, any>> {
-    const results = new Map<string, any>()
+  static async getCompletionFlags(jobIds: string[]): Promise<Map<string, CompletionFlag>> {
+    const results = new Map<string, CompletionFlag>()
 
     for (const jobId of jobIds) {
       try {

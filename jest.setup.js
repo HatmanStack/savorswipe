@@ -8,6 +8,18 @@ process.env.EXPO_PUBLIC_CLOUDFRONT_BASE_URL = 'https://test-cloudfront.cloudfron
 
 jest.mock('aws-sdk');
 
+// Mock expo-crypto
+jest.mock('expo-crypto', () => ({
+  randomUUID: jest.fn(() => {
+    // Generate a simple UUID v4 for testing
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  })
+}));
+
 // Mock expo-constants
 jest.mock('expo-constants', () => ({
   default: {
@@ -18,8 +30,38 @@ jest.mock('expo-constants', () => ({
         AWS_ID: 'test-id',
         AWS_SECRET: 'test-secret'
       }
+    },
+    expoConfig: {
+      extra: {
+        AWS_S3_BUCKET: 'test-bucket',
+        AWS_REGION_S3: 'test-region',
+        AWS_ID: 'test-id',
+        AWS_SECRET: 'test-secret'
+      }
     }
+  },
+  ExecutionEnvironment: {
+    Standalone: 'standalone',
+    StoreClient: 'storeClient',
+    Bare: 'bare'
   }
+}));
+
+// Mock expo-asset
+jest.mock('expo-asset', () => ({
+  Asset: {
+    fromModule: jest.fn(() => ({
+      downloadAsync: jest.fn(() => Promise.resolve()),
+    })),
+    loadAsync: jest.fn(() => Promise.resolve()),
+  },
+}));
+
+// Mock expo-font
+jest.mock('expo-font', () => ({
+  loadAsync: jest.fn(() => Promise.resolve()),
+  isLoaded: jest.fn(() => true),
+  isLoading: jest.fn(() => false),
 }));
 
 // Mock react-native's Dimensions
@@ -40,3 +82,23 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   mergeItem: jest.fn(() => Promise.resolve()),
   multiMerge: jest.fn(() => Promise.resolve()),
 }));
+
+// Mock @expo/vector-icons
+jest.mock('@expo/vector-icons', () => {
+  const { Text } = require('react-native');
+  return {
+    Ionicons: Text,
+    MaterialIcons: Text,
+    FontAwesome: Text,
+    Entypo: Text,
+    AntDesign: Text,
+    MaterialCommunityIcons: Text,
+    Feather: Text,
+    Foundation: Text,
+    EvilIcons: Text,
+    Octicons: Text,
+    SimpleLineIcons: Text,
+    Zocial: Text,
+    FontAwesome5: Text,
+  };
+});
