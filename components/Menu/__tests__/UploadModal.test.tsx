@@ -1,0 +1,486 @@
+/**
+ * Tests for UploadModal Component
+ * Background processing UI with error details and toast notifications
+ */
+
+import React from 'react'
+import { render, waitFor, fireEvent, act } from '@testing-library/react-native'
+import { UploadModal } from '../UploadModal'
+import { UploadService } from '@/services/UploadService'
+import { UploadJob, JobStatusCallback } from '@/types/upload'
+import { ToastQueue } from '@/components/Toast'
+
+// Mock AsyncStorage
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  __esModule: true,
+  default: {
+    getItem: jest.fn(),
+    setItem: jest.fn(),
+    removeItem: jest.fn(),
+  },
+}))
+
+// Mock dependencies
+jest.mock('@/services/UploadService')
+jest.mock('@/components/UploadRecipe', () => ({
+  __esModule: true,
+  default: ({ setUploadVisible }: any) => {
+    return null
+  },
+}))
+jest.mock('@/components/ErrorDetailModal', () => ({
+  ErrorDetailModal: ({ visible, errors }: any) => {
+    if (!visible) return null
+    return null
+  },
+}))
+jest.mock('@/components/Toast', () => ({
+  ToastQueue: {
+    show: jest.fn(),
+    clear: jest.fn(),
+  },
+}))
+
+// Mock RecipeContext
+const mockSetJsonData = jest.fn()
+const mockSetFirstFile = jest.fn()
+const mockSetAllFiles = jest.fn()
+
+jest.mock('@/context/RecipeContext', () => ({
+  useRecipe: () => ({
+    jsonData: {},
+    setJsonData: mockSetJsonData,
+    setFirstFile: mockSetFirstFile,
+    setAllFiles: mockSetAllFiles,
+  }),
+}))
+
+describe('UploadModal', () => {
+  const mockStyles = {
+    uploadMessage: {},
+  }
+
+  const mockOnClose = jest.fn()
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
+  describe('Subscription Lifecycle', () => {
+    it('subscribes to UploadService on mount', () => {
+      const mockUnsubscribe = jest.fn()
+      ;(UploadService.subscribe as jest.Mock).mockReturnValue(mockUnsubscribe)
+
+      render(
+        <UploadModal
+          visible={true}
+          onClose={mockOnClose}
+          uploadCount={1}
+          styles={mockStyles}
+        />
+      )
+
+      expect(UploadService.subscribe).toHaveBeenCalled()
+    })
+
+    it('unsubscribes from UploadService on unmount', () => {
+      const mockUnsubscribe = jest.fn()
+      ;(UploadService.subscribe as jest.Mock).mockReturnValue(mockUnsubscribe)
+
+      const { unmount } = render(
+        <UploadModal
+          visible={true}
+          onClose={mockOnClose}
+          uploadCount={1}
+          styles={mockStyles}
+        />
+      )
+
+      unmount()
+
+      expect(mockUnsubscribe).toHaveBeenCalled()
+    })
+  })
+
+  describe('Progress Display', () => {
+    it('shows progress during upload', async () => {
+      let subscribedCallback: JobStatusCallback | null = null
+      ;(UploadService.subscribe as jest.Mock).mockImplementation(
+        (callback: JobStatusCallback) => {
+          subscribedCallback = callback
+          return jest.fn()
+        }
+      )
+
+      const { getByText } = render(
+        <UploadModal
+          visible={true}
+          onClose={mockOnClose}
+          uploadCount={1}
+          styles={mockStyles}
+        />
+      )
+
+      // Simulate processing status
+      const processingJob: UploadJob = {
+        id: 'job-1',
+        files: [],
+        status: 'processing',
+        progress: { total: 10, completed: 3, failed: 0 },
+        errors: [],
+        timestamp: Date.now(),
+      }
+
+      act(() => {
+        act(() => {
+          subscribedCallback?.(processingJob)
+        })
+      })
+
+      await waitFor(() => {
+        expect(getByText(/Uploading.*3.*10/)).toBeTruthy()
+      })
+    })
+  })
+
+  describe('Toast Notifications', () => {
+    it('shows toast on completion with all success', async () => {
+      let subscribedCallback: JobStatusCallback | null = null
+      ;(UploadService.subscribe as jest.Mock).mockImplementation(
+        (callback: JobStatusCallback) => {
+          subscribedCallback = callback
+          return jest.fn()
+        }
+      )
+
+      render(
+        <UploadModal
+          visible={true}
+          onClose={mockOnClose}
+          uploadCount={1}
+          styles={mockStyles}
+        />
+      )
+
+      // Simulate completed status
+      const completedJob: UploadJob = {
+        id: 'job-1',
+        files: [],
+        status: 'completed',
+        progress: { total: 5, completed: 5, failed: 0 },
+        result: {
+          returnMessage: 'Success',
+          successCount: 5,
+          failCount: 0,
+          jsonData: {},
+          newRecipeKeys: [],
+          errors: [],
+          jobId: 'job-1',
+        },
+        errors: [],
+        timestamp: Date.now(),
+      }
+
+      act(() => {
+        subscribedCallback?.(completedJob)
+      })
+
+      await waitFor(() => {
+        expect(ToastQueue.show).toHaveBeenCalledWith(
+          'All 5 recipes added successfully!',
+          expect.objectContaining({
+            tappable: false,
+          })
+        )
+      })
+    })
+
+    it('shows correct message for all success', async () => {
+      let subscribedCallback: JobStatusCallback | null = null
+      ;(UploadService.subscribe as jest.Mock).mockImplementation(
+        (callback: JobStatusCallback) => {
+          subscribedCallback = callback
+          return jest.fn()
+        }
+      )
+
+      render(
+        <UploadModal
+          visible={true}
+          onClose={mockOnClose}
+          uploadCount={1}
+          styles={mockStyles}
+        />
+      )
+
+      const completedJob: UploadJob = {
+        id: 'job-1',
+        files: [],
+        status: 'completed',
+        progress: { total: 5, completed: 5, failed: 0 },
+        result: {
+          returnMessage: 'Success',
+          successCount: 5,
+          failCount: 0,
+          jsonData: {},
+          newRecipeKeys: [],
+          errors: [],
+          jobId: 'job-1',
+        },
+        errors: [],
+        timestamp: Date.now(),
+      }
+
+      act(() => {
+        subscribedCallback?.(completedJob)
+      })
+
+      await waitFor(() => {
+        expect(ToastQueue.show).toHaveBeenCalledWith(
+          'All 5 recipes added successfully!',
+          expect.any(Object)
+        )
+      })
+    })
+
+    it('shows correct message for partial failure', async () => {
+      let subscribedCallback: JobStatusCallback | null = null
+      ;(UploadService.subscribe as jest.Mock).mockImplementation(
+        (callback: JobStatusCallback) => {
+          subscribedCallback = callback
+          return jest.fn()
+        }
+      )
+
+      render(
+        <UploadModal
+          visible={true}
+          onClose={mockOnClose}
+          uploadCount={1}
+          styles={mockStyles}
+        />
+      )
+
+      const partialJob: UploadJob = {
+        id: 'job-1',
+        files: [],
+        status: 'error',
+        progress: { total: 5, completed: 3, failed: 2 },
+        result: {
+          returnMessage: 'Partial',
+          successCount: 3,
+          failCount: 2,
+          jsonData: {},
+          newRecipeKeys: [],
+          errors: [
+            { file: 0, title: 'Recipe 1', reason: 'Error 1' },
+            { file: 1, title: 'Recipe 2', reason: 'Error 2' },
+          ],
+          jobId: 'job-1',
+        },
+        errors: [
+          { file: 0, title: 'Recipe 1', reason: 'Error 1' },
+          { file: 1, title: 'Recipe 2', reason: 'Error 2' },
+        ],
+        timestamp: Date.now(),
+      }
+
+      act(() => {
+        subscribedCallback?.(partialJob)
+      })
+
+      await waitFor(() => {
+        expect(ToastQueue.show).toHaveBeenCalledWith(
+          '3 of 5 added. Tap to view 2 errors.',
+          expect.objectContaining({
+            tappable: true,
+          })
+        )
+      })
+    })
+  })
+
+  describe('Error Modal', () => {
+    it('shows tappable toast when there are errors', async () => {
+      let subscribedCallback: JobStatusCallback | null = null
+      ;(UploadService.subscribe as jest.Mock).mockImplementation(
+        (callback: JobStatusCallback) => {
+          subscribedCallback = callback
+          return jest.fn()
+        }
+      )
+
+      render(
+        <UploadModal
+          visible={true}
+          onClose={mockOnClose}
+          uploadCount={1}
+          styles={mockStyles}
+        />
+      )
+
+      const errorJob: UploadJob = {
+        id: 'job-1',
+        files: [],
+        status: 'error',
+        progress: { total: 2, completed: 0, failed: 2 },
+        errors: [
+          { file: 0, title: 'Recipe 1', reason: 'Error 1' },
+          { file: 1, title: 'Recipe 2', reason: 'Error 2' },
+        ],
+        timestamp: Date.now(),
+      }
+
+      act(() => {
+        subscribedCallback?.(errorJob)
+      })
+
+      await waitFor(() => {
+        expect(ToastQueue.show).toHaveBeenCalledWith(
+          'All 2 recipes failed. Tap for details.',
+          expect.objectContaining({
+            tappable: true,
+            onTap: expect.any(Function),
+          })
+        )
+      })
+    })
+
+    it('shows non-tappable toast when there are no errors', async () => {
+      let subscribedCallback: JobStatusCallback | null = null
+      ;(UploadService.subscribe as jest.Mock).mockImplementation(
+        (callback: JobStatusCallback) => {
+          subscribedCallback = callback
+          return jest.fn()
+        }
+      )
+
+      render(
+        <UploadModal
+          visible={true}
+          onClose={mockOnClose}
+          uploadCount={1}
+          styles={mockStyles}
+        />
+      )
+
+      const successJob: UploadJob = {
+        id: 'job-1',
+        files: [],
+        status: 'completed',
+        progress: { total: 5, completed: 5, failed: 0 },
+        errors: [],
+        timestamp: Date.now(),
+      }
+
+      act(() => {
+        subscribedCallback?.(successJob)
+      })
+
+      await waitFor(() => {
+        expect(ToastQueue.show).toHaveBeenCalledWith(
+          'All 5 recipes added successfully!',
+          expect.objectContaining({
+            tappable: false,
+          })
+        )
+      })
+    })
+  })
+
+  describe('RecipeContext Integration', () => {
+    it('updates recipe context with new jsonData', async () => {
+      let subscribedCallback: JobStatusCallback | null = null
+      ;(UploadService.subscribe as jest.Mock).mockImplementation(
+        (callback: JobStatusCallback) => {
+          subscribedCallback = callback
+          return jest.fn()
+        }
+      )
+
+      render(
+        <UploadModal
+          visible={true}
+          onClose={mockOnClose}
+          uploadCount={1}
+          styles={mockStyles}
+        />
+      )
+
+      const newJsonData = { recipe1: { title: 'New Recipe' } }
+      const completedJob: UploadJob = {
+        id: 'job-1',
+        files: [],
+        status: 'completed',
+        progress: { total: 1, completed: 1, failed: 0 },
+        result: {
+          returnMessage: 'Success',
+          successCount: 1,
+          failCount: 0,
+          jsonData: newJsonData,
+          newRecipeKeys: ['recipe1'],
+          errors: [],
+          jobId: 'job-1',
+        },
+        errors: [],
+        timestamp: Date.now(),
+      }
+
+      act(() => {
+        subscribedCallback?.(completedJob)
+      })
+
+      await waitFor(() => {
+        expect(mockSetJsonData).toHaveBeenCalledWith(newJsonData)
+      })
+    })
+
+    it('captures errors from upload job', async () => {
+      let subscribedCallback: JobStatusCallback | null = null
+      ;(UploadService.subscribe as jest.Mock).mockImplementation(
+        (callback: JobStatusCallback) => {
+          subscribedCallback = callback
+          return jest.fn()
+        }
+      )
+
+      render(
+        <UploadModal
+          visible={true}
+          onClose={mockOnClose}
+          uploadCount={1}
+          styles={mockStyles}
+        />
+      )
+
+      const errors = [
+        { file: 0, title: 'Recipe A', reason: 'Duplicate' },
+        { file: 1, title: 'Recipe B', reason: 'Invalid format' },
+      ]
+
+      const errorJob: UploadJob = {
+        id: 'job-1',
+        files: [],
+        status: 'error',
+        progress: { total: 2, completed: 0, failed: 2 },
+        errors,
+        timestamp: Date.now(),
+      }
+
+      act(() => {
+        subscribedCallback?.(errorJob)
+      })
+
+      // Verify toast was shown with tap handler
+      await waitFor(() => {
+        expect(ToastQueue.show).toHaveBeenCalledWith(
+          expect.any(String),
+          expect.objectContaining({
+            tappable: true,
+            onTap: expect.any(Function),
+          })
+        )
+      })
+    })
+  })
+})

@@ -418,4 +418,288 @@ describe('useImageQueue', () => {
       expect(result.current.currentImage).toBeNull();
     });
   });
+
+  describe('injectRecipes', () => {
+    it('injects recipes at position 2', async () => {
+      // Setup: Initial queue
+      (ImageQueueService.fetchBatch as jest.Mock)
+        .mockResolvedValueOnce({
+          images: [
+            { filename: 'images/recipe1.jpg', file: 'blob:1' },
+            { filename: 'images/recipe2.jpg', file: 'blob:2' },
+            { filename: 'images/recipe3.jpg', file: 'blob:3' },
+          ],
+          failedKeys: [],
+        })
+        .mockResolvedValueOnce({
+          images: [
+            { filename: 'images/recipe4.jpg', file: 'blob:4' },
+          ],
+          failedKeys: [],
+        })
+        .mockResolvedValueOnce({
+          images: [
+            { filename: 'images/recipe5.jpg', file: 'blob:5' },
+          ],
+          failedKeys: [],
+        });
+
+      const { result } = renderHook(() => useImageQueue());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      }, { timeout: 3000 });
+
+      const initialLength = result.current.queueLength;
+
+      // Mock fetch for injection
+      (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValueOnce({
+        images: [
+          { filename: 'images/new1.jpg', file: 'blob:new1' },
+          { filename: 'images/new2.jpg', file: 'blob:new2' },
+        ],
+        failedKeys: [],
+      });
+
+      // Inject new recipes
+      await act(async () => {
+        await result.current.injectRecipes(['new1', 'new2']);
+      });
+
+      // Queue should have grown
+      expect(result.current.queueLength).toBe(initialLength + 2);
+    });
+
+    it('handles empty array without errors', async () => {
+      const { result } = renderHook(() => useImageQueue());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      }, { timeout: 3000 });
+
+      const fetchCallsBefore = (ImageQueueService.fetchBatch as jest.Mock).mock.calls.length;
+
+      await act(async () => {
+        await result.current.injectRecipes([]);
+      });
+
+      // Should not have made additional fetch calls
+      expect((ImageQueueService.fetchBatch as jest.Mock).mock.calls.length).toBe(fetchCallsBefore);
+    });
+
+    it('retries on partial fetch', async () => {
+      const { result } = renderHook(() => useImageQueue());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      }, { timeout: 3000 });
+
+      const fetchCallsBefore = (ImageQueueService.fetchBatch as jest.Mock).mock.calls.length;
+
+      // First attempt: partial (1 of 2)
+      // Second attempt: full (2 of 2)
+      (ImageQueueService.fetchBatch as jest.Mock)
+        .mockResolvedValueOnce({
+          images: [{ filename: 'images/new1.jpg', file: 'blob:new1' }],
+          failedKeys: ['new2'],
+        })
+        .mockResolvedValueOnce({
+          images: [
+            { filename: 'images/new1.jpg', file: 'blob:new1' },
+            { filename: 'images/new2.jpg', file: 'blob:new2' },
+          ],
+          failedKeys: [],
+        });
+
+      await act(async () => {
+        await result.current.injectRecipes(['new1', 'new2']);
+      });
+
+      // Should have retried
+      expect((ImageQueueService.fetchBatch as jest.Mock).mock.calls.length).toBeGreaterThan(fetchCallsBefore + 1);
+    });
+
+    it('handles S3 eventual consistency with retry delays', async () => {
+      const { result } = renderHook(() => useImageQueue());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      }, { timeout: 3000 });
+
+      // Simulate S3 delay: first fails, second succeeds
+      (ImageQueueService.fetchBatch as jest.Mock)
+        .mockResolvedValueOnce({
+          images: [],
+          failedKeys: ['new1'],
+        })
+        .mockResolvedValueOnce({
+          images: [{ filename: 'images/new1.jpg', file: 'blob:new1' }],
+          failedKeys: [],
+        });
+
+      await act(async () => {
+        await result.current.injectRecipes(['new1']);
+      });
+
+      // Should have eventually succeeded
+      expect(result.current.queueLength).toBeGreaterThan(0);
+    });
+
+    it('gives up after max retries', async () => {
+      const { result } = renderHook(() => useImageQueue());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      }, { timeout: 3000 });
+
+      const fetchCallsBefore = (ImageQueueService.fetchBatch as jest.Mock).mock.calls.length;
+
+      // All attempts fail
+      (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
+        images: [],
+        failedKeys: ['new1'],
+      });
+
+      await act(async () => {
+        await result.current.injectRecipes(['new1']);
+      });
+
+      // Should have tried max 3 times
+      const totalCalls = (ImageQueueService.fetchBatch as jest.Mock).mock.calls.length - fetchCallsBefore;
+      expect(totalCalls).toBeLessThanOrEqual(3);
+    });
+
+    it('removes injected keys from pool to prevent duplicates', async () => {
+      const { result } = renderHook(() => useImageQueue());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      }, { timeout: 3000 });
+
+      (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValueOnce({
+        images: [{ filename: 'images/new1.jpg', file: 'blob:new1' }],
+        failedKeys: [],
+      });
+
+      const queueBefore = result.current.queueLength;
+
+      await act(async () => {
+        await result.current.injectRecipes(['new1']);
+      });
+
+      // Queue should have grown
+      expect(result.current.queueLength).toBeGreaterThan(queueBefore);
+    });
+
+    it('enforces max queue size of 30', async () => {
+      // Setup: Large queue
+      const largeQueue = Array.from({ length: 28 }, (_, i) => ({
+        filename: `images/recipe${i}.jpg`,
+        file: `blob:${i}`,
+      }));
+
+      (ImageQueueService.fetchBatch as jest.Mock)
+        .mockResolvedValueOnce({ images: largeQueue.slice(0, 10), failedKeys: [] })
+        .mockResolvedValueOnce({ images: largeQueue.slice(10, 20), failedKeys: [] })
+        .mockResolvedValueOnce({ images: largeQueue.slice(20, 28), failedKeys: [] });
+
+      const { result } = renderHook(() => useImageQueue());
+
+      await waitFor(() => {
+        expect(result.current.queueLength).toBeGreaterThan(20);
+      }, { timeout: 3000 });
+
+      // Inject 5 more
+      const newRecipes = Array.from({ length: 5 }, (_, i) => ({
+        filename: `images/new${i}.jpg`,
+        file: `blob:new${i}`,
+      }));
+
+      (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValueOnce({
+        images: newRecipes,
+        failedKeys: [],
+      });
+
+      await act(async () => {
+        await result.current.injectRecipes(['new0', 'new1', 'new2', 'new3', 'new4']);
+      });
+
+      // Should be capped at 30
+      await waitFor(() => {
+        expect(result.current.queueLength).toBeLessThanOrEqual(30);
+      }, { timeout: 3000 });
+    });
+
+    it('updates nextImage when queue is small and nextImage is null', async () => {
+      // Setup: Queue with only 1 item
+      (ImageQueueService.fetchBatch as jest.Mock)
+        .mockResolvedValueOnce({ images: [{ filename: 'images/recipe1.jpg', file: 'blob:1' }], failedKeys: [] })
+        .mockResolvedValueOnce({ images: [], failedKeys: [] })
+        .mockResolvedValueOnce({ images: [], failedKeys: [] });
+
+      const { result } = renderHook(() => useImageQueue());
+
+      await waitFor(() => {
+        expect(result.current.currentImage).toBeTruthy();
+        expect(result.current.nextImage).toBeNull();
+      }, { timeout: 3000 });
+
+      // Inject new recipe
+      (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValueOnce({
+        images: [{ filename: 'images/new1.jpg', file: 'blob:new1' }],
+        failedKeys: [],
+      });
+
+      await act(async () => {
+        await result.current.injectRecipes(['new1']);
+      });
+
+      // nextImage should now be set
+      await waitFor(() => {
+        expect(result.current.nextImage).toBeTruthy();
+      }, { timeout: 3000 });
+    });
+
+    it('cleans up blob URLs for images beyond max queue size', async () => {
+      // Setup: Large queue
+      const largeQueue = Array.from({ length: 28 }, (_, i) => ({
+        filename: `images/recipe${i}.jpg`,
+        file: `blob:${i}`,
+      }));
+
+      (ImageQueueService.fetchBatch as jest.Mock)
+        .mockResolvedValueOnce({ images: largeQueue.slice(0, 10), failedKeys: [] })
+        .mockResolvedValueOnce({ images: largeQueue.slice(10, 20), failedKeys: [] })
+        .mockResolvedValueOnce({ images: largeQueue.slice(20, 28), failedKeys: [] });
+
+      const { result } = renderHook(() => useImageQueue());
+
+      await waitFor(() => {
+        expect(result.current.queueLength).toBeGreaterThan(20);
+      }, { timeout: 3000 });
+
+      const cleanupSpy = ImageQueueService.cleanupImages as jest.Mock;
+      cleanupSpy.mockClear();
+
+      // Inject 5 more to exceed max
+      const newRecipes = Array.from({ length: 5 }, (_, i) => ({
+        filename: `images/new${i}.jpg`,
+        file: `blob:new${i}`,
+      }));
+
+      (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValueOnce({
+        images: newRecipes,
+        failedKeys: [],
+      });
+
+      await act(async () => {
+        await result.current.injectRecipes(['new0', 'new1', 'new2', 'new3', 'new4']);
+      });
+
+      // cleanup should have been called for excess images
+      await waitFor(() => {
+        expect(cleanupSpy).toHaveBeenCalled();
+      }, { timeout: 3000 });
+    });
+  });
 });

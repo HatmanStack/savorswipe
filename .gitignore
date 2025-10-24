@@ -10,6 +10,7 @@ npm-debug.*
 *.mobileprovision
 *.orig.*
 web-build/
+.venv/
 .env
 # macOS
 .DS_Store
@@ -22,3 +23,11 @@ s3-old
 docs/
 
 .worktrees/
+lambda-deploy/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python

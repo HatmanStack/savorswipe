@@ -24,6 +24,7 @@ export interface ImageQueueHook {
   queueLength: number;                // Current queue size (for debugging)
   advanceQueue: () => void;           // Call on swipe left
   resetQueue: () => Promise<void>;    // Call on filter change
+  injectRecipes: (recipeKeys: string[]) => Promise<void>;  // Inject new recipes into queue
 }
 
 // Result of a batch fetch operation
