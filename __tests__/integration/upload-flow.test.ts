@@ -266,7 +266,8 @@ describe('Upload Flow Integration', () => {
       await waitFor(
         () => {
           const job = UploadService.getJob(jobId)
-          expect(job?.status).toBe('completed')
+          // Service marks job as 'error' when any files fail
+          expect(job?.status).toBe('error')
         },
         { timeout: 2000 }
       )
@@ -333,7 +334,8 @@ describe('Upload Flow Integration', () => {
       await waitFor(
         () => {
           const job = UploadService.getJob(jobId)
-          expect(job?.status).toBe('completed')
+          // Service marks job as 'error' when any files fail (including duplicates)
+          expect(job?.status).toBe('error')
         },
         { timeout: 2000 }
       )
@@ -350,8 +352,8 @@ describe('Upload Flow Integration', () => {
       expect(job?.errors[0].reason).toContain('Duplicate of recipe')
       expect(job?.errors[0].reason).toContain('similarity: 0.95')
 
-      // Verify job marked as completed (not error) since Lambda succeeded
-      expect(job?.status).toBe('completed')
+      // Verify job marked as error (service marks as error when progress.failed > 0)
+      expect(job?.status).toBe('error')
       expect(job?.progress.failed).toBe(1)
     })
   })

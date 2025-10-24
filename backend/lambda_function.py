@@ -164,6 +164,15 @@ def lambda_handler(event, context):
                 # Extract images from PDF
                 base64_images = handlepdf.pdf_to_base64_images(file_content)
 
+                # Check if PDF processing failed (returns False for PDFs over limit)
+                if base64_images is False:
+                    file_errors.append({
+                        'file': file_idx,
+                        'title': 'unknown',
+                        'reason': f'PDF too large (exceeds page limit)'
+                    })
+                    continue
+
                 # Check page count
                 if len(base64_images) > PDF_MAX_PAGES:
                     file_errors.append({

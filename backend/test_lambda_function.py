@@ -163,13 +163,14 @@ class TestLambdaFunction(unittest.TestCase):
     @patch('lambda_function.EmbeddingGenerator')
     @patch('lambda_function.DuplicateDetector')
     @patch('lambda_function.batch_to_s3_atomic')
-    @patch('lambda_function.concurrent.futures.ThreadPoolExecutor')
+    @patch('lambda_function.ThreadPoolExecutor')
+    @patch('lambda_function.as_completed')
     @patch('lambda_function.handlepdf')
     @patch('lambda_function.ocr')
     @patch('lambda_function.upload.upload_user_data')
     def test_lambda_handler_parallel_processing(
         self, mock_upload_user, mock_ocr, mock_pdf,
-        mock_executor_class, mock_batch, mock_detector_class,
+        mock_as_completed, mock_executor_class, mock_batch, mock_detector_class,
         mock_gen_class, mock_store_class, mock_boto
     ):
         """Test that Lambda handler uses ThreadPoolExecutor with 3 workers."""
@@ -195,6 +196,9 @@ class TestLambdaFunction(unittest.TestCase):
             mock_executor.__enter__.return_value = mock_executor
             mock_executor_class.return_value = mock_executor
 
+            # Mock as_completed to yield our mocked future
+            mock_as_completed.return_value = [mock_future]
+
             # Mock batch upload
             mock_batch.return_value = ({'1': self.test_recipe}, ['2'], [])
 
@@ -202,10 +206,10 @@ class TestLambdaFunction(unittest.TestCase):
             mock_cloudwatch = MagicMock()
             mock_boto.return_value = mock_cloudwatch
 
-            # Test
+            # Test (use 'data' field as Lambda expects, not 'base64')
             event = {
                 'files': [
-                    {'base64': 'base64data', 'type': 'image'}
+                    {'data': 'base64data', 'type': 'image'}
                 ],
                 'jobId': 'test-job-123'
             }

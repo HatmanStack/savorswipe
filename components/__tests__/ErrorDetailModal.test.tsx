@@ -81,11 +81,11 @@ describe('ErrorDetailModal', () => {
 
   // Test 5: Close button calls onClose callback
   it('test_close_button_calls_onClose: should call onClose when close button pressed', () => {
-    const { getByText } = render(
+    const { getByLabelText } = render(
       <ErrorDetailModal visible={true} errors={mockErrors} onClose={mockOnClose} />
     )
 
-    const closeButton = getByText('Close')
+    const closeButton = getByLabelText('Close error dialog')
     fireEvent.press(closeButton)
 
     expect(mockOnClose).toHaveBeenCalledTimes(1)

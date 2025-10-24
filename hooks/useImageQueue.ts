@@ -24,14 +24,19 @@ export function useImageQueue(): ImageQueueHook {
   const isInitializingRef = useRef(false);
   const queueRef = useRef<ImageFile[]>([]); // Track latest queue for cleanup
   const prevJsonDataKeysRef = useRef<Set<string>>(new Set());
+  const nextImageRef = useRef<ImageFile | null>(null); // Track nextImage for injection without causing re-creation
 
   // Context
   const { jsonData, setCurrentRecipe, mealTypeFilters } = useRecipe();
 
-  // Keep queueRef in sync with queue state
+  // Keep queueRef and nextImageRef in sync with state
   useEffect(() => {
     queueRef.current = queue;
   }, [queue]);
+
+  useEffect(() => {
+    nextImageRef.current = nextImage;
+  }, [nextImage]);
 
   // Internal helper to update current recipe in context
   const updateCurrentRecipe = useCallback((image: ImageFile) => {
@@ -256,7 +261,7 @@ export function useImageQueue(): ImageQueueHook {
       return;
     }
 
-    // Update queue with functional state update
+    // Update queue with functional state update (single call to avoid race conditions)
     setQueue(prev => {
       // Calculate insert position (min of 2 or queue length)
       const insertPosition = Math.min(2, prev.length);
@@ -275,15 +280,12 @@ export function useImageQueue(): ImageQueueHook {
         newQueue = newQueue.slice(0, MAX_QUEUE_SIZE);
       }
 
-      return newQueue;
-    });
-
-    // Update nextImage if it was null and queue now has 2+ images
-    setQueue(currentQueue => {
-      if (currentQueue.length >= 2 && nextImage === null) {
-        setNextImage(currentQueue[1]);
+      // Update nextImage if needed (use ref to avoid stale closure)
+      if (newQueue.length >= 2 && nextImageRef.current === null) {
+        setNextImage(newQueue[1]);
       }
-      return currentQueue;
+
+      return newQueue;
     });
 
     // Remove injected keys from pool to avoid duplicates
@@ -294,7 +296,7 @@ export function useImageQueue(): ImageQueueHook {
     if (__DEV__) {
       console.log(`Successfully injected ${fetchedImages.length} recipes into queue`);
     }
-  }, [nextImage]);
+  }, []); // Empty deps - all state reads use refs or functional updates
 
   // Effect: Initialize queue on mount
   useEffect(() => {

@@ -90,8 +90,8 @@ describe('UploadPersistence', () => {
       const savedData = (AsyncStorage.setItem as jest.Mock).mock.calls[0][1]
       const parsed = JSON.parse(savedData)
 
-      // Should keep all 3 pending + most recent completed jobs up to 10 total
-      expect(parsed.length).toBeLessThanOrEqual(10)
+      // Should keep all 3 pending + up to 10 most recent completed jobs for a total of 13
+      expect(parsed.length).toBe(13)
 
       // All pending jobs should be included
       const pendingCount = parsed.filter((j: UploadJob) => j.status === 'pending').length

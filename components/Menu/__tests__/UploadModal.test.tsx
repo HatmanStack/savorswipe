@@ -4,7 +4,7 @@
  */
 
 import React from 'react'
-import { render, waitFor, fireEvent } from '@testing-library/react-native'
+import { render, waitFor, fireEvent, act } from '@testing-library/react-native'
 import { UploadModal } from '../UploadModal'
 import { UploadService } from '@/services/UploadService'
 import { UploadJob, JobStatusCallback } from '@/types/upload'
@@ -131,7 +131,11 @@ describe('UploadModal', () => {
         timestamp: Date.now(),
       }
 
-      subscribedCallback?.(processingJob)
+      act(() => {
+        act(() => {
+          subscribedCallback?.(processingJob)
+        })
+      })
 
       await waitFor(() => {
         expect(getByText(/Uploading.*3.*10/)).toBeTruthy()
@@ -177,7 +181,9 @@ describe('UploadModal', () => {
         timestamp: Date.now(),
       }
 
-      subscribedCallback?.(completedJob)
+      act(() => {
+        subscribedCallback?.(completedJob)
+      })
 
       await waitFor(() => {
         expect(ToastQueue.show).toHaveBeenCalledWith(
@@ -225,7 +231,9 @@ describe('UploadModal', () => {
         timestamp: Date.now(),
       }
 
-      subscribedCallback?.(completedJob)
+      act(() => {
+        subscribedCallback?.(completedJob)
+      })
 
       await waitFor(() => {
         expect(ToastQueue.show).toHaveBeenCalledWith(
@@ -277,7 +285,9 @@ describe('UploadModal', () => {
         timestamp: Date.now(),
       }
 
-      subscribedCallback?.(partialJob)
+      act(() => {
+        subscribedCallback?.(partialJob)
+      })
 
       await waitFor(() => {
         expect(ToastQueue.show).toHaveBeenCalledWith(
@@ -321,7 +331,9 @@ describe('UploadModal', () => {
         timestamp: Date.now(),
       }
 
-      subscribedCallback?.(errorJob)
+      act(() => {
+        subscribedCallback?.(errorJob)
+      })
 
       await waitFor(() => {
         expect(ToastQueue.show).toHaveBeenCalledWith(
@@ -361,7 +373,9 @@ describe('UploadModal', () => {
         timestamp: Date.now(),
       }
 
-      subscribedCallback?.(successJob)
+      act(() => {
+        subscribedCallback?.(successJob)
+      })
 
       await waitFor(() => {
         expect(ToastQueue.show).toHaveBeenCalledWith(
@@ -412,7 +426,9 @@ describe('UploadModal', () => {
         timestamp: Date.now(),
       }
 
-      subscribedCallback?.(completedJob)
+      act(() => {
+        subscribedCallback?.(completedJob)
+      })
 
       await waitFor(() => {
         expect(mockSetJsonData).toHaveBeenCalledWith(newJsonData)
@@ -451,7 +467,9 @@ describe('UploadModal', () => {
         timestamp: Date.now(),
       }
 
-      subscribedCallback?.(errorJob)
+      act(() => {
+        subscribedCallback?.(errorJob)
+      })
 
       // Verify toast was shown with tap handler
       await waitFor(() => {
