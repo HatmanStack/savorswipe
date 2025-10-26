@@ -18,7 +18,7 @@
     <img src="https://img.shields.io/badge/AWS-Lambda-green" alt="AWS Lambda Documentation" />
   </a>
   <a href="https://coderabbit.ai">
-    <img src="https://img.shields.io/coderabbit/prs/github/:org/:repo" alt="CoderRabbit PR Reviews" />
+    <img src="https://img.shields.io/coderabbit/prs/github/hatmanstack/savorswipe" alt="CoderRabbit PR Reviews" />
   </a>
 </h4>
 <p align="center">
