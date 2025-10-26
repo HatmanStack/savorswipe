@@ -433,15 +433,42 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
 }}
 
 # Output Requirements
-1. If input contains MULTIPLE DISTINCT recipes (different titles), return as array: [recipe1, recipe2, ...]
-2. If input contains SINGLE recipe (or multiple with same title merged), return as single object: {Title: "...", ...}
-3. Maintain JSON validity
-4. Preserve all nested structures
-5. Don't include any special characters in the response
-6. Keep original data types (arrays, objects, strings)
-7. Ensure all keys and values are properly escaped
-8. Format output for readability
+1. If input contains MULTIPLE DISTINCT recipes (different titles), you MUST return: {"recipes": [recipe1, recipe2, ...]}
+2. If input contains SINGLE recipe (or multiple with same title merged), return: {Title: "...", ...}
+3. CRITICAL: For multiple recipes, ALWAYS wrap in {"recipes": [...]} - NEVER return a direct array or single object
+4. Maintain JSON validity
+5. Preserve all nested structures
+6. Don't include any special characters in the response
+7. Keep original data types (arrays, objects, strings)
+8. Ensure all keys and values are properly escaped
 9. Return only the JSON and nothing else
+
+# Example for Multiple Recipes (3 recipes):
+{
+  "recipes": [
+    {
+      "Title": "Recipe 1",
+      "Servings": 4,
+      "Type": ["main dish"],
+      "Ingredients": {...},
+      "Directions": [...]
+    },
+    {
+      "Title": "Recipe 2",
+      "Servings": 6,
+      "Type": ["dessert"],
+      "Ingredients": {...},
+      "Directions": [...]
+    },
+    {
+      "Title": "Recipe 3",
+      "Servings": 8,
+      "Type": ["appetizer"],
+      "Ingredients": {...},
+      "Directions": [...]
+    }
+  ]
+}
 
   """
     json_string = json.dumps(recipes)
@@ -460,7 +487,7 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
             }
         ],
         temperature=0.0,
-        max_tokens=8192,  # Ensure enough tokens for combining multiple recipes
+        max_tokens=32768,  # Next highest tier - handles large batches of recipes
     )
 
     # Parse the LLM response and normalize the recipe
@@ -480,12 +507,15 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
 
         if isinstance(recipe_data, dict) and 'recipes' in recipe_data:
             # Format 1: Wrapped array
+            print(f"[PARSEJSON] Detected wrapped array format with {len(recipe_data['recipes'])} recipes")
             recipes_to_normalize = recipe_data['recipes']
         elif isinstance(recipe_data, list):
             # Format 2: Direct array
+            print(f"[PARSEJSON] Detected direct array format with {len(recipe_data)} recipes")
             recipes_to_normalize = recipe_data
         else:
             # Format 3: Single recipe
+            print(f"[PARSEJSON] Detected single recipe format: {recipe_data.get('Title', 'Unknown')}")
             normalized_recipe = normalize_recipe(recipe_data)
             result = json.dumps(normalized_recipe, ensure_ascii=False)
             return result
