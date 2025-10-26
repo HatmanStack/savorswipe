@@ -38,31 +38,28 @@ function RecipeDetails({ currentRecipe }: { currentRecipe: Recipe | null }) {
 
 {typeof currentRecipe.Ingredients === 'object' && !Array.isArray(currentRecipe.Ingredients) ? (
   <Collapsible title="Ingredients">
-    {/* Check if the first value is an object (indicating a sectioned structure) */}
-    {Object.values(currentRecipe.Ingredients)[0] && 
-     typeof Object.values(currentRecipe.Ingredients)[0] === 'object' ? (
-      // Handle sectioned ingredients (nested objects)
-      Object.entries(currentRecipe.Ingredients).map(([sectionName, ingredients], sectionIndex) => (
-        <Collapsible key={sectionIndex} title={decodeUnicode(sectionName)}>
-          {typeof ingredients === 'object' && !Array.isArray(ingredients) ? (
-            Object.entries(ingredients as Record<string, string>).map(([ingredient, amount], ingredientIndex) => (
+    {Object.entries(currentRecipe.Ingredients).map(([key, value], index) => {
+      // Check if this value is an object (nested section) or a string (flat ingredient)
+      if (typeof value === 'object' && !Array.isArray(value)) {
+        // Handle nested section
+        return (
+          <Collapsible key={index} title={decodeUnicode(key)}>
+            {Object.entries(value as Record<string, string>).map(([ingredient, amount], ingredientIndex) => (
               <ThemedText key={ingredientIndex}>
                 {decodeUnicode(ingredient)}: {amount ? decodeUnicode(amount) : ''}
               </ThemedText>
-            ))
-          ) : (
-            <ThemedText>{decodeUnicode(String(ingredients))}</ThemedText>
-          )}
-        </Collapsible>
-      ))
-    ) : (
-      // Handle flat ingredients (direct key-value pairs)
-      Object.entries(currentRecipe.Ingredients).map(([ingredient, amount], index) => (
-        <ThemedText key={index}>
-          {decodeUnicode(ingredient)}: {amount ? decodeUnicode(amount as string) : ''}
-        </ThemedText>
-      ))
-    )}
+            ))}
+          </Collapsible>
+        );
+      } else {
+        // Handle flat ingredient
+        return (
+          <ThemedText key={index}>
+            {decodeUnicode(key)}: {value ? decodeUnicode(value as string) : ''}
+          </ThemedText>
+        );
+      }
+    })}
   </Collapsible>
 ) : (
   <Collapsible title="Ingredients">
@@ -78,47 +75,50 @@ function RecipeDetails({ currentRecipe }: { currentRecipe: Recipe | null }) {
 
 {typeof currentRecipe.Directions === 'object' && !Array.isArray(currentRecipe.Directions) ? (
   <Collapsible title="Directions">
-    {/* Check if the first value is an object (indicating a sectioned structure) */}
-    {Object.values(currentRecipe.Directions)[0] && 
-     typeof Object.values(currentRecipe.Directions)[0] === 'object' ? (
-      // Handle sectioned directions (nested objects)
-      Object.entries(currentRecipe.Directions).map(([sectionName, steps], sectionIndex) => (
-        <Collapsible key={sectionIndex} title={decodeUnicode(sectionName)}>
-          {typeof steps === 'object' && !Array.isArray(steps) ? (
-            // Handle numbered steps (like in your JSON)
-            Object.entries(steps as Record<string, string>).sort((a, b) => {
-              // Try to sort numerically if possible
-              const numA = parseInt(a[0]);
-              const numB = parseInt(b[0]);
-              return isNaN(numA) || isNaN(numB) ? a[0].localeCompare(b[0]) : numA - numB;
-            }).map(([stepNum, instruction], stepIndex) => (
-              <ThemedText key={stepIndex}>
-                {stepNum}. {decodeUnicode(instruction)}
-              </ThemedText>
-            ))
-          ) : Array.isArray(steps) ? (
-            steps.map((item, itemIndex) => (
-              <ThemedText key={itemIndex}>{decodeUnicode(item)}</ThemedText>
-            ))
-          ) : (
-            <ThemedText>{decodeUnicode(String(steps))}</ThemedText>
-          )}
-        </Collapsible>
-      ))
-    ) : (
-      // Handle flat directions (direct step-instruction pairs)
-      Object.entries(currentRecipe.Directions)
-        .sort((a, b) => {
-          const numA = parseInt(a[0]);
-          const numB = parseInt(b[0]);
-          return isNaN(numA) || isNaN(numB) ? a[0].localeCompare(b[0]) : numA - numB;
-        })
-        .map(([step, instruction], index) => (
-          <ThemedText key={index}>
-            {step}. {decodeUnicode(instruction as string)}
-          </ThemedText>
-        ))
-    )}
+    {Object.entries(currentRecipe.Directions)
+      .sort((a, b) => {
+        // Try to sort numerically if the keys are numbers
+        const numA = parseInt(a[0]);
+        const numB = parseInt(b[0]);
+        return isNaN(numA) || isNaN(numB) ? a[0].localeCompare(b[0]) : numA - numB;
+      })
+      .map(([key, value], index) => {
+        // Check if this value is an object (nested section) or a string (flat step)
+        if (typeof value === 'object' && !Array.isArray(value)) {
+          // Handle nested section
+          return (
+            <Collapsible key={index} title={decodeUnicode(key)}>
+              {Object.entries(value as Record<string, string>)
+                .sort((a, b) => {
+                  const numA = parseInt(a[0]);
+                  const numB = parseInt(b[0]);
+                  return isNaN(numA) || isNaN(numB) ? a[0].localeCompare(b[0]) : numA - numB;
+                })
+                .map(([stepNum, instruction], stepIndex) => (
+                  <ThemedText key={stepIndex}>
+                    {stepNum}. {decodeUnicode(instruction)}
+                  </ThemedText>
+                ))}
+            </Collapsible>
+          );
+        } else if (Array.isArray(value)) {
+          // Handle array of steps
+          return (
+            <Collapsible key={index} title={decodeUnicode(key)}>
+              {value.map((item, itemIndex) => (
+                <ThemedText key={itemIndex}>{decodeUnicode(item)}</ThemedText>
+              ))}
+            </Collapsible>
+          );
+        } else {
+          // Handle flat step
+          return (
+            <ThemedText key={index}>
+              {key}. {decodeUnicode(value as string)}
+            </ThemedText>
+          );
+        }
+      })}
   </Collapsible>
 ) : (
   <Collapsible title="Directions">
