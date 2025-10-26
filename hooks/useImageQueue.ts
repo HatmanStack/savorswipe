@@ -102,9 +102,7 @@ export function useImageQueue(): ImageQueueHook {
         setNextImage(allImages[1]);
       }
     } catch (error) {
-      if (__DEV__) {
         console.error('Error initializing image queue:', error);
-      }
     } finally {
       isInitializingRef.current = false;
       if (isMountedRef.current) {
@@ -122,9 +120,6 @@ export function useImageQueue(): ImageQueueHook {
 
     // If pool is empty, reshuffle to create a new pool
     if (recipeKeyPoolRef.current.length === 0 && jsonData) {
-      if (__DEV__) {
-        console.log('Recipe pool exhausted, reshuffling...');
-      }
       recipeKeyPoolRef.current = ImageQueueService.createRecipeKeyPool(jsonData, mealTypeFilters);
     }
 
@@ -153,9 +148,7 @@ export function useImageQueue(): ImageQueueHook {
       const fetchedCount = result.images.length + result.failedKeys.length;
       recipeKeyPoolRef.current = recipeKeyPoolRef.current.slice(fetchedCount);
     } catch (error) {
-      if (__DEV__) {
         console.error('Error refilling queue:', error);
-      }
     } finally {
       isRefillingRef.current = false;
     }
@@ -242,9 +235,7 @@ export function useImageQueue(): ImageQueueHook {
         fetchedImages = result.images;
         break;
       } catch (error) {
-        if (__DEV__) {
           console.error('Error fetching images for injection:', error);
-        }
         attemptCount++;
 
         if (attemptCount >= INJECT_RETRY_MAX) {
@@ -255,9 +246,6 @@ export function useImageQueue(): ImageQueueHook {
 
     // No images fetched
     if (fetchedImages.length === 0) {
-      if (__DEV__) {
-        console.log('No images fetched for injection after retries');
-      }
       return;
     }
 
@@ -293,9 +281,6 @@ export function useImageQueue(): ImageQueueHook {
       key => !recipeKeys.includes(key)
     );
 
-    if (__DEV__) {
-      console.log(`Successfully injected ${fetchedImages.length} recipes into queue`);
-    }
   }, []); // Empty deps - all state reads use refs or functional updates
 
   // Effect: Initialize queue on mount
@@ -353,9 +338,6 @@ export function useImageQueue(): ImageQueueHook {
 
     // If new keys found, inject them
     if (newKeys.length > 0) {
-      if (__DEV__) {
-        console.log(`Detected ${newKeys.length} new recipes, injecting into queue`);
-      }
       injectRecipes(newKeys);
     }
 

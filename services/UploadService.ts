@@ -293,7 +293,7 @@ export class UploadService {
     // Persist queue state to AsyncStorage
     UploadPersistence.saveQueue(this.jobQueue).catch(error => {
       if (__DEV__) {
-        console.warn('Failed to persist upload queue:', error)
+        console.error('Failed to persist upload queue:', error)
       }
     })
   }

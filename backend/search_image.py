@@ -1,11 +1,57 @@
 import os
 import requests
+import re
 from typing import List, Set, Dict
+
+
+def simplify_recipe_title(title: str) -> str:
+    """
+    Simplify recipe title for better image search results.
+
+    Examples:
+        "Flat Iron Steak Sandwiches with Peppers and Onions" -> "Flat Iron Steak"
+        "Grandma's Famous Chocolate Chip Cookies" -> "Chocolate Chip Cookies"
+        "Easy 30-Minute Chicken Parmesan" -> "Chicken Parmesan"
+
+    Args:
+        title: Full recipe title
+
+    Returns:
+        Simplified title focusing on main ingredient/dish
+    """
+    # Remove common prefixes
+    prefixes_to_remove = [
+        r"^(Easy|Quick|Best|Perfect|Homemade|Classic|Traditional|Authentic|Simple|Delicious|Amazing|Ultimate|World's Best)\s+",
+        r"^\d+(-|\s)?(Minute|Hour|Ingredient|Step)\s+",  # "30-Minute", "5 Ingredient"
+        r"^(Mom's|Grandma's|Aunt\s+\w+'s|[A-Z]\w+'s)\s+",  # Possessives
+    ]
+
+    simplified = title
+    for pattern in prefixes_to_remove:
+        simplified = re.sub(pattern, '', simplified, flags=re.IGNORECASE)
+
+    # Remove trailing qualifiers (everything after "with", "in", "on", etc.)
+    qualifiers = r'\s+(with|in|on|topped with|served with|featuring)\s+.+$'
+    simplified = re.sub(qualifiers, '', simplified, flags=re.IGNORECASE)
+
+    # Remove parenthetical notes
+    simplified = re.sub(r'\([^)]*\)', '', simplified)
+
+    # Remove extra whitespace
+    simplified = ' '.join(simplified.split())
+
+    return simplified
 
 
 def google_search_image(title: str, count: int = 10) -> List[str]:
     """
-    Search for images using Google Custom Search API.
+    Search for images using Google Custom Search API with automatic query simplification.
+
+    Tries multiple search strategies to find actual food photos:
+    1. Simplified title + "food dish" (e.g., "Flat Iron Steak food dish")
+    2. If <5 results, tries simplified title + "recipe food"
+    3. If still <5 results, tries just simplified title
+    4. Returns best results found
 
     Args:
         title: Search query (recipe title)
@@ -14,15 +60,53 @@ def google_search_image(title: str, count: int = 10) -> List[str]:
     Returns:
         List of image URLs (up to count results), or empty list if no results
     """
+    # Simplify the title first
+    simplified_title = simplify_recipe_title(title)
+
+    # Strategy 1: Try simplified title + "food dish" to prioritize actual food photos
+    results = _search_google_images(f"{simplified_title} food dish", count)
+
+    # Strategy 2: If we got very few results, try "recipe food"
+    if len(results) < 5:
+        recipe_results = _search_google_images(f"{simplified_title} recipe food", count)
+
+        # Use whichever gave us more results
+        if len(recipe_results) > len(results):
+            results = recipe_results
+
+    # Strategy 3: If still very few, try just simplified title as fallback
+    if len(results) < 5:
+        simple_results = _search_google_images(simplified_title, count)
+
+        # Use whichever gave us more results
+        if len(simple_results) > len(results):
+            results = simple_results
+
+    return results
+
+
+def _search_google_images(query: str, count: int = 10) -> List[str]:
+    """
+    Internal function to perform actual Google Custom Search API call.
+
+    Args:
+        query: Search query string
+        count: Number of results to return
+
+    Returns:
+        List of image URLs
+    """
     url = "https://www.googleapis.com/customsearch/v1"
     params = {
         'key': os.getenv('SEARCH_KEY'),
         'cx': os.getenv('SEARCH_ID'),
-        'q': title,
+        'q': query,
         'searchType': 'image',
         'num': count,
         'imgSize': 'xlarge',
         'imgType': 'photo',
+        'imgColorType': 'color',  # Prefer color photos (most food photos are in color)
+        'safe': 'active',  # Enable SafeSearch to filter inappropriate content
     }
 
     try:
@@ -32,7 +116,6 @@ def google_search_image(title: str, count: int = 10) -> List[str]:
             try:
                 search_results = response.json()
             except ValueError as json_err:
-                print(f"Error parsing JSON response: {json_err}")
                 return []
 
             # Extract image URLs from results
@@ -40,17 +123,13 @@ def google_search_image(title: str, count: int = 10) -> List[str]:
                 image_urls = [item['link'] for item in search_results['items']]
                 return image_urls
             else:
-                print("No image results found.")
                 return []
         else:
-            print(f"Error: {response.status_code} - {response.text[:200]}")
             return []
 
     except requests.exceptions.Timeout:
-        print("Error: Request timed out after 10 seconds")
         return []
     except requests.exceptions.RequestException as e:
-        print(f"Error making request: {e}")
         return []
 
 
@@ -94,7 +173,7 @@ def select_unique_image_url(search_results: List[str], used_urls: Set[str]) -> s
         return ''
 
     # Find first unused URL
-    for url in search_results:
+    for idx, url in enumerate(search_results):
         if url not in used_urls:
             return url
 
@@ -126,8 +205,6 @@ def google_search_image_legacy(title):
         if 'items' in search_results and len(search_results['items']) > 0:
             return search_results
         else:
-            print("No image results found.")
             return None
     else:
-        print(f"Error: {response.status_code}")
         return None

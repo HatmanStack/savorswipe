@@ -41,7 +41,7 @@ export class UploadPersistence {
       await AsyncStorage.setItem(this.STORAGE_KEY, jsonString)
     } catch (error) {
       if (__DEV__) {
-        console.warn('Failed to save upload queue:', error)
+        console.error('Failed to save upload queue:', error)
       }
       // Don't throw - persistence is optional
     }
@@ -62,7 +62,7 @@ export class UploadPersistence {
       return jobs
     } catch (error) {
       if (__DEV__) {
-        console.warn('Failed to load upload queue:', error)
+        console.error('Failed to load upload queue:', error)
       }
       return []
     }
@@ -76,7 +76,7 @@ export class UploadPersistence {
       await AsyncStorage.removeItem(this.STORAGE_KEY)
     } catch (error) {
       if (__DEV__) {
-        console.warn('Failed to clear upload queue:', error)
+        console.error('Failed to clear upload queue:', error)
       }
       // Don't throw - persistence is optional
     }
@@ -101,7 +101,7 @@ export class UploadPersistence {
         // Ignore 404s - file doesn't exist yet
       } catch (error) {
         if (__DEV__) {
-          console.warn(`Failed to fetch completion flag for ${jobId}:`, error)
+          console.error(`Failed to fetch completion flag for ${jobId}:`, error)
         }
         // Continue to next job
       }
@@ -123,7 +123,7 @@ export class UploadPersistence {
     } catch (error) {
       // Ignore errors - flag may already be deleted or delete may not be supported
       if (__DEV__) {
-        console.warn(`Failed to delete completion flag for ${jobId}:`, error)
+        console.error(`Failed to delete completion flag for ${jobId}:`, error)
       }
     }
   }

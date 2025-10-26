@@ -56,9 +56,7 @@ export class ImageQueueService {
       } else {
         // Track which key failed
         failedKeys.push(keysToFetch[index]);
-        if (__DEV__) {
           console.error(`Failed to fetch image for recipe ${keysToFetch[index]}:`, result.reason);
-        }
       }
     });
 
@@ -85,11 +83,8 @@ export class ImageQueueService {
         if (image.file && image.file.startsWith('blob:')) {
           URL.revokeObjectURL(image.file);
         }
-      } catch (error) {
+      } catch {
         // Silently handle errors - cleanup is best-effort
-        if (__DEV__) {
-          console.warn('Error revoking blob URL:', error);
-        }
       }
     });
   }

@@ -154,7 +154,6 @@ def lambda_handler(event, context):
             try:
                 app_time = upload.upload_user_data('user_images', 'image/jpeg', 'jpg', file_content)
             except Exception as upload_err:
-                print(f"Warning: Failed to upload user data: {upload_err}")
                 app_time = int(time.time())
 
             # Detect if PDF from MIME type
@@ -191,14 +190,22 @@ def lambda_handler(event, context):
                 upload.upload_user_data('user_images_json', 'application/json', 'json', recipe_json, app_time)
 
                 if recipe_json is None:
-                    print(f"Warning: extract_recipe_data returned None for file {file_idx}")
                     continue
 
                 try:
-                    recipe = json.loads(recipe_json)
-                    all_recipes.append((recipe, file_idx))
+                    parsed_data = json.loads(recipe_json)
+
+                    # Handle multi-recipe response (OCR detected multiple recipes on one page)
+                    if isinstance(parsed_data, list):
+                        # Multiple recipes from this image
+                        for recipe_idx, recipe in enumerate(parsed_data):
+                            all_recipes.append((recipe, file_idx))
+                    else:
+                        # Single recipe (original behavior)
+                        all_recipes.append((parsed_data, file_idx))
+
                 except json.JSONDecodeError as e:
-                    print(f"Error decoding JSON for file {file_idx}: {e}")
+                    pass
 
         except Exception as e:
             file_errors.append({
@@ -230,7 +237,7 @@ def lambda_handler(event, context):
         else:
             all_recipes = []
     except Exception as e:
-        print(f"Error parsing recipes: {e}")
+        pass
 
     # Process recipes in parallel
     unique_recipes = []
@@ -293,7 +300,6 @@ def lambda_handler(event, context):
                 json_data = {}
             except Exception as e:
                 # Other errors should be logged/raised
-                print(f"Error loading combined_data.json: {e}")
                 json_data = {}
 
             # Extract used URLs
@@ -382,7 +388,7 @@ def lambda_handler(event, context):
             ]
         )
     except Exception as e:
-        print(f"Warning: Failed to send CloudWatch metrics: {e}")
+        pass
 
     # Write S3 completion flag
     try:
@@ -404,7 +410,7 @@ def lambda_handler(event, context):
             ContentType='application/json'
         )
     except Exception as e:
-        print(f"Warning: Failed to write completion flag: {e}")
+        pass
 
     # Return response
     return {

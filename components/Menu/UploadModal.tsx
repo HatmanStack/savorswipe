@@ -71,7 +71,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
         const difference = [...newKeys].filter((key) => !existingKeys.has(key));
         const sortedDifference = difference.sort((a, b) => Number(b) - Number(a));
 
-        console.log('New recipes uploaded:', sortedDifference);
+        // New recipes uploaded
 
         setAllFiles(sortedDifference);
         setJsonData(uploadMessage.jsonData);

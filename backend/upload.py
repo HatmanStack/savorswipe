@@ -43,40 +43,59 @@ def to_s3(recipe, search_results, jsonData = None):
 
 def upload_image(search_results, bucket_name, highest_key):
     images_prefix = 'images/'
-    for searched_item in search_results['items']: ## You are returned 10 items from the google search to iterate through and find a good response
-        image_url = searched_item['link']
-        print(f"Fetching image from URL: {image_url}")
-        image_response = requests.get(image_url)
+
+    # Handle both list format (new) and dict format (legacy)
+    if isinstance(search_results, list):
+        # New format: list of URLs
+        image_urls = search_results
+    elif isinstance(search_results, dict) and 'items' in search_results:
+        # Legacy format: {'items': [{'link': 'url'}]}
+        image_urls = [item['link'] for item in search_results['items']]
+    else:
+        return None
+
+    item_count = len(image_urls)
+
+    if item_count == 0:
+        return None
+
+    for idx, image_url in enumerate(image_urls):
+        try:
+            image_response = requests.get(image_url, timeout=10)
+        except requests.exceptions.RequestException as e:
+            continue  # Try next URL
 
         if image_response.status_code == 200:
-            if 'image' in image_response.headers['Content-Type']:
+            content_type = image_response.headers.get('Content-Type', 'unknown')
 
-                image_data = image_response.content
-                image_key = images_prefix + str(highest_key) + '.jpg'
+            if 'image' not in content_type:
+                continue  # Try next URL
 
-                tmp_image_path = f'/tmp/searchImage.jpg'
-                with open(tmp_image_path, 'wb') as image_file:
-                    image_file.write(image_data)
-                # Upload to S3
-                s3_client = boto3.client('s3')
-                try:
-                    s3_client.put_object(
-                        Bucket=bucket_name,  # Replace with your bucket name
-                        Key=image_key,
-                        Body=image_data,
-                        ContentType='image/jpeg'
-                    )
-                    print('Image uploaded successfully.')
-                    return image_url  # Return the URL instead of True
+            # Valid image found
+            image_data = image_response.content
+            image_key = images_prefix + str(highest_key) + '.jpg'
 
-                except Exception as e:
-                    print(f"Error uploading image to S3: {e}")
-                    return None
-            else:
-                print("The fetched content is not an image.")
+            tmp_image_path = f'/tmp/searchImage.jpg'
+            with open(tmp_image_path, 'wb') as image_file:
+                image_file.write(image_data)
+
+            # Upload to S3
+            s3_client = boto3.client('s3')
+            try:
+                s3_client.put_object(
+                    Bucket=bucket_name,
+                    Key=image_key,
+                    Body=image_data,
+                    ContentType='image/jpeg'
+                )
+                return image_url  # Return the source URL
+
+            except Exception as e:
+                continue  # Try next URL
         else:
-            print(f"Error fetching image: {image_response.status_code}")
-    return None  # Return None instead of False    
+            continue  # Try next URL
+
+    return None    
     
 
 def upload_user_data(prefix, content, file_type, data, app_time=None):
@@ -91,7 +110,6 @@ def upload_user_data(prefix, content, file_type, data, app_time=None):
             image.convert('RGB').save(jpeg_image_io, format='JPEG')
             data = jpeg_image_io.getvalue()
         except Exception as e:
-            print(f"Error converting image to JPEG: {e}")
             return
     image_key = f'{prefix}/{app_time}.{file_type}'
     try:
@@ -101,12 +119,10 @@ def upload_user_data(prefix, content, file_type, data, app_time=None):
             Body=data,
             ContentType=content  # Adjust based on the actual image type
         )
-        print('User Image uploaded successfully.')
-        
-        
+
     except Exception as e:
-        print(f"Error uploading User Image to S3: {e}")
-    
+        pass
+
     return app_time
 
 
@@ -242,14 +258,12 @@ def batch_to_s3_atomic(
             except ClientError as e:
                 if e.response['Error']['Code'] == 'PreconditionFailed':
                     # Race condition detected - rollback uploaded images
-                    print(f"Race condition detected on attempt {attempt + 1}, rolling back...")
-
                     for key in images_to_upload:
                         try:
                             image_key = f'images/{key}.jpg'
                             s3_client.delete_object(Bucket=bucket_name, Key=image_key)
                         except Exception as rollback_error:
-                            print(f"Error rolling back image {key}: {rollback_error}")
+                            pass
 
                     # Retry with exponential backoff
                     if attempt < MAX_RETRIES - 1:
