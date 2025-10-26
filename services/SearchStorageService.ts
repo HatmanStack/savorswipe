@@ -21,7 +21,6 @@ export class SearchStorageService {
 
       // Validate structure
       if (!Array.isArray(searches)) {
-        console.warn('Invalid recent searches format, resetting');
         return [];
       }
 

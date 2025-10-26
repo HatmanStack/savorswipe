@@ -12,7 +12,38 @@ export default {
       favicon: './assets/images/icon.png',
       name: "SavorSwipe",
       orientation: "portrait",
-      shortName: "SavorSwipe"
+      shortName: "SavorSwipe",
+      themeColor: "#ffffff",
+      backgroundColor: "#ffffff",
+      display: "standalone",
+      startUrl: "/",
+      scope: "/",
+      icons: [
+        {
+          src: './assets/images/icon-192.png',
+          sizes: '192x192',
+          type: 'image/png',
+          purpose: 'any'
+        },
+        {
+          src: './assets/images/icon-512.png',
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'any'
+        },
+        {
+          src: './assets/images/icon-maskable-192.png',
+          sizes: '192x192',
+          type: 'image/png',
+          purpose: 'maskable'
+        },
+        {
+          src: './assets/images/icon-maskable-512.png',
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'maskable'
+        }
+      ]
     },
     splash: {
       image: './assets/images/adaptive-icon.png', // Path to your splash screen image

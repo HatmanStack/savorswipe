@@ -25,6 +25,8 @@ export function useImageQueue(): ImageQueueHook {
   const queueRef = useRef<ImageFile[]>([]); // Track latest queue for cleanup
   const prevJsonDataKeysRef = useRef<Set<string>>(new Set());
   const nextImageRef = useRef<ImageFile | null>(null); // Track nextImage for injection without causing re-creation
+  const lastInjectionTimeRef = useRef<number>(0); // Track last injection time to block refills
+  const seenRecipeKeysRef = useRef<Set<string>>(new Set()); // Track seen recipes to avoid duplicates
 
   // Context
   const { jsonData, setCurrentRecipe, mealTypeFilters } = useRecipe();
@@ -102,9 +104,7 @@ export function useImageQueue(): ImageQueueHook {
         setNextImage(allImages[1]);
       }
     } catch (error) {
-      if (__DEV__) {
         console.error('Error initializing image queue:', error);
-      }
     } finally {
       isInitializingRef.current = false;
       if (isMountedRef.current) {
@@ -120,12 +120,32 @@ export function useImageQueue(): ImageQueueHook {
       return;
     }
 
+    // Don't refill immediately after injection (wait 2 seconds)
+    const timeSinceInjection = Date.now() - lastInjectionTimeRef.current;
+    if (timeSinceInjection < 2000) {
+      console.log('[QUEUE] Skipping refill - injection happened', timeSinceInjection, 'ms ago');
+      return;
+    }
+
     // If pool is empty, reshuffle to create a new pool
     if (recipeKeyPoolRef.current.length === 0 && jsonData) {
-      if (__DEV__) {
-        console.log('Recipe pool exhausted, reshuffling...');
-      }
-      recipeKeyPoolRef.current = ImageQueueService.createRecipeKeyPool(jsonData, mealTypeFilters);
+      console.log('[QUEUE] Recipe pool exhausted, reshuffling with seen recipes at end...');
+      console.log('[QUEUE] Seen recipes this session:', seenRecipeKeysRef.current.size);
+
+      // Create new shuffled pool
+      const allKeys = ImageQueueService.createRecipeKeyPool(jsonData, mealTypeFilters);
+
+      // Separate seen and unseen recipes
+      const unseenKeys = allKeys.filter(key => !seenRecipeKeysRef.current.has(key));
+      const seenKeys = allKeys.filter(key => seenRecipeKeysRef.current.has(key));
+
+      // Put unseen recipes first, then seen recipes at the end
+      recipeKeyPoolRef.current = [...unseenKeys, ...seenKeys];
+
+      console.log('[QUEUE] Total recipes in jsonData:', Object.keys(jsonData).length);
+      console.log('[QUEUE] Recipes matching filters:', allKeys.length);
+      console.log('[QUEUE] Missing recipes:', Object.keys(jsonData).length - allKeys.length);
+      console.log('[QUEUE] Reshuffled pool:', unseenKeys.length, 'unseen,', seenKeys.length, 'seen');
     }
 
     // If still no keys available (no recipes match filters), return
@@ -153,9 +173,7 @@ export function useImageQueue(): ImageQueueHook {
       const fetchedCount = result.images.length + result.failedKeys.length;
       recipeKeyPoolRef.current = recipeKeyPoolRef.current.slice(fetchedCount);
     } catch (error) {
-      if (__DEV__) {
         console.error('Error refilling queue:', error);
-      }
     } finally {
       isRefillingRef.current = false;
     }
@@ -188,6 +206,11 @@ export function useImageQueue(): ImageQueueHook {
       // Update recipe in context if new current image exists
       if (newCurrent) {
         updateCurrentRecipe(newCurrent);
+
+        // Mark recipe as seen
+        const recipeKey = ImageService.getRecipeKeyFromFileName(newCurrent.filename);
+        seenRecipeKeysRef.current.add(recipeKey);
+        console.log('[QUEUE] Marked recipe as seen:', recipeKey, '- Total seen:', seenRecipeKeysRef.current.size);
       }
 
       return newQueue;
@@ -198,6 +221,10 @@ export function useImageQueue(): ImageQueueHook {
   const resetQueue = useCallback(async () => {
     // Clean up existing queue using ref to avoid stale closure
     ImageQueueService.cleanupImages(queueRef.current);
+
+    // Clear seen recipes tracker (new filter context)
+    seenRecipeKeysRef.current.clear();
+    console.log('[QUEUE] Cleared seen recipes tracker for filter change');
 
     // Clear state
     setQueue([]);
@@ -242,9 +269,7 @@ export function useImageQueue(): ImageQueueHook {
         fetchedImages = result.images;
         break;
       } catch (error) {
-        if (__DEV__) {
           console.error('Error fetching images for injection:', error);
-        }
         attemptCount++;
 
         if (attemptCount >= INJECT_RETRY_MAX) {
@@ -255,14 +280,44 @@ export function useImageQueue(): ImageQueueHook {
 
     // No images fetched
     if (fetchedImages.length === 0) {
-      if (__DEV__) {
-        console.log('No images fetched for injection after retries');
-      }
+      console.log('[QUEUE] No images fetched for injection after retries');
       return;
     }
 
     // Update queue with functional state update (single call to avoid race conditions)
     setQueue(prev => {
+      // Get recipe keys already in queue to avoid duplicates
+      const existingKeys = new Set(
+        prev.map(img => ImageService.getRecipeKeyFromFileName(img.filename))
+      );
+
+      // Filter out images that are already in the queue
+      const duplicatesToCleanup: ImageFile[] = [];
+      const uniqueNewImages = fetchedImages.filter(img => {
+        const key = ImageService.getRecipeKeyFromFileName(img.filename);
+        if (existingKeys.has(key)) {
+          console.log('[QUEUE] Recipe', key, 'already in queue - skipping duplicate injection');
+          duplicatesToCleanup.push(img);
+          return false;
+        }
+        return true;
+      });
+
+      // Clean up duplicate blob URLs after a delay
+      if (duplicatesToCleanup.length > 0) {
+        setTimeout(() => {
+          console.log('[QUEUE] Cleaning up', duplicatesToCleanup.length, 'duplicate blob URLs (delayed)');
+          ImageQueueService.cleanupImages(duplicatesToCleanup);
+        }, 300);
+      }
+
+      if (uniqueNewImages.length === 0) {
+        console.log('[QUEUE] No new unique recipes to inject after deduplication');
+        return prev;
+      }
+
+      console.log('[QUEUE] Injecting', uniqueNewImages.length, 'unique recipes (filtered', duplicatesToCleanup.length, 'duplicates)');
+
       // Calculate insert position (min of 2 or queue length)
       const insertPosition = Math.min(2, prev.length);
 
@@ -271,7 +326,7 @@ export function useImageQueue(): ImageQueueHook {
       const after = prev.slice(insertPosition);
 
       // Combine
-      let newQueue = [...before, ...fetchedImages, ...after];
+      let newQueue = [...before, ...uniqueNewImages, ...after];
 
       // Enforce max queue size
       if (newQueue.length > MAX_QUEUE_SIZE) {
@@ -293,9 +348,11 @@ export function useImageQueue(): ImageQueueHook {
       key => !recipeKeys.includes(key)
     );
 
-    if (__DEV__) {
-      console.log(`Successfully injected ${fetchedImages.length} recipes into queue`);
-    }
+    // Set timestamp to block refill for 2 seconds
+    lastInjectionTimeRef.current = Date.now();
+    console.log('[QUEUE] Injection complete - refill blocked for 2 seconds');
+    console.log('Successfully injected', fetchedImages.length, 'recipes into queue');
+
   }, []); // Empty deps - all state reads use refs or functional updates
 
   // Effect: Initialize queue on mount
@@ -306,12 +363,12 @@ export function useImageQueue(): ImageQueueHook {
       initializeQueue();
     }
 
-    // Cleanup on unmount - use queueRef to avoid stale closure
+    // Cleanup on unmount ONLY - don't run when jsonData changes
     return () => {
       isMountedRef.current = false;
       ImageQueueService.cleanupImages(queueRef.current);
     };
-  }, [jsonData]); // Only run when jsonData is available
+  }, []); // Empty deps - only run on mount/unmount
 
   // Effect: Auto-initialize when jsonData becomes available
   useEffect(() => {
@@ -353,9 +410,6 @@ export function useImageQueue(): ImageQueueHook {
 
     // If new keys found, inject them
     if (newKeys.length > 0) {
-      if (__DEV__) {
-        console.log(`Detected ${newKeys.length} new recipes, injecting into queue`);
-      }
       injectRecipes(newKeys);
     }
 

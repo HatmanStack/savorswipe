@@ -6,6 +6,7 @@ import { DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { AppProvider } from '@/context';
 import Menu from '@/components/Menu';
 import { Toast } from '@/components/Toast';
+import { UploadListener } from '@/components/UploadListener';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -13,7 +14,8 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AppProvider>
-      <Menu />
+        <UploadListener />
+        <Menu />
         <Stack
           screenOptions={{
             headerShown: false,
