@@ -35,7 +35,7 @@ Upload a picture of your own directions, ingredients or recipe to join it to the
 - **Swipe Navigation**: Easily browse through recipes by swiping left to discard or right to select.
 - **Recipe Search**: Find recipes by title or ingredients with real-time filtering and recent search history.
 - **Recipe Details**: View detailed information about each recipe, including ingredients and cooking instructions.
-- **Recipe Upload**: Upload photos of recipes for OCR processing and automatic recipe extraction.
+- **Multi-File Upload**: Upload multiple recipe images or PDF cookbooks at once with background processing, duplicate detection, and automatic image search.
 - **Meal Type Filters**: Filter recipes by category (main dish, dessert, appetizer, etc.).
 
 ## Technologies Used
@@ -104,6 +104,39 @@ To get started with the SavorSwipe, follow these steps:
 - Partial matches work: "choc" finds "chocolate"
 - Case-insensitive searches
 - Clear recent searches using the "Clear All" button
+
+## Architecture
+
+**Frontend**: Expo/React Native app with file-based routing
+- Context-based state management
+- Image queue with prefetch (10-15 images)
+- Background upload processing with job queue
+- AsyncStorage for persistence
+
+**Backend**: AWS Lambda (Python 3.12)
+- OpenAI Vision API for OCR
+- Google Custom Search for recipe images
+- Semantic duplicate detection using embeddings
+- Atomic S3 writes with race condition protection
+
+**Storage**: S3 with CloudFront CDN
+- `/images/*.jpg` - Recipe photos
+- `/jsondata/combined_data.json` - Recipe metadata
+- `/jsondata/recipe_embeddings.json` - Similarity vectors
+
+## Testing
+
+```bash
+# Run frontend tests
+npm test
+
+# Run backend tests (from backend/)
+pytest
+```
+
+**Test Coverage**:
+- Frontend: 105+ tests (services, components, integration)
+- Backend: 69 tests (Lambda, OCR, embeddings, upload)
 
 ## License
 
