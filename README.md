@@ -117,7 +117,7 @@ To get started with the SavorSwipe, follow these steps:
 - OpenAI Vision API for OCR
 - Google Custom Search for recipe images
 - Semantic duplicate detection using embeddings
-- Atomic S3 writes with race condition protection
+- Atomic S3 writes with race condition protection (S3 conditional writes using If-Match on PutObject)
 
 **Storage**: S3 with CloudFront CDN
 - `/images/*.jpg` - Recipe photos

@@ -5,6 +5,26 @@ from fix_ingredients import normalize_recipe
 
 client = OpenAI(api_key=os.getenv('API_KEY'))
 
+
+def _repair_partial_json(recipe_json: str) -> str:
+    """
+    Repair partial/truncated JSON by adding missing quotes, brackets, or braces.
+
+    Args:
+        recipe_json: Potentially incomplete JSON string
+
+    Returns:
+        Repaired JSON string with balanced quotes/brackets/braces
+    """
+    repaired = recipe_json
+    if repaired.count('"') % 2 != 0:
+        repaired += '"'
+    if repaired.count('[') > repaired.count(']'):
+        repaired += '\n]'
+    if repaired.count('{') > repaired.count('}'):
+        repaired += '\n}'
+    return repaired
+
 def complete_recipe_with_gpt4o(partial_recipe_json, base64_image):
     """
     Attempts to complete a truncated recipe using GPT-4o.
@@ -16,16 +36,9 @@ def complete_recipe_with_gpt4o(partial_recipe_json, base64_image):
     partial_data = {}
     try:
         # Attempt to repair and parse the partial JSON
-        repaired_json = partial_recipe_json
-        if repaired_json.count('"') % 2 != 0:
-            repaired_json += '"'
-        if repaired_json.count('[') > repaired_json.count(']'):
-            repaired_json += '\n]'
-        if repaired_json.count('{') > repaired_json.count('}'):
-            repaired_json += '\n}'
-
+        repaired_json = _repair_partial_json(partial_recipe_json)
         partial_data = json.loads(repaired_json)
-    except json.JSONDecodeError as e:
+    except json.JSONDecodeError:
         # If we can't parse it, just use the raw text
         partial_data = {"partial_extraction": partial_recipe_json}
 
@@ -321,14 +334,9 @@ Example 3 - Multiple partial recipes (e.g., index page with snippets):
         try:
             # Use GPT-4o to complete the truncated recipe based on partial extraction and image
             recipe_json = complete_recipe_with_gpt4o(recipe_json, base64_image)
-        except Exception as e:
+        except (json.JSONDecodeError, Exception):
             # Fallback to basic repair if completion fails
-            if recipe_json.count('"') % 2 != 0:
-                recipe_json += '"'
-            if recipe_json.count('[') > recipe_json.count(']'):
-                recipe_json += '\n]'
-            if recipe_json.count('{') > recipe_json.count('}'):
-                recipe_json += '\n}'
+            recipe_json = _repair_partial_json(recipe_json)
 
     try:
         recipe_data = json.loads(recipe_json)
@@ -337,7 +345,7 @@ Example 3 - Multiple partial recipes (e.g., index page with snippets):
         if 'recipes' in recipe_data and isinstance(recipe_data['recipes'], list):
             # Normalize each recipe separately
             normalized_recipes = []
-            for idx, recipe in enumerate(recipe_data['recipes']):
+            for recipe in recipe_data['recipes']:
                 normalized_recipe = normalize_recipe(recipe)
                 normalized_recipes.append(normalized_recipe)
 
@@ -350,11 +358,14 @@ Example 3 - Multiple partial recipes (e.g., index page with snippets):
             normalized_recipe = normalize_recipe(recipe_data)
             result = json.dumps(normalized_recipe, ensure_ascii=False)
             return result
-    except json.JSONDecodeError as e:
+    except json.JSONDecodeError:
         # Return None to signal parsing failure
         return None
 
 def parseJSON(recipes):
+    print(f"[PARSEJSON] Received {len(recipes)} recipe object(s)")
+    print(f"[PARSEJSON] Input preview: {str(recipes)[:300]}")
+
     parse_prompt = """
     # Role and Objective
 You are an Expert Data Editor specializing in JSON processing and recipe data normalization. Your primary goal is to standardize and organize recipe data while preserving the original language and structure integrity.
@@ -454,6 +465,9 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
 
     # Parse the LLM response and normalize the recipe
     recipe_json = response.choices[0].message.content
+    print(f"[PARSEJSON] GPT-4o returned {len(recipe_json)} characters")
+    print(f"[PARSEJSON] GPT response preview: {recipe_json[:400]}")
+
     try:
         recipe_data = json.loads(recipe_json)
 
@@ -478,13 +492,14 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
 
         # Normalize multiple recipes
         normalized_recipes = []
-        for idx, recipe in enumerate(recipes_to_normalize):
+        for recipe in recipes_to_normalize:
             normalized_recipe = normalize_recipe(recipe)
             normalized_recipes.append(normalized_recipe)
 
+        print(f"[PARSEJSON] Returning {len(normalized_recipes)} normalized recipes")
         result = json.dumps(normalized_recipes, ensure_ascii=False)
         return result
 
-    except json.JSONDecodeError as e:
+    except json.JSONDecodeError:
         # Return empty JSON object to signal parsing failure
         return '{}'

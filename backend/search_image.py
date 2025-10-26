@@ -173,7 +173,7 @@ def select_unique_image_url(search_results: List[str], used_urls: Set[str]) -> s
         return ''
 
     # Find first unused URL
-    for idx, url in enumerate(search_results):
+    for url in search_results:
         if url not in used_urls:
             return url
 
@@ -198,13 +198,13 @@ def google_search_image_legacy(title):
         'imgSize': 'xlarge',
         'imgType': 'photo',
     }
-    response = requests.get(url, params=params)
+    response = requests.get(url, params=params, timeout=10)
     if response.status_code == 200:
         search_results = response.json()
 
         if 'items' in search_results and len(search_results['items']) > 0:
             return search_results
         else:
-            return None
+            return []
     else:
-        return None
+        return []

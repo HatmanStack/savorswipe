@@ -18,10 +18,17 @@ def to_s3(recipe, search_results, jsonData = None):
     try:
         if not jsonData:
             existing_data = s3_client.get_object(Bucket=bucket_name, Key=combined_data_key)
-            existing_data_body = existing_data['Body'].read()  
-        else: 
+            existing_data_body = existing_data['Body'].read()
+        else:
             existing_data_body = jsonData
-        existing_data_json = json.loads(existing_data_body)  
+
+        # Defensive parsing: handle bytes, str, or dict
+        if isinstance(existing_data_body, (bytes, str)):
+            existing_data_json = json.loads(existing_data_body)
+        elif isinstance(existing_data_body, dict):
+            existing_data_json = existing_data_body
+        else:
+            existing_data_json = {}  
         for existing_recipe in existing_data_json.values():
             if existing_recipe.get('Title') == recipe.get('Title'):
                 return False, existing_data_json
@@ -59,41 +66,46 @@ def upload_image(search_results, bucket_name, highest_key):
     if item_count == 0:
         return None
 
-    for idx, image_url in enumerate(image_urls):
+    for image_url in image_urls:
         try:
             image_response = requests.get(image_url, timeout=10)
-        except requests.exceptions.RequestException as e:
+        except requests.exceptions.RequestException:
             continue  # Try next URL
 
         if image_response.status_code == 200:
-            content_type = image_response.headers.get('Content-Type', 'unknown')
+            content_type = image_response.headers.get('Content-Type', '')
 
             if 'image' not in content_type:
                 continue  # Try next URL
 
             # Valid image found
-            image_data = image_response.content
+            raw_bytes = image_response.content
             image_key = images_prefix + str(highest_key) + '.jpg'
 
-            tmp_image_path = f'/tmp/searchImage.jpg'
-            with open(tmp_image_path, 'wb') as image_file:
-                image_file.write(image_data)
+            # Force JPEG to match key/content-type (minimizes downstream surprises)
+            try:
+                img = Image.open(io.BytesIO(raw_bytes)).convert('RGB')
+                buf = io.BytesIO()
+                img.save(buf, format='JPEG', quality=85)
+                image_data = buf.getvalue()
+                upload_content_type = 'image/jpeg'
+            except Exception:
+                # As a fallback, honor server-provided content type if it is an image
+                image_data = raw_bytes
+                upload_content_type = content_type or 'application/octet-stream'
 
             # Upload to S3
-            s3_client = boto3.client('s3')
             try:
                 s3_client.put_object(
                     Bucket=bucket_name,
                     Key=image_key,
                     Body=image_data,
-                    ContentType='image/jpeg'
+                    ContentType=upload_content_type
                 )
                 return image_url  # Return the source URL
 
-            except Exception as e:
+            except ClientError:
                 continue  # Try next URL
-        else:
-            continue  # Try next URL
 
     return None    
     

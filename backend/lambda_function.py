@@ -196,12 +196,13 @@ def lambda_handler(event, context):
                     parsed_data = json.loads(recipe_json)
 
                     # Handle multi-recipe response (OCR detected multiple recipes on one page)
+                    # Note: The parseJSON step (line 230) will handle unwrapping and consolidation
                     if isinstance(parsed_data, list):
                         # Multiple recipes from this image
                         for recipe_idx, recipe in enumerate(parsed_data):
                             all_recipes.append((recipe, file_idx))
                     else:
-                        # Single recipe (original behavior)
+                        # Single recipe OR multi-recipe dict format (parseJSON will handle)
                         all_recipes.append((parsed_data, file_idx))
 
                 except json.JSONDecodeError as e:
@@ -219,12 +220,20 @@ def lambda_handler(event, context):
         if all_recipes:
             # Collect just the recipes for parseJSON
             recipes_only = [r[0] for r in all_recipes]
+            print(f"[LAMBDA] Parsing and combining {len(recipes_only)} recipe objects...")
+            print(f"[LAMBDA] Recipe objects preview: {str(recipes_only)[:500]}")
             parsed_json = ocr.parseJSON(recipes_only)
+            print(f"[LAMBDA] ParseJSON returned {len(parsed_json)} characters")
             parsed_recipes = json.loads(parsed_json)
 
             # Handle both list and single recipe outputs
             if not isinstance(parsed_recipes, list):
                 parsed_recipes = [parsed_recipes]
+
+            print(f"[LAMBDA] Parsed {len(parsed_recipes)} recipe(s)")
+            for idx, recipe in enumerate(parsed_recipes):
+                title = recipe.get('Title', 'Unknown')
+                print(f"[LAMBDA] Recipe {idx+1}/{len(parsed_recipes)}: {title}")
 
             # Re-associate file indices
             final_recipes = []
@@ -381,7 +390,7 @@ def lambda_handler(event, context):
                     'Unit': 'Seconds'
                 },
                 {
-                    'MetricName': 'DuplicateRate',
+                    'MetricName': 'DuplicateCount',
                     'Value': duplicate_count,
                     'Unit': 'Count'
                 }
