@@ -19,6 +19,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Dict, Tuple, Optional
 
 import boto3
+from botocore.exceptions import ClientError
 import handlepdf
 import ocr
 import upload
@@ -165,14 +166,25 @@ def handle_get_request(event, context):
             'body': json_data
         }
 
-    except s3_client.exceptions.NoSuchKey:
-        return {
-            'statusCode': 404,
-            'headers': {
-                'Content-Type': 'application/json'
-            },
-            'body': json.dumps({'error': f'File not found: {json_key}'})
-        }
+    except ClientError as e:
+        error_code = e.response.get('Error', {}).get('Code', '')
+        if error_code == 'NoSuchKey':
+            return {
+                'statusCode': 404,
+                'headers': {
+                    'Content-Type': 'application/json'
+                },
+                'body': json.dumps({'error': f'File not found: {json_key}'})
+            }
+        else:
+            print(f'S3 ClientError fetching recipe JSON: {str(e)}')
+            return {
+                'statusCode': 500,
+                'headers': {
+                    'Content-Type': 'application/json'
+                },
+                'body': json.dumps({'error': f'Failed to fetch recipes: {str(e)}'})
+            }
 
     except Exception as e:
         print(f'Error fetching recipe JSON from S3: {str(e)}')
