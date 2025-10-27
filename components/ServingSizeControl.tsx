@@ -142,7 +142,7 @@ export function ServingSizeControl({
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: -30,
+    top: -60,
     right: 48,
     marginBottom: -5,
     borderRadius: 30,
@@ -150,8 +150,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
-    elevation: 5,
-    zIndex: 10,
+    elevation: 10,
+    zIndex: 100,
   },
   collapsed: {
     width: 60,
