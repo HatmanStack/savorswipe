@@ -17,9 +17,6 @@ export class RecipeService {
     try {
       const response = await fetch(lambdaUrl, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
       });
 
       if (!response.ok) {

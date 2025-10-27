@@ -652,6 +652,7 @@ class TestLambdaRouting(unittest.TestCase):
 
         # Assert
         mock_post_handler.assert_called_once_with(event, None)
+        self.assertEqual(result['statusCode'], 400)
 
 
 class TestLambdaPostRequest(unittest.TestCase):
@@ -661,7 +662,6 @@ class TestLambdaPostRequest(unittest.TestCase):
     def test_post_request_still_works(self, mock_post_handler):
         """Ensure POST upload logic still functions."""
         # Arrange
-        test_recipe = {'Title': 'Test', 'Servings': 4}
         mock_post_handler.return_value = {
             'statusCode': 200,
             'body': json.dumps({
