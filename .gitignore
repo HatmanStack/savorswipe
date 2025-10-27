@@ -21,7 +21,7 @@ components/__tests__/Menu.test.tsx
 CLAUDE.md
 s3-old
 docs/
-
+coverage/
 .worktrees/
 lambda-deploy/
 

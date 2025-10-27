@@ -463,5 +463,229 @@ class TestLambdaFunction(unittest.TestCase):
             self.assertEqual(response['statusCode'], 200)
 
 
+class TestLambdaGetRequest(unittest.TestCase):
+    """Test cases for GET request handling."""
+
+    @patch('lambda_function.boto3.client')
+    def test_get_request_success(self, mock_boto_client):
+        """Test successful GET request returns JSON with cache headers."""
+        # Arrange
+        mock_s3 = Mock()
+        mock_boto_client.return_value = mock_s3
+
+        mock_body = Mock()
+        mock_body.read.return_value = b'{"recipe-1": {"Title": "Test Recipe"}}'
+        mock_s3.get_object.return_value = {'Body': mock_body}
+
+        with patch.dict('os.environ', {'S3_BUCKET': 'test-bucket'}):
+            from lambda_function import handle_get_request
+
+            event = {
+                'requestContext': {
+                    'http': {
+                        'method': 'GET'
+                    }
+                }
+            }
+
+            # Act
+            result = handle_get_request(event, None)
+
+            # Assert
+            self.assertEqual(result['statusCode'], 200)
+            self.assertEqual(result['headers']['Content-Type'], 'application/json')
+            self.assertEqual(result['headers']['Cache-Control'], 'no-cache, no-store, must-revalidate')
+            self.assertEqual(result['headers']['Pragma'], 'no-cache')
+            self.assertEqual(result['headers']['Expires'], '0')
+            self.assertIn('Access-Control-Allow-Origin', result['headers'])
+
+            body = result['body']
+            self.assertIn('recipe-1', body)
+            self.assertIn('Test Recipe', body)
+
+            # Verify S3 call
+            mock_s3.get_object.assert_called_once_with(
+                Bucket='test-bucket',
+                Key='jsondata/combined_data.json'
+            )
+
+    @patch('lambda_function.boto3.client')
+    def test_get_request_file_not_found(self, mock_boto_client):
+        """Test GET request returns 404 when JSON file missing."""
+        # Arrange
+        mock_s3 = Mock()
+        mock_boto_client.return_value = mock_s3
+
+        from botocore.exceptions import ClientError
+        error_response = {'Error': {'Code': 'NoSuchKey'}}
+        mock_s3.get_object.side_effect = ClientError(error_response, 'GetObject')
+        mock_s3.exceptions.NoSuchKey = ClientError
+
+        with patch.dict('os.environ', {'S3_BUCKET': 'test-bucket'}):
+            from lambda_function import handle_get_request
+
+            event = {
+                'requestContext': {
+                    'http': {
+                        'method': 'GET'
+                    }
+                }
+            }
+
+            # Act
+            result = handle_get_request(event, None)
+
+            # Assert
+            self.assertEqual(result['statusCode'], 404)
+            body = json.loads(result['body'])
+            self.assertIn('error', body)
+            self.assertIn('not found', body['error'].lower())
+
+    @patch('lambda_function.boto3.client')
+    def test_get_request_s3_error(self, mock_boto_client):
+        """Test GET request returns 500 on S3 error."""
+        # Arrange
+        mock_s3 = Mock()
+        mock_boto_client.return_value = mock_s3
+        mock_s3.get_object.side_effect = Exception('S3 connection failed')
+
+        with patch.dict('os.environ', {'S3_BUCKET': 'test-bucket'}):
+            from lambda_function import handle_get_request
+
+            event = {
+                'requestContext': {
+                    'http': {
+                        'method': 'GET'
+                    }
+                }
+            }
+
+            # Act
+            result = handle_get_request(event, None)
+
+            # Assert
+            self.assertEqual(result['statusCode'], 500)
+            body = json.loads(result['body'])
+            self.assertIn('error', body)
+
+    def test_get_request_missing_bucket_env(self):
+        """Test GET request returns 500 when S3_BUCKET not set."""
+        # Arrange
+        with patch.dict('os.environ', {}, clear=True):
+            from lambda_function import handle_get_request
+
+            event = {
+                'requestContext': {
+                    'http': {
+                        'method': 'GET'
+                    }
+                }
+            }
+
+            # Act
+            result = handle_get_request(event, None)
+
+            # Assert
+            self.assertEqual(result['statusCode'], 500)
+            body = json.loads(result['body'])
+            self.assertIn('S3_BUCKET', body['error'])
+
+
+class TestLambdaRouting(unittest.TestCase):
+    """Test cases for HTTP method routing."""
+
+    @patch('lambda_function.handle_get_request')
+    def test_routes_get_request(self, mock_get_handler):
+        """Test lambda_handler routes GET to handle_get_request."""
+        # Arrange
+        mock_get_handler.return_value = {'statusCode': 200}
+
+        event = {
+            'requestContext': {
+                'http': {
+                    'method': 'GET'
+                }
+            }
+        }
+
+        # Act
+        result = lambda_handler(event, None)
+
+        # Assert
+        mock_get_handler.assert_called_once_with(event, None)
+        self.assertEqual(result['statusCode'], 200)
+
+    @patch('lambda_function.handle_post_request')
+    def test_routes_post_request(self, mock_post_handler):
+        """Test lambda_handler routes POST to handle_post_request."""
+        # Arrange
+        mock_post_handler.return_value = {'statusCode': 200}
+
+        event = {
+            'requestContext': {
+                'http': {
+                    'method': 'POST'
+                }
+            },
+            'files': []
+        }
+
+        # Act
+        result = lambda_handler(event, None)
+
+        # Assert
+        mock_post_handler.assert_called_once_with(event, None)
+        self.assertEqual(result['statusCode'], 200)
+
+    @patch('lambda_function.handle_post_request')
+    def test_defaults_to_post_when_method_missing(self, mock_post_handler):
+        """Test lambda_handler defaults to POST for backwards compatibility."""
+        # Arrange
+        mock_post_handler.return_value = {'statusCode': 400}
+
+        event = {
+            'files': []  # No requestContext
+        }
+
+        # Act
+        result = lambda_handler(event, None)
+
+        # Assert
+        mock_post_handler.assert_called_once_with(event, None)
+        self.assertEqual(result['statusCode'], 400)
+
+
+class TestLambdaPostRequest(unittest.TestCase):
+    """Test cases for POST request handling (existing functionality)."""
+
+    @patch('lambda_function.handle_post_request')
+    def test_post_request_still_works(self, mock_post_handler):
+        """Ensure POST upload logic still functions."""
+        # Arrange
+        mock_post_handler.return_value = {
+            'statusCode': 200,
+            'body': json.dumps({
+                'returnMessage': '2 recipes added successfully',
+                'successCount': 2,
+                'failCount': 0
+            })
+        }
+
+        event = {
+            'files': [
+                {'data': 'base64-image-data', 'type': 'image/jpeg'}
+            ],
+            'jobId': 'test-123'
+        }
+
+        # Act
+        result = lambda_handler(event, None)
+
+        # Assert
+        self.assertEqual(result['statusCode'], 200)
+        body = json.loads(result['body'])
+        self.assertEqual(body['successCount'], 2)
+
+
 if __name__ == '__main__':
     unittest.main()
