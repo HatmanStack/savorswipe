@@ -144,6 +144,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -30,
     right: 48,
+    marginBottom: -5,
     borderRadius: 30,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },

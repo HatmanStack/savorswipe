@@ -125,7 +125,7 @@ export default function RecipeDetail() {
       >
         <Image source={buttonSrc} style={{ width: 50, height: 50 }} />
       </Pressable>
-      
+
       {!recipeExists ? (
         <ThemedView style={{ padding: 20, alignItems: 'center', justifyContent: 'center', flex: 1 }}>
           <Image 

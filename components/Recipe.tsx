@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     marginRight: 50,
   },
   title: {
-    marginTop:20,
+    marginTop: 0,
     marginBottom: 50, // Adjust height as needed
   },
 });
