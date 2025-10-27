@@ -151,12 +151,20 @@ export default function RecipeDetail() {
       >
         <Image source={buttonSrc} style={{ width: 50, height: 50 }} />
       </Pressable>
-      
+
+      {/* Serving Size Control - positioned to overlap parallax image */}
+      {!isLoadingServings && scaledRecipe && (
+        <ServingSizeControl
+          currentServings={currentServings}
+          onServingsChange={handleServingsChange}
+        />
+      )}
+
       {!recipeExists ? (
         <ThemedView style={{ padding: 20, alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-          <Image 
-            source={holderImg} 
-            style={{ width: 100, height: 100, marginBottom: 20 }} 
+          <Image
+            source={holderImg}
+            style={{ width: 100, height: 100, marginBottom: 20 }}
           />
           <ThemedText style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10 }}>
             Recipe Not Found
@@ -183,15 +191,7 @@ export default function RecipeDetail() {
         >
           <ThemedView style={{ width: screenDimensions.width, height: screenDimensions.height }}>
             {scaledRecipe && (
-              <>
-                <RecipeDetails currentRecipe={scaledRecipe}/>
-                {!isLoadingServings && (
-                  <ServingSizeControl
-                    currentServings={currentServings}
-                    onServingsChange={handleServingsChange}
-                  />
-                )}
-              </>
+              <RecipeDetails currentRecipe={scaledRecipe}/>
             )}
           </ThemedView>
         </ParallaxScrollView>
