@@ -4,27 +4,35 @@ const CLOUDFRONT_BASE_URL = process.env.EXPO_PUBLIC_CLOUDFRONT_BASE_URL;
 
 export class RecipeService {
   /**
-   * Fetches the combined recipe data from S3/CloudFront
+   * Fetches the combined recipe data from Lambda (which fetches from S3)
+   * This bypasses CloudFront cache to ensure fresh data
    */
   static async getRecipesFromS3(): Promise<S3JsonData> {
-    const fileKey = 'jsondata/combined_data.json';
-    const url = `${CLOUDFRONT_BASE_URL}/${fileKey}`;
+    const lambdaUrl = process.env.EXPO_PUBLIC_LAMBDA_FUNCTION_URL;
+
+    if (!lambdaUrl) {
+      throw new Error('EXPO_PUBLIC_LAMBDA_FUNCTION_URL environment variable not set');
+    }
 
     try {
-      
-      const response = await fetch(url);
+      const response = await fetch(lambdaUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
       if (!response.ok) {
         console.error(`HTTP error ${response.status} while fetching JSON: ${response.statusText}`);
         const errorText = await response.text();
         console.error('Error details:', errorText);
-        throw new Error(`Failed to fetch JSON from CloudFront. Status: ${response.status}`);
+        throw new Error(`Failed to fetch JSON from Lambda. Status: ${response.status}`);
       }
 
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Error fetching JSON from CloudFront:', error);
+      console.error('Error fetching JSON from Lambda:', error);
       throw error;
     }
   }
