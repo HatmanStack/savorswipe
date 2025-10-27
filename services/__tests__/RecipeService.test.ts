@@ -9,12 +9,16 @@ describe('RecipeService', () => {
     // Reset fetch mock before each test
     global.fetch = jest.fn();
 
-    // Set environment variable
-    process.env.EXPO_PUBLIC_LAMBDA_FUNCTION_URL = MOCK_LAMBDA_URL;
+    // Use Object.defineProperty for env vars to ensure it persists
+    Object.defineProperty(process.env, 'EXPO_PUBLIC_LAMBDA_FUNCTION_URL', {
+      value: MOCK_LAMBDA_URL,
+      configurable: true,
+    });
   });
 
   afterEach(() => {
     jest.resetAllMocks();
+    delete process.env.EXPO_PUBLIC_LAMBDA_FUNCTION_URL;
   });
 
   describe('getRecipesFromS3', () => {
