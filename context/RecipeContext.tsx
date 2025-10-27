@@ -31,20 +31,46 @@ export const RecipeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     'beverage'
   ]);
 
-  // Load recipe JSON data from S3 on mount
+  // Load recipe JSON data with stale-while-revalidate pattern
   useEffect(() => {
-    const loadRecipeData = async () => {
+    // Step 1: Load local cached recipes immediately (fast)
+    const localRecipes = RecipeService.getLocalRecipes();
+    if (Object.keys(localRecipes).length > 0) {
+      setJsonData(localRecipes);
+    }
+
+    // Step 2: Fetch fresh data from Lambda in background (slow but fresh)
+    const fetchFreshData = async () => {
       try {
-        const combinedJsonData = await RecipeService.getRecipesFromS3();
-        setJsonData(combinedJsonData);
+        const freshRecipes = await RecipeService.getRecipesFromS3();
+
+        // Merge strategy: append new recipes only (preserve existing in-memory data)
+        setJsonData(prevData => {
+          if (!prevData || Object.keys(prevData).length === 0) {
+            // If no local data was loaded, use fresh data entirely
+            return freshRecipes;
+          }
+
+          // Merge: keep existing recipes, add only new ones
+          const merged = { ...prevData };
+          Object.keys(freshRecipes).forEach(key => {
+            if (!(key in prevData)) {
+              // Only add recipes that don't exist locally
+              merged[key] = freshRecipes[key];
+            }
+          });
+
+          return merged;
+        });
       } catch (error) {
+        // Silent fallback: continue using local cached data
         if (__DEV__) {
-          console.error('Failed to fetch recipe data:', error);
+          console.error('Failed to fetch fresh recipe data (using cached):', error);
         }
       }
     };
 
-    loadRecipeData();
+    fetchFreshData();
   }, []);
 
   // Memoize provider value to prevent unnecessary re-renders

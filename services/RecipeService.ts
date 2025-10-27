@@ -4,6 +4,22 @@ const CLOUDFRONT_BASE_URL = process.env.EXPO_PUBLIC_CLOUDFRONT_BASE_URL;
 
 export class RecipeService {
   /**
+   * Loads the bundled local recipe data from assets
+   * Used for fast initial load (stale-while-revalidate pattern)
+   */
+  static getLocalRecipes(): S3JsonData {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const localData = require('@/assets/data/combined_data.json');
+      return localData as S3JsonData;
+    } catch (error) {
+      console.error('Error loading local recipes:', error);
+      // Return empty object as fallback
+      return {};
+    }
+  }
+
+  /**
    * Fetches the combined recipe data from Lambda (which fetches from S3)
    * This bypasses CloudFront cache to ensure fresh data
    */
