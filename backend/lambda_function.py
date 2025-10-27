@@ -74,9 +74,9 @@ def process_single_recipe(
 
 def lambda_handler(event, context):
     """
-    AWS Lambda handler for processing recipe uploads.
+    AWS Lambda handler for processing recipe uploads and fetching recipe data.
 
-    Event format:
+    Event format for POST (upload):
     {
         "files": [
             {"base64": "...", "type": "image"|"pdf"},
@@ -85,18 +85,111 @@ def lambda_handler(event, context):
         "jobId": "unique-job-uuid"
     }
 
+    Event format for GET (fetch recipes):
+    {
+        "requestContext": {
+            "http": {
+                "method": "GET"
+            }
+        }
+    }
+
+    Returns:
+        POST: Upload result with successCount, failCount, errors
+        GET: Recipe JSON with cache-prevention headers
+    """
+
+    # Detect HTTP method (default to POST for backwards compatibility)
+    http_method = event.get('requestContext', {}).get('http', {}).get('method', 'POST')
+
+    if http_method == 'GET':
+        return handle_get_request(event, context)
+    else:
+        return handle_post_request(event, context)
+
+
+def handle_get_request(event, context):
+    """
+    Handle GET requests for fetching recipe JSON from S3.
+
+    Returns the combined_data.json file with cache-prevention headers
+    to ensure clients always receive fresh data.
+
+    Args:
+        event: API Gateway Lambda proxy integration request
+        context: Lambda context object
+
     Returns:
         {
-            "statusCode": 200,
-            "body": JSON string with:
-                - returnMessage
-                - successCount
-                - failCount
-                - jsonData
-                - newRecipeKeys
-                - errors
-                - jobId
+            "statusCode": 200 or 500,
+            "headers": {
+                "Content-Type": "application/json",
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0"
+            },
+            "body": JSON string (recipe data or error message)
         }
+    """
+    bucket_name = os.getenv('S3_BUCKET')
+
+    if not bucket_name:
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json'
+            },
+            'body': json.dumps({'error': 'S3_BUCKET environment variable not set'})
+        }
+
+    s3_client = boto3.client('s3')
+    json_key = 'jsondata/combined_data.json'
+
+    try:
+        # Fetch recipe JSON from S3
+        response = s3_client.get_object(Bucket=bucket_name, Key=json_key)
+        json_data = response['Body'].read().decode('utf-8')
+
+        # Return with cache-prevention headers
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0',
+                'Access-Control-Allow-Origin': '*',  # CORS support
+                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type'
+            },
+            'body': json_data
+        }
+
+    except s3_client.exceptions.NoSuchKey:
+        return {
+            'statusCode': 404,
+            'headers': {
+                'Content-Type': 'application/json'
+            },
+            'body': json.dumps({'error': f'File not found: {json_key}'})
+        }
+
+    except Exception as e:
+        print(f'Error fetching recipe JSON from S3: {str(e)}')
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json'
+            },
+            'body': json.dumps({'error': f'Failed to fetch recipes: {str(e)}'})
+        }
+
+
+def handle_post_request(event, context):
+    """
+    Handle POST requests for recipe uploads.
+
+    This is the existing lambda_handler logic, extracted for clarity.
     """
     start_time = time.time()
 
