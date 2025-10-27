@@ -142,8 +142,8 @@ export function ServingSizeControl({
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: 20,
-    right: 50,
+    top: -30,
+    right: 48,
     borderRadius: 30,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
