@@ -38,15 +38,6 @@ jest.mock('react-native', () => {
     AccessibilityInfo: {
       isReduceMotionEnabled: jest.fn(() => Promise.resolve(false)),
     },
-    Animated: {
-      ...RN.Animated,
-      timing: jest.fn(() => ({
-        start: jest.fn(),
-      })),
-      sequence: jest.fn(() => ({
-        start: jest.fn(),
-      })),
-    },
   };
 });
 
