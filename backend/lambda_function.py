@@ -229,20 +229,21 @@ def handle_post_request(event, context):
         print(f"[DEBUG] Body exists, type: {type(event['body'])}, length: {len(str(event['body']))}")
         print(f"[DEBUG] Body preview: {str(event['body'])[:200]}")
     else:
-        print(f"[DEBUG] No 'body' key in event!")
+        print("[DEBUG] No 'body' key in event!")
 
     # Parse request body (API Gateway sends body as JSON string)
     try:
-        if 'body' in event and event['body']:
+        body_content = event.get('body')
+        if body_content:
             # API Gateway format - body is a JSON string
-            print(f"[DEBUG] handle_post_request: Parsing body from API Gateway format")
-            body = json.loads(event['body'])
+            print("[DEBUG] handle_post_request: Parsing body from API Gateway format")
+            body = json.loads(body_content)
         else:
             # Direct invocation format - event is the body
-            print(f"[DEBUG] handle_post_request: Using direct invocation format")
+            print("[DEBUG] handle_post_request: Using direct invocation format")
             body = event
     except json.JSONDecodeError as e:
-        print(f"[DEBUG] handle_post_request: JSON decode error: {str(e)}")
+        print(f"[DEBUG] handle_post_request: JSON decode error: {e!r}")
         return {
             'statusCode': 400,
             'headers': {
