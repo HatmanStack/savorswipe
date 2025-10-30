@@ -6,6 +6,8 @@ import { useRouter } from 'expo-router';
 import { useRecipe } from '@/context/RecipeContext';
 import { useImageQueue } from '@/hooks/useImageQueue';
 import { useResponsiveLayout } from '@/hooks';
+import { isNewRecipe } from '@/services/RecipeService';
+import NewRecipeBanner from '@/components/NewRecipeBanner';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const holderImg = require('@/assets/images/skillet.png');
 
@@ -21,6 +23,12 @@ export default function HomeScreen() {
 
   const { getImageDimensions } = useResponsiveLayout();
   const imageDimensions = getImageDimensions();
+
+  // Determine if current recipe should show "new" banner
+  const showBanner = useMemo(() => {
+    if (!currentRecipe) return false;
+    return isNewRecipe(currentRecipe);
+  }, [currentRecipe]);
 
   // Handle swipe gestures
   const handleSwipe = useCallback((direction: 'left' | 'right') => {
@@ -84,6 +92,7 @@ export default function HomeScreen() {
           />
         </Animated.View>
       </PanGestureHandler>
+      <NewRecipeBanner visible={showBanner} />
     </View>
   );
 }
