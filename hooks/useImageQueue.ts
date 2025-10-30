@@ -121,10 +121,16 @@ export function useImageQueue(): ImageQueueHook {
     }
 
     // Don't refill immediately after injection (wait 2 seconds)
+    // UNLESS the queue is completely empty (emergency refill)
     const timeSinceInjection = Date.now() - lastInjectionTimeRef.current;
-    if (timeSinceInjection < 2000) {
+    const isQueueEmpty = queueRef.current.length === 0;
+    if (timeSinceInjection < 2000 && !isQueueEmpty) {
       console.log('[QUEUE] Skipping refill - injection happened', timeSinceInjection, 'ms ago');
       return;
+    }
+
+    if (isQueueEmpty) {
+      console.log('[QUEUE] Emergency refill - queue is completely empty');
     }
 
     // If pool is empty, reshuffle to create a new pool
@@ -166,7 +172,27 @@ export function useImageQueue(): ImageQueueHook {
 
       // Append new images to queue
       if (result.images.length > 0) {
-        setQueue(prev => [...prev, ...result.images]);
+        const wasEmpty = queueRef.current.length === 0;
+
+        setQueue(prev => {
+          const newQueue = [...prev, ...result.images];
+
+          // If queue was empty, initialize currentImage and nextImage
+          if (wasEmpty && newQueue.length > 0) {
+            console.log('[QUEUE] Queue was empty, initializing currentImage and nextImage');
+            setCurrentImage(newQueue[0]);
+            if (newQueue.length > 1) {
+              setNextImage(newQueue[1]);
+            }
+            // Update recipe context
+            if (newQueue[0]) {
+              updateCurrentRecipe(newQueue[0]);
+            }
+            setIsLoading(false);
+          }
+
+          return newQueue;
+        });
       }
 
       // Remove fetched keys from pool
@@ -177,7 +203,7 @@ export function useImageQueue(): ImageQueueHook {
     } finally {
       isRefillingRef.current = false;
     }
-  }, [jsonData, mealTypeFilters]);
+  }, [jsonData, mealTypeFilters, updateCurrentRecipe]);
 
   // Advance to next image in queue
   const advanceQueue = useCallback(() => {

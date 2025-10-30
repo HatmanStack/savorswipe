@@ -100,8 +100,23 @@ def lambda_handler(event, context):
         GET: Recipe JSON with cache-prevention headers
     """
 
-    # Detect HTTP method (default to POST for backwards compatibility)
+    # Detect HTTP method from requestContext
     http_method = event.get('requestContext', {}).get('http', {}).get('method', 'POST')
+
+    print(f"[DEBUG] lambda_handler: Detected HTTP method: {http_method}")
+
+    # Handle CORS preflight OPTIONS request
+    if http_method == 'OPTIONS':
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Max-Age': '86400'
+            },
+            'body': ''
+        }
 
     if http_method == 'GET':
         return handle_get_request(event, context)
@@ -205,21 +220,63 @@ def handle_post_request(event, context):
     """
     start_time = time.time()
 
-    # Parse request
-    if 'files' not in event:
+    # Debug: Log full event structure (first 500 chars)
+    print(f"[DEBUG] Full event keys: {list(event.keys())}")
+    print(f"[DEBUG] Event preview: {str(event)[:500]}")
+
+    # Check if body exists and log it
+    if 'body' in event:
+        print(f"[DEBUG] Body exists, type: {type(event['body'])}, length: {len(str(event['body']))}")
+        print(f"[DEBUG] Body preview: {str(event['body'])[:200]}")
+    else:
+        print("[DEBUG] No 'body' key in event!")
+
+    # Parse request body (API Gateway sends body as JSON string)
+    try:
+        body_content = event.get('body')
+        if body_content:
+            # API Gateway format - body is a JSON string
+            print("[DEBUG] handle_post_request: Parsing body from API Gateway format")
+            body = json.loads(body_content)
+        else:
+            # Direct invocation format - event is the body
+            print("[DEBUG] handle_post_request: Using direct invocation format")
+            body = event
+    except json.JSONDecodeError as e:
+        print(f"[DEBUG] handle_post_request: JSON decode error: {e!r}")
         return {
             'statusCode': 400,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({'returnMessage': f'Invalid JSON in request body: {str(e)}'})
+        }
+
+    # Validate files key exists
+    if 'files' not in body:
+        print(f"[DEBUG] handle_post_request: ERROR: No 'files' key in body. Body keys: {list(body.keys())}")
+        return {
+            'statusCode': 400,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
             'body': json.dumps({'returnMessage': 'No files provided in request'})
         }
 
-    files = event['files']
-    job_id = event.get('jobId', str(uuid.uuid4()))
+    files = body['files']
+    job_id = body.get('jobId', str(uuid.uuid4()))
 
     # Initialize services
     bucket_name = os.getenv('S3_BUCKET')
     if not bucket_name:
         return {
             'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
             'body': json.dumps({'returnMessage': 'S3_BUCKET environment variable not set'})
         }
 
@@ -237,6 +294,10 @@ def handle_post_request(event, context):
     except Exception as e:
         return {
             'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
             'body': json.dumps({'returnMessage': f'Service initialization failed: {str(e)}'})
         }
 
@@ -395,6 +456,10 @@ def handle_post_request(event, context):
     except Exception as e:
         return {
             'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
             'body': json.dumps({'returnMessage': f'Parallel processing failed: {str(e)}'})
         }
 
@@ -454,6 +519,10 @@ def handle_post_request(event, context):
     except Exception as e:
         return {
             'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
             'body': json.dumps({'returnMessage': f'Batch upload failed: {str(e)}'})
         }
 
@@ -526,9 +595,15 @@ def handle_post_request(event, context):
     except Exception as e:
         pass
 
-    # Return response
+    # Return response with CORS headers
     return {
         'statusCode': 200,
+        'headers': {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type'
+        },
         'body': json.dumps({
             'returnMessage': message,
             'successCount': success_count,

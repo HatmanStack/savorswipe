@@ -74,7 +74,18 @@ def upload_image(search_results, bucket_name, highest_key):
         print(f"[UPLOAD] Trying image {idx + 1}/{item_count} from URL: {image_url[:100]}...")
 
         try:
-            image_response = requests.get(image_url, timeout=10)
+            # Add headers to appear like a real browser request
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Referer': 'https://www.google.com/',
+                'DNT': '1',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1'
+            }
+            image_response = requests.get(image_url, headers=headers, timeout=10)
         except requests.exceptions.RequestException as e:
             print(f"[UPLOAD ERROR] Request failed: {e}")
             continue  # Try next URL
