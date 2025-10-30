@@ -94,9 +94,9 @@ describe('HomeScreen Integration Tests', () => {
     });
     (isNewRecipe as jest.Mock).mockReturnValue(true);
 
-    const { getByTestID } = render(<HomeScreen />);
+    const { getByTestId } = render(<HomeScreen />);
 
-    expect(getByTestID('new-recipe-banner')).toBeTruthy();
+    expect(getByTestId('new-recipe-banner')).toBeTruthy();
   });
 
   it('should not display banner when recipe is old', () => {
@@ -105,9 +105,9 @@ describe('HomeScreen Integration Tests', () => {
     });
     (isNewRecipe as jest.Mock).mockReturnValue(false);
 
-    const { queryByTestID } = render(<HomeScreen />);
+    const { queryByTestId } = render(<HomeScreen />);
 
-    expect(queryByTestID('new-recipe-banner')).toBeNull();
+    expect(queryByTestId('new-recipe-banner')).toBeNull();
   });
 
   it('should not display banner when uploadedAt is missing', () => {
@@ -116,9 +116,9 @@ describe('HomeScreen Integration Tests', () => {
     });
     (isNewRecipe as jest.Mock).mockReturnValue(false);
 
-    const { queryByTestID } = render(<HomeScreen />);
+    const { queryByTestId } = render(<HomeScreen />);
 
-    expect(queryByTestID('new-recipe-banner')).toBeNull();
+    expect(queryByTestId('new-recipe-banner')).toBeNull();
   });
 
   it('should call isNewRecipe with current recipe', () => {
@@ -141,10 +141,10 @@ describe('HomeScreen Integration Tests', () => {
     });
     (isNewRecipe as jest.Mock).mockReturnValue(true);
 
-    const { queryByTestID, rerender } = render(<HomeScreen />);
+    const { queryByTestId, rerender } = render(<HomeScreen />);
 
     // Banner should be visible initially
-    expect(queryByTestID('new-recipe-banner')).toBeTruthy();
+    expect(queryByTestId('new-recipe-banner')).toBeTruthy();
 
     // Update to old recipe
     mockUseRecipe.mockReturnValue({
@@ -155,7 +155,7 @@ describe('HomeScreen Integration Tests', () => {
     rerender(<HomeScreen />);
 
     // Banner should now be hidden
-    expect(queryByTestID('new-recipe-banner')).toBeNull();
+    expect(queryByTestId('new-recipe-banner')).toBeNull();
   });
 
   it('should not display banner when overlapping with hamburger menu', () => {
@@ -164,10 +164,10 @@ describe('HomeScreen Integration Tests', () => {
     });
     (isNewRecipe as jest.Mock).mockReturnValue(true);
 
-    const { getByTestID } = render(<HomeScreen />);
+    const { getByTestId } = render(<HomeScreen />);
 
     // Verify banner exists
-    const banner = getByTestID('new-recipe-banner');
+    const banner = getByTestId('new-recipe-banner');
     expect(banner).toBeTruthy();
 
     // Note: Z-index verification requires visual testing or style inspection
@@ -204,7 +204,7 @@ describe('HomeScreen Integration Tests', () => {
     });
     (isNewRecipe as jest.Mock).mockReturnValue(true);
 
-    const { getByTestID } = render(<HomeScreen />);
+    const { getByTestId } = render(<HomeScreen />);
 
     // Wait for reduced motion check to complete
     await waitFor(() => {
@@ -212,7 +212,7 @@ describe('HomeScreen Integration Tests', () => {
     });
 
     // Banner should still be visible (only animation is disabled, not banner)
-    expect(getByTestID('new-recipe-banner')).toBeTruthy();
+    expect(getByTestId('new-recipe-banner')).toBeTruthy();
 
     // Note: Verifying that Animated.sequence is NOT called would require
     // deeper mocking. This test ensures the feature respects reduceMotion state.
