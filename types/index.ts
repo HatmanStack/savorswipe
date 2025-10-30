@@ -1,6 +1,12 @@
 // Core Recipe Types
 export interface Recipe {
   key: string;
+  /**
+   * ISO 8601 timestamp of when this recipe was uploaded.
+   * Used to display "new" indicator for recipes uploaded within the last 72 hours.
+   * @example "2025-10-30T14:23:45.123Z"
+   */
+  uploadedAt?: string;
   Title: string;
   Description?: string | string[];
   Ingredients?: RecipeIngredients;
