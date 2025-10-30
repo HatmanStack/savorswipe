@@ -1,5 +1,5 @@
-import { RecipeService } from '../RecipeService';
-import type { S3JsonData } from '@/types';
+import { RecipeService, isNewRecipe } from '../RecipeService';
+import type { S3JsonData, Recipe } from '@/types';
 
 // Mock environment variables
 const MOCK_LAMBDA_URL = 'https://test-lambda.execute-api.us-east-1.amazonaws.com';
@@ -246,6 +246,117 @@ describe('RecipeService', () => {
       expect(result).toHaveLength(2);
       expect(result).toContain('recipe-1');
       expect(result).toContain('recipe-2');
+    });
+  });
+
+  describe('isNewRecipe', () => {
+    it('should return false for recipe without uploadedAt field', () => {
+      // Arrange
+      const recipe: Recipe = {
+        key: 'recipe-1',
+        Title: 'Test Recipe',
+      };
+
+      // Act
+      const result = isNewRecipe(recipe);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it('should return true for recipe uploaded less than 72 hours ago', () => {
+      // Arrange - 1 hour ago
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const recipe: Recipe = {
+        key: 'recipe-1',
+        Title: 'Test Recipe',
+        uploadedAt: oneHourAgo,
+      };
+
+      // Act
+      const result = isNewRecipe(recipe);
+
+      // Assert
+      expect(result).toBe(true);
+    });
+
+    it('should return false for recipe uploaded more than 72 hours ago', () => {
+      // Arrange - 73 hours ago
+      const seventyThreeHoursAgo = new Date(Date.now() - 73 * 60 * 60 * 1000).toISOString();
+      const recipe: Recipe = {
+        key: 'recipe-1',
+        Title: 'Test Recipe',
+        uploadedAt: seventyThreeHoursAgo,
+      };
+
+      // Act
+      const result = isNewRecipe(recipe);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it('should return false for recipe uploaded exactly 72 hours ago', () => {
+      // Arrange - exactly 72 hours ago
+      const exactlySixtyTwoHoursAgo = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString();
+      const recipe: Recipe = {
+        key: 'recipe-1',
+        Title: 'Test Recipe',
+        uploadedAt: exactlySixtyTwoHoursAgo,
+      };
+
+      // Act
+      const result = isNewRecipe(recipe);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it('should return false for recipe with invalid timestamp format', () => {
+      // Arrange
+      const recipe: Recipe = {
+        key: 'recipe-1',
+        Title: 'Test Recipe',
+        uploadedAt: 'invalid-date-string',
+      };
+
+      // Act
+      const result = isNewRecipe(recipe);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it('should return false for recipe with future timestamp (> 1 minute ahead)', () => {
+      // Arrange - 2 minutes in the future
+      const twoMinutesAhead = new Date(Date.now() + 2 * 60 * 1000).toISOString();
+      const recipe: Recipe = {
+        key: 'recipe-1',
+        Title: 'Test Recipe',
+        uploadedAt: twoMinutesAhead,
+      };
+
+      // Act
+      const result = isNewRecipe(recipe);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it('should return true for recipe with slightly future timestamp (< 1 minute clock skew tolerance)', () => {
+      // Arrange - 30 seconds in the future (within tolerance)
+      const thirtySecondsAhead = new Date(Date.now() + 30 * 1000).toISOString();
+      const recipe: Recipe = {
+        key: 'recipe-1',
+        Title: 'Test Recipe',
+        uploadedAt: thirtySecondsAhead,
+      };
+
+      // Act
+      const result = isNewRecipe(recipe);
+
+      // Assert
+      expect(result).toBe(true);
     });
   });
 });
