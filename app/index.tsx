@@ -102,9 +102,9 @@ export default function HomeScreen() {
   }, [advanceQueue, currentRecipe?.key, router]);
 
   // Debounce function (keep existing)
-  const debounce = (func: (...args: unknown[]) => void, delay: number) => {
+  const debounce = <T extends (...args: any[]) => void>(func: T, delay: number): ((...args: Parameters<T>) => void) => {
     let timeout: NodeJS.Timeout | undefined;
-    return (...args: unknown[]) => {
+    return (...args: Parameters<T>) => {
       if (timeout) clearTimeout(timeout);
       timeout = setTimeout(() => func(...args), delay);
     };
