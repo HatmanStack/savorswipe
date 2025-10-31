@@ -129,52 +129,38 @@ const ImageGridComponent: React.FC<ImageGridProps> = ({
   const renderThumbnail = useCallback(({ item: imageUrl }: { item: string }) => {
     const state = loadingStates[imageUrl] || { isLoading: true, hasError: false, isLoaded: false }
 
-    // Render error state
-    if (state.hasError) {
-      return (
-        <TouchableOpacity
-          style={styles.thumbnailWrapper}
-          onPress={() => handleThumbnailPress(imageUrl)}
-          activeOpacity={0.8}
-        >
-          <View style={styles.thumbnailError}>
-            <Text style={styles.errorIcon}>🍳</Text>
-            <Text style={styles.errorText}>No image</Text>
-          </View>
-        </TouchableOpacity>
-      )
-    }
-
-    // Render skeleton loading state (only mount Image when not loading)
-    if (state.isLoading && !state.isLoaded) {
-      return (
-        <TouchableOpacity
-          style={styles.thumbnailWrapper}
-          onPress={() => handleThumbnailPress(imageUrl)}
-          activeOpacity={0.8}
-        >
-          <View style={styles.skeletonPlaceholder}>
-            <View style={styles.skeletonShimmer} />
-          </View>
-        </TouchableOpacity>
-      )
-    }
-
-    // Render actual image (only mounted when not in skeleton state)
+    // Always mount Image component unconditionally so onLoad/onLoadStart/onError callbacks fire
+    // Overlay skeleton and error states on top using absolute positioning
     return (
       <TouchableOpacity
         style={styles.thumbnailWrapper}
         onPress={() => handleThumbnailPress(imageUrl)}
         activeOpacity={0.8}
       >
-        <Image
-          source={{ uri: imageUrl }}
-          style={styles.thumbnail}
-          onLoadStart={() => handleImageLoadStart(imageUrl)}
-          onLoad={() => handleImageLoadEnd(imageUrl)}
-          onError={() => handleImageError(imageUrl)}
-          resizeMode="cover"
-        />
+        <View style={styles.thumbnailInner}>
+          <Image
+            source={{ uri: imageUrl }}
+            style={[
+              styles.thumbnail,
+              (state.isLoading || state.hasError) ? styles.thumbnailHidden : null,
+            ]}
+            onLoadStart={() => handleImageLoadStart(imageUrl)}
+            onLoad={() => handleImageLoadEnd(imageUrl)}
+            onError={() => handleImageError(imageUrl)}
+            resizeMode="cover"
+          />
+          {state.isLoading && !state.hasError && (
+            <View style={[styles.overlayContent, styles.skeletonPlaceholder]}>
+              <View style={styles.skeletonShimmer} />
+            </View>
+          )}
+          {state.hasError && (
+            <View style={[styles.overlayContent, styles.thumbnailError]}>
+              <Text style={styles.errorIcon}>🍳</Text>
+              <Text style={styles.errorText}>No image</Text>
+            </View>
+          )}
+        </View>
       </TouchableOpacity>
     )
   }, [loadingStates, handleThumbnailPress, handleImageLoadStart, handleImageLoadEnd, handleImageError])
@@ -296,14 +282,29 @@ const styles = StyleSheet.create({
     // Ensure 44pt minimum touch target
     minHeight: 44,
   },
+  thumbnailInner: {
+    flex: 1,
+    position: 'relative',
+  },
+  overlayContent: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   thumbnail: {
     width: '100%',
     height: '100%',
     backgroundColor: '#efefef',
   },
+  thumbnailHidden: {
+    opacity: 0,
+  },
   skeletonPlaceholder: {
-    width: '100%',
-    height: '100%',
+    flex: 1,
     backgroundColor: '#e8e8e8',
     justifyContent: 'center',
     alignItems: 'center',

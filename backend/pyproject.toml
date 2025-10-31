@@ -77,4 +77,6 @@ known-first-party = [
     "embedding_generator",
     "duplicate_detector",
     "handlepdf",
+    "image_uploader",
+    "recipe_deletion",
 ]

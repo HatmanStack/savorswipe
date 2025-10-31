@@ -11,11 +11,14 @@ Processes multiple images and PDFs containing recipes with:
 """
 
 import base64
+import ipaddress
 import json
 import os
 import random
 import re
+import socket
 import time
+import urllib.parse
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Dict, Tuple, Optional
@@ -354,18 +357,33 @@ def handle_delete_request(event, context):
             }
         else:
             print(f"[DELETE] Failed to delete recipe '{recipe_key}': {error_message}")
-            # Idempotent: return 200 success even if recipe was already deleted
-            return {
-                'statusCode': 200,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
-                'body': json.dumps({
-                    'success': True,
-                    'message': f'Recipe {recipe_key} deletion completed (idempotent)'
-                })
-            }
+            # Distinguish between "not found" (idempotent, 200) and real failures (500)
+            if error_message and 'not found' in error_message.lower():
+                # Recipe was already deleted or never existed - idempotent operation
+                return {
+                    'statusCode': 200,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'body': json.dumps({
+                        'success': True,
+                        'message': f'Recipe {recipe_key} was already deleted or not found'
+                    })
+                }
+            else:
+                # Real failure (S3 error, permissions, race condition, etc.)
+                return {
+                    'statusCode': 500,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'body': json.dumps({
+                        'success': False,
+                        'error': f'Failed to delete recipe: {error_message or "Unknown error"}'
+                    })
+                }
 
     except Exception as e:
         print(f"[DELETE] Unexpected error deleting recipe '{recipe_key}': {str(e)}")
@@ -380,6 +398,69 @@ def handle_delete_request(event, context):
                 'error': f'Failed to delete recipe: {str(e)}'
             })
         }
+
+
+def _validate_image_url_for_api(image_url: str) -> Tuple[bool, Optional[str]]:
+    """
+    Validate image URL at API entry point to prevent SSRF attacks.
+
+    Checks:
+    1. URL uses HTTPS scheme
+    2. Hostname is in whitelist (Google domains or CloudFront)
+    3. Hostname resolves to public IP (not private/reserved)
+
+    Args:
+        image_url: URL to validate
+
+    Returns:
+        Tuple of (is_valid, error_message) where error_message is None if valid
+    """
+    # Whitelist of allowed domains for image sources
+    ALLOWED_DOMAINS = {
+        'lh3.googleusercontent.com',
+        'lh4.googleusercontent.com',
+        'lh5.googleusercontent.com',
+        'lh6.googleusercontent.com',
+        'lh7.googleusercontent.com',
+        'images.google.com',
+        'www.google.com',
+        'google.com',
+        # Add CloudFront domains if using CloudFront for image hosting
+    }
+
+    try:
+        parsed = urllib.parse.urlparse(image_url)
+
+        # Check scheme is HTTPS
+        if parsed.scheme != 'https':
+            return False, f"Invalid scheme: {parsed.scheme} (only HTTPS allowed)"
+
+        hostname = parsed.hostname
+        if not hostname:
+            return False, "URL has no hostname"
+
+        # Check hostname is in whitelist
+        if hostname not in ALLOWED_DOMAINS:
+            return False, f"Hostname not whitelisted: {hostname}"
+
+        # Resolve hostname to IP and check it's not private/reserved
+        try:
+            ip_str = socket.gethostbyname(hostname)
+            ip = ipaddress.ip_address(ip_str)
+
+            # Reject private, loopback, link-local, multicast addresses
+            if (ip.is_private or ip.is_loopback or ip.is_link_local or
+                ip.is_multicast or ip.is_reserved):
+                return False, f"Refusing to fetch private/reserved IP: {hostname} -> {ip_str}"
+
+            print(f"[SSRF-CHECK] URL validation passed: {hostname} -> {ip_str}")
+            return True, None
+
+        except (socket.gaierror, socket.error) as e:
+            return False, f"Failed to resolve hostname {hostname}: {str(e)}"
+
+    except Exception as e:
+        return False, f"Error validating URL: {str(e)}"
 
 
 def handle_post_image_request(event, context):
@@ -475,6 +556,22 @@ def handle_post_image_request(event, context):
             'body': json.dumps({
                 'success': False,
                 'error': 'imageUrl is required'
+            })
+        }
+
+    # Validate imageUrl to prevent SSRF attacks
+    is_valid, validation_error = _validate_image_url_for_api(image_url)
+    if not is_valid:
+        print(f"[POST-IMAGE] URL validation failed: {validation_error}")
+        return {
+            'statusCode': 400,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({
+                'success': False,
+                'error': f'Invalid image URL: {validation_error}'
             })
         }
 

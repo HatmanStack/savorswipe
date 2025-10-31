@@ -29,7 +29,7 @@ describe('Integration: Edge Cases & Data Integrity', () => {
 
     // Setup ImageQueueService mocks
     (ImageQueueService.createRecipeKeyPool as jest.Mock).mockReturnValue(['recipe1']);
-    (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValueOnce({
+    (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
       images: [{ filename: 'images/recipe1.jpg', file: 'blob:1' }],
       failedKeys: [],
     });
@@ -84,7 +84,7 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         mealTypeFilters: [],
       });
 
-      (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValueOnce({
+      (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
         images: [{ filename: 'images/recipe1.jpg', file: 'blob:1' }],
         failedKeys: [],
       });
@@ -139,7 +139,7 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         mealTypeFilters: [],
       });
 
-      (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValueOnce({
+      (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
         images: [{ filename: 'images/recipe1.jpg', file: 'blob:1' }],
         failedKeys: [],
       });
@@ -192,7 +192,7 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         mealTypeFilters: [],
       });
 
-      (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValueOnce({
+      (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
         images: [{ filename: 'images/recipe1.jpg', file: 'blob:1' }],
         failedKeys: [],
       });
@@ -246,7 +246,7 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         mealTypeFilters: [],
       });
 
-      (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValueOnce({
+      (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
         images: [{ filename: 'images/recipe1.jpg', file: 'blob:1' }],
         failedKeys: [],
       });
@@ -293,7 +293,7 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         mealTypeFilters: [],
       });
 
-      (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValueOnce({
+      (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
         images: [{ filename: 'images/recipe1.jpg', file: 'blob:1' }],
         failedKeys: [],
       });
@@ -367,7 +367,7 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         mealTypeFilters: [],
       });
 
-      (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValueOnce({
+      (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
         images: [{ filename: 'images/recipe1.jpg', file: 'blob:1' }],
         failedKeys: [],
       });

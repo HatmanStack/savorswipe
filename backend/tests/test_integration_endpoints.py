@@ -265,8 +265,8 @@ class TestIntegrationEndpoints:
         final_data = json.loads(result['Body'].read())
         assert final_data["1"]["image_url"] == "https://example.com/second.jpg"
 
-    def test_concurrent_selects_last_wins(self, s3_client, env_vars):
-        """Test that concurrent image selections result in last one winning."""
+    def test_sequential_selects_last_wins(self, s3_client, env_vars):
+        """Test that sequential image selections result in last one winning."""
         combined_data = {"1": {"Title": "Recipe", "image_url": None}}
 
         s3_client.put_object(

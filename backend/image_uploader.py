@@ -2,15 +2,18 @@
 Image fetching and S3 upload functions for recipe image selection.
 
 Provides functions to:
-- Fetch images from Google URLs
+- Fetch images from Google URLs with SSRF protection
 - Use fallback image on fetch failure
 - Upload images to S3 with retry logic
 """
 
+import ipaddress
 import logging
 import os
 import random
+import socket
 import time
+import urllib.parse
 from typing import Optional, Tuple
 from botocore.exceptions import ClientError
 import requests
@@ -19,10 +22,82 @@ import requests
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Allowed domains for image fetching (whitelist to prevent SSRF)
+ALLOWED_DOMAINS = {
+    'lh3.googleusercontent.com',  # Google image results
+    'lh4.googleusercontent.com',
+    'lh5.googleusercontent.com',
+    'lh6.googleusercontent.com',
+    'lh7.googleusercontent.com',
+    'images.google.com',
+    'www.google.com',
+    'google.com',
+    # CloudFront domains if using CloudFront for image hosting
+    # 'dcxyz.cloudfront.net',  # Add your CloudFront domains here
+}
+
+
+def _validate_image_url(image_url: str) -> bool:
+    """
+    Validate image URL to prevent SSRF attacks.
+
+    Checks:
+    1. URL uses HTTPS scheme
+    2. Hostname is in the whitelist
+    3. Hostname resolves to public IP (not private/reserved)
+
+    Args:
+        image_url: URL to validate
+
+    Returns:
+        True if URL is safe to fetch, False otherwise
+    """
+    try:
+        parsed = urllib.parse.urlparse(image_url)
+
+        # Check scheme is HTTPS
+        if parsed.scheme != 'https':
+            logger.warning(f"[IMAGE] Disallowed URL scheme (not HTTPS): {parsed.scheme}")
+            return False
+
+        hostname = parsed.hostname
+        if not hostname:
+            logger.warning(f"[IMAGE] URL has no hostname: {image_url}")
+            return False
+
+        # Check hostname is in whitelist
+        if hostname not in ALLOWED_DOMAINS:
+            logger.warning(f"[IMAGE] Disallowed hostname (not whitelisted): {hostname}")
+            return False
+
+        # Resolve hostname to IP and check it's not private/reserved
+        try:
+            ip_str = socket.gethostbyname(hostname)
+            ip = ipaddress.ip_address(ip_str)
+
+            # Reject private, loopback, link-local, multicast addresses
+            if (ip.is_private or ip.is_loopback or ip.is_link_local or
+                ip.is_multicast or ip.is_reserved):
+                logger.warning(
+                    f"[IMAGE] Refusing to fetch private/reserved IP: {hostname} -> {ip_str}"
+                )
+                return False
+
+            logger.info(f"[IMAGE] URL validation passed: {hostname} -> {ip_str}")
+            return True
+
+        except (socket.gaierror, socket.error) as e:
+            logger.warning(f"[IMAGE] Failed to resolve hostname {hostname}: {str(e)}")
+            return False
+
+    except Exception as e:
+        logger.error(f"[IMAGE] Error validating URL: {str(e)}")
+        return False
+
 
 def fetch_image_from_url(image_url: str, timeout: int = 10) -> Tuple[Optional[bytes], Optional[str]]:
     """
-    Fetch image from Google URL with validation.
+    Fetch image from Google URL with SSRF protection.
 
     Args:
         image_url: URL to fetch image from
@@ -38,6 +113,11 @@ def fetch_image_from_url(image_url: str, timeout: int = 10) -> Tuple[Optional[by
 
     logger.info(f"[IMAGE] Fetching image from URL: {image_url[:100]}...")
 
+    # Validate URL to prevent SSRF attacks
+    if not _validate_image_url(image_url):
+        logger.warning(f"[IMAGE] URL validation failed, refusing to fetch: {image_url[:100]}...")
+        return None, None
+
     try:
         # Use browser-like headers to avoid being blocked
         headers = {
@@ -50,7 +130,8 @@ def fetch_image_from_url(image_url: str, timeout: int = 10) -> Tuple[Optional[by
             'Connection': 'keep-alive',
         }
 
-        response = requests.get(image_url, headers=headers, timeout=timeout)
+        # Disable redirects to unvalidated hosts
+        response = requests.get(image_url, headers=headers, timeout=timeout, allow_redirects=False)
 
         if response.status_code != 200:
             logger.warning(f"[IMAGE] Failed to fetch: HTTP {response.status_code}")
