@@ -23,17 +23,37 @@ class TestUploadTimestamp(unittest.TestCase):
         }
         self.mock_search_results = [['http://example.com/image.jpg']]
 
+    def _setup_mocks(self, mock_s3, mock_upload_image, existing_data=None):
+        """
+        Helper to set up S3 and upload_image mocks consistently.
+
+        Args:
+            mock_s3: Mocked S3 client
+            mock_upload_image: Mocked upload_image function
+            existing_data: Optional dict of existing recipe data (defaults to empty)
+        """
+        if existing_data is None:
+            existing_data = {}
+
+        # Mock S3 get_object (fetching existing combined_data.json)
+        mock_s3.get_object.return_value = {
+            'Body': MagicMock(read=lambda: json.dumps(existing_data).encode()),
+            'ETag': '"etag123"'
+        }
+
+        # Mock S3 put_object (writing updated combined_data.json)
+        mock_s3.put_object.return_value = {
+            'ETag': '"new-etag456"'
+        }
+
+        # Mock successful image upload
+        mock_upload_image.return_value = 'http://example.com/image.jpg'
+
     @patch('upload.s3_client')
     @patch('upload.upload_image')
     def test_uploaded_at_field_added(self, mock_upload_image, mock_s3):
         """Test that uploadedAt field is added to recipe."""
-        # Mock S3 to return empty combined_data
-        mock_s3.get_object.return_value = {
-            'Body': MagicMock(read=lambda: json.dumps({}).encode()),
-            'ETag': '"etag123"'
-        }
-        # Mock successful image upload
-        mock_upload_image.return_value = 'http://example.com/image.jpg'
+        self._setup_mocks(mock_s3, mock_upload_image)
 
         # Call batch_to_s3_atomic
         result_data, success_keys, _, _ = batch_to_s3_atomic(
@@ -52,13 +72,7 @@ class TestUploadTimestamp(unittest.TestCase):
     @patch('upload.upload_image')
     def test_uploaded_at_is_iso8601_format(self, mock_upload_image, mock_s3):
         """Test that uploadedAt timestamp uses ISO 8601 format."""
-        # Mock S3 to return empty combined_data
-        mock_s3.get_object.return_value = {
-            'Body': MagicMock(read=lambda: json.dumps({}).encode()),
-            'ETag': '"etag123"'
-        }
-        # Mock successful image upload
-        mock_upload_image.return_value = 'http://example.com/image.jpg'
+        self._setup_mocks(mock_s3, mock_upload_image)
 
         # Call batch_to_s3_atomic
         result_data, success_keys, _, _ = batch_to_s3_atomic(
@@ -81,13 +95,7 @@ class TestUploadTimestamp(unittest.TestCase):
     @patch('upload.upload_image')
     def test_uploaded_at_is_recent(self, mock_upload_image, mock_s3):
         """Test that uploadedAt timestamp is recent (within seconds of test execution)."""
-        # Mock S3 to return empty combined_data
-        mock_s3.get_object.return_value = {
-            'Body': MagicMock(read=lambda: json.dumps({}).encode()),
-            'ETag': '"etag123"'
-        }
-        # Mock successful image upload
-        mock_upload_image.return_value = 'http://example.com/image.jpg'
+        self._setup_mocks(mock_s3, mock_upload_image)
 
         # Capture current time before call
         before_time = datetime.now(timezone.utc)
@@ -115,13 +123,7 @@ class TestUploadTimestamp(unittest.TestCase):
     @patch('upload.upload_image')
     def test_uploaded_at_uses_utc_timezone(self, mock_upload_image, mock_s3):
         """Test that uploadedAt timestamp uses UTC timezone."""
-        # Mock S3 to return empty combined_data
-        mock_s3.get_object.return_value = {
-            'Body': MagicMock(read=lambda: json.dumps({}).encode()),
-            'ETag': '"etag123"'
-        }
-        # Mock successful image upload
-        mock_upload_image.return_value = 'http://example.com/image.jpg'
+        self._setup_mocks(mock_s3, mock_upload_image)
 
         # Call batch_to_s3_atomic
         result_data, success_keys, _, _ = batch_to_s3_atomic(
@@ -143,13 +145,7 @@ class TestUploadTimestamp(unittest.TestCase):
     @patch('upload.upload_image')
     def test_multiple_recipes_all_have_timestamp(self, mock_upload_image, mock_s3):
         """Test that all recipes in batch receive uploadedAt timestamp."""
-        # Mock S3 to return empty combined_data
-        mock_s3.get_object.return_value = {
-            'Body': MagicMock(read=lambda: json.dumps({}).encode()),
-            'ETag': '"etag123"'
-        }
-        # Mock successful image upload
-        mock_upload_image.return_value = 'http://example.com/image.jpg'
+        self._setup_mocks(mock_s3, mock_upload_image)
 
         # Create multiple recipes
         recipes = [
