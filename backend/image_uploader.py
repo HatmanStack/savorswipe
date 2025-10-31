@@ -85,30 +85,43 @@ def upload_image_to_s3(
     image_bytes: bytes,
     s3_client,
     bucket: str,
-    max_retries: int = 3
+    max_retries: int = 3,
+    content_type: str = 'image/jpeg'
 ) -> Tuple[Optional[str], Optional[str]]:
     """
     Upload image bytes to S3 with retry logic for race conditions.
 
     Args:
-        recipe_key: Recipe key for S3 path (images/{recipe_key}.jpg)
+        recipe_key: Recipe key for S3 path (images/{recipe_key}.ext)
         image_bytes: Image bytes to upload
         s3_client: Boto3 S3 client
         bucket: S3 bucket name
         max_retries: Maximum retry attempts (default: 3)
+        content_type: MIME type of the image (default: 'image/jpeg')
 
     Returns:
         Tuple of (s3_path, error_message)
-        - On success: (s3_path, None) where s3_path = "images/{recipe_key}.jpg"
+        - On success: (s3_path, None) where s3_path = "images/{recipe_key}.ext"
         - On failure: (None, error_message)
     """
-    s3_key = f"images/{recipe_key}.jpg"
+    # Determine file extension based on content-type
+    extension_map = {
+        'image/jpeg': 'jpg',
+        'image/jpg': 'jpg',
+        'image/png': 'png',
+        'image/webp': 'webp',
+        'image/gif': 'gif',
+    }
+
+    # Extract extension from content-type or default to jpg
+    extension = extension_map.get(content_type.lower(), 'jpg')
+    s3_key = f"images/{recipe_key}.{extension}"
 
     if not image_bytes:
         logger.error(f"[IMAGE] No image bytes provided for {s3_key}")
         return None, "No image bytes provided"
 
-    logger.info(f"[IMAGE] Uploading image to S3: {bucket}/{s3_key} ({len(image_bytes)} bytes)")
+    logger.info(f"[IMAGE] Uploading image to S3: {bucket}/{s3_key} ({len(image_bytes)} bytes, content-type: {content_type})")
 
     for attempt in range(max_retries):
         try:
@@ -118,7 +131,7 @@ def upload_image_to_s3(
                 Bucket=bucket,
                 Key=s3_key,
                 Body=image_bytes,
-                ContentType='image/jpeg'
+                ContentType=content_type
             )
 
             logger.info(f"[IMAGE] Successfully uploaded {s3_key}")

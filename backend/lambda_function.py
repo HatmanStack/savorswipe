@@ -13,6 +13,7 @@ Processes multiple images and PDFs containing recipes with:
 import base64
 import json
 import os
+import random
 import re
 import time
 import uuid
@@ -300,7 +301,8 @@ def handle_delete_request(event, context):
         return {
             'statusCode': 400,
             'headers': {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
             },
             'body': json.dumps({
                 'success': False,
@@ -316,7 +318,8 @@ def handle_delete_request(event, context):
         return {
             'statusCode': 400,
             'headers': {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
             },
             'body': json.dumps({
                 'success': False,
@@ -425,7 +428,8 @@ def handle_post_image_request(event, context):
         return {
             'statusCode': 400,
             'headers': {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
             },
             'body': json.dumps({
                 'success': False,
@@ -450,7 +454,8 @@ def handle_post_image_request(event, context):
         return {
             'statusCode': 400,
             'headers': {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
             },
             'body': json.dumps({
                 'success': False,
@@ -464,7 +469,8 @@ def handle_post_image_request(event, context):
         return {
             'statusCode': 400,
             'headers': {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
             },
             'body': json.dumps({
                 'success': False,
@@ -497,7 +503,7 @@ def handle_post_image_request(event, context):
         print(f"[POST-IMAGE] Image fetched: {len(image_bytes)} bytes, content-type: {content_type}")
 
         # Step 2: Upload image to S3
-        s3_path, error_msg = upload_image_to_s3(recipe_key, image_bytes, s3_client, bucket_name)
+        s3_path, error_msg = upload_image_to_s3(recipe_key, image_bytes, s3_client, bucket_name, content_type=content_type)
 
         if s3_path is None:
             print(f"[POST-IMAGE] Failed to upload image to S3: {error_msg}")
