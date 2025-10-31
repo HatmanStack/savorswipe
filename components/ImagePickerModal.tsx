@@ -35,7 +35,7 @@
  * - Cancel: Clicking overlay or onCancel closes modal without action
  */
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { Modal, View, StyleSheet } from 'react-native'
 import { Recipe } from '@/types/index'
 import { ImageGrid } from './ImageGrid'
@@ -86,6 +86,11 @@ const ImagePickerModalComponent: React.FC<ImagePickerModalProps> = ({
 }) => {
   // Track selected image URL (null = grid view, set = preview view)
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null)
+
+  // Reset state when recipe or visibility changes
+  useEffect(() => {
+    setSelectedImageUrl(null)
+  }, [recipe?.key, isVisible])
 
   // Reset state when modal closes
   const handleCancel = useCallback(() => {

@@ -107,13 +107,22 @@ const ImagePreviewComponent: React.FC<ImagePreviewProps> = ({
 
       {/* Confirm button */}
       <TouchableOpacity
-        style={styles.confirmButton}
+        style={[
+          styles.confirmButton,
+          hasError && styles.confirmButtonDisabled
+        ]}
         onPress={handleConfirm}
-        activeOpacity={0.8}
+        disabled={hasError}
+        activeOpacity={hasError ? 1 : 0.8}
         accessibilityLabel="Confirm image selection"
         accessibilityRole="button"
       >
-        <Text style={styles.confirmButtonText}>Confirm & Apply Image</Text>
+        <Text style={[
+          styles.confirmButtonText,
+          hasError && styles.confirmButtonTextDisabled
+        ]}>
+          {hasError ? 'Image Failed to Load' : 'Confirm & Apply Image'}
+        </Text>
       </TouchableOpacity>
     </View>
   )
@@ -189,10 +198,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minHeight: 48,
   },
+  confirmButtonDisabled: {
+    backgroundColor: '#ccc',
+  },
   confirmButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  confirmButtonTextDisabled: {
+    color: '#666',
   },
 })

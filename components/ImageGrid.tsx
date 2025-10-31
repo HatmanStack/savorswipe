@@ -129,34 +129,52 @@ const ImageGridComponent: React.FC<ImageGridProps> = ({
   const renderThumbnail = useCallback(({ item: imageUrl }: { item: string }) => {
     const state = loadingStates[imageUrl] || { isLoading: true, hasError: false, isLoaded: false }
 
+    // Render error state
+    if (state.hasError) {
+      return (
+        <TouchableOpacity
+          style={styles.thumbnailWrapper}
+          onPress={() => handleThumbnailPress(imageUrl)}
+          activeOpacity={0.8}
+        >
+          <View style={styles.thumbnailError}>
+            <Text style={styles.errorIcon}>🍳</Text>
+            <Text style={styles.errorText}>No image</Text>
+          </View>
+        </TouchableOpacity>
+      )
+    }
+
+    // Render skeleton loading state (only mount Image when not loading)
+    if (state.isLoading && !state.isLoaded) {
+      return (
+        <TouchableOpacity
+          style={styles.thumbnailWrapper}
+          onPress={() => handleThumbnailPress(imageUrl)}
+          activeOpacity={0.8}
+        >
+          <View style={styles.skeletonPlaceholder}>
+            <View style={styles.skeletonShimmer} />
+          </View>
+        </TouchableOpacity>
+      )
+    }
+
+    // Render actual image (only mounted when not in skeleton state)
     return (
       <TouchableOpacity
         style={styles.thumbnailWrapper}
         onPress={() => handleThumbnailPress(imageUrl)}
         activeOpacity={0.8}
       >
-        {state.hasError ? (
-          // Error placeholder - use skillet.png as fallback
-          <View style={styles.thumbnailError}>
-            <Text style={styles.errorIcon}>🍳</Text>
-            <Text style={styles.errorText}>No image</Text>
-          </View>
-        ) : state.isLoading && !state.isLoaded ? (
-          // Skeleton placeholder while loading
-          <View style={styles.skeletonPlaceholder}>
-            <View style={styles.skeletonShimmer} />
-          </View>
-        ) : (
-          // Actual image (cached or freshly loaded)
-          <Image
-            source={{ uri: imageUrl }}
-            style={styles.thumbnail}
-            onLoadStart={() => handleImageLoadStart(imageUrl)}
-            onLoad={() => handleImageLoadEnd(imageUrl)}
-            onError={() => handleImageError(imageUrl)}
-            resizeMode="cover"
-          />
-        )}
+        <Image
+          source={{ uri: imageUrl }}
+          style={styles.thumbnail}
+          onLoadStart={() => handleImageLoadStart(imageUrl)}
+          onLoad={() => handleImageLoadEnd(imageUrl)}
+          onError={() => handleImageError(imageUrl)}
+          resizeMode="cover"
+        />
       </TouchableOpacity>
     )
   }, [loadingStates, handleThumbnailPress, handleImageLoadStart, handleImageLoadEnd, handleImageError])
