@@ -17,14 +17,203 @@ from search_image import (
     select_unique_image_url,
     simplify_recipe_title,
     extract_used_image_urls,
+    validate_image_urls,
 )
+
+
+class TestValidateImageUrls:
+    """Tests for validate_image_urls() function."""
+
+    @patch("search_image.requests.head")
+    def test_validate_all_valid_urls(self, mock_head):
+        """Test validation of all valid image URLs."""
+        # Arrange
+        urls = [
+            "https://example.com/image1.jpg",
+            "https://example.com/image2.jpg",
+            "https://example.com/image3.jpg",
+        ]
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.headers = {"Content-Type": "image/jpeg"}
+        mock_head.return_value = mock_response
+
+        # Act
+        result = validate_image_urls(urls)
+
+        # Assert
+        assert len(result) == 3
+        assert result == urls
+
+    @patch("search_image.requests.head")
+    def test_validate_mixed_valid_invalid(self, mock_head):
+        """Test validation with mix of valid and invalid URLs."""
+        # Arrange
+        urls = [
+            "https://example.com/image1.jpg",
+            "https://example.com/notanimage.html",
+            "https://example.com/image2.jpg",
+        ]
+
+        def head_side_effect(url, **kwargs):
+            response = Mock()
+            response.status_code = 200
+            if "notanimage" in url:
+                response.headers = {"Content-Type": "text/html"}
+            else:
+                response.headers = {"Content-Type": "image/jpeg"}
+            return response
+
+        mock_head.side_effect = head_side_effect
+
+        # Act
+        result = validate_image_urls(urls)
+
+        # Assert
+        assert len(result) == 2
+        assert "https://example.com/image1.jpg" in result
+        assert "https://example.com/image2.jpg" in result
+
+    @patch("search_image.requests.head")
+    def test_validate_url_returns_404(self, mock_head):
+        """Test handling of URLs that return 404."""
+        # Arrange
+        urls = [
+            "https://example.com/image1.jpg",
+            "https://example.com/missing.jpg",
+        ]
+
+        def head_side_effect(url, **kwargs):
+            response = Mock()
+            response.status_code = 200 if "image1" in url else 404
+            response.headers = {"Content-Type": "image/jpeg"}
+            return response
+
+        mock_head.side_effect = head_side_effect
+
+        # Act
+        result = validate_image_urls(urls)
+
+        # Assert
+        assert len(result) == 1
+        assert result == ["https://example.com/image1.jpg"]
+
+    @patch("search_image.requests.head")
+    def test_validate_url_timeout(self, mock_head):
+        """Test handling of URL validation timeouts."""
+        # Arrange
+        import requests
+
+        urls = [
+            "https://example.com/image1.jpg",
+            "https://example.com/slow.jpg",
+        ]
+
+        def head_side_effect(url, **kwargs):
+            if "slow" in url:
+                raise requests.exceptions.Timeout()
+            response = Mock()
+            response.status_code = 200
+            response.headers = {"Content-Type": "image/jpeg"}
+            return response
+
+        mock_head.side_effect = head_side_effect
+
+        # Act
+        result = validate_image_urls(urls)
+
+        # Assert
+        assert len(result) == 1
+        assert result == ["https://example.com/image1.jpg"]
+
+    @patch("search_image.requests.head")
+    def test_validate_url_connection_error(self, mock_head):
+        """Test handling of connection errors during validation."""
+        # Arrange
+        import requests
+
+        urls = [
+            "https://example.com/image1.jpg",
+            "https://example.com/error.jpg",
+        ]
+
+        def head_side_effect(url, **kwargs):
+            if "error" in url:
+                raise requests.exceptions.ConnectionError()
+            response = Mock()
+            response.status_code = 200
+            response.headers = {"Content-Type": "image/jpeg"}
+            return response
+
+        mock_head.side_effect = head_side_effect
+
+        # Act
+        result = validate_image_urls(urls)
+
+        # Assert
+        assert len(result) == 1
+        assert result == ["https://example.com/image1.jpg"]
+
+    def test_validate_empty_list(self):
+        """Test validation of empty URL list."""
+        # Act
+        result = validate_image_urls([])
+
+        # Assert
+        assert result == []
+
+    @patch("search_image.requests.head")
+    def test_validate_with_empty_urls_in_list(self, mock_head):
+        """Test validation skips empty strings in list."""
+        # Arrange
+        urls = ["", "https://example.com/image1.jpg", None, "https://example.com/image2.jpg"]
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.headers = {"Content-Type": "image/jpeg"}
+        mock_head.return_value = mock_response
+
+        # Act
+        result = validate_image_urls(urls)
+
+        # Assert
+        assert len(result) == 2
+
+    @patch("search_image.requests.head")
+    def test_validate_variable_content_types(self, mock_head):
+        """Test validation accepts various image content types."""
+        # Arrange
+        urls = [
+            "https://example.com/image1.jpg",
+            "https://example.com/image2.png",
+            "https://example.com/image3.webp",
+        ]
+
+        def head_side_effect(url, **kwargs):
+            response = Mock()
+            response.status_code = 200
+            if "image1" in url:
+                response.headers = {"Content-Type": "image/jpeg"}
+            elif "image2" in url:
+                response.headers = {"Content-Type": "image/png"}
+            else:
+                response.headers = {"Content-Type": "image/webp"}
+            return response
+
+        mock_head.side_effect = head_side_effect
+
+        # Act
+        result = validate_image_urls(urls)
+
+        # Assert
+        assert len(result) == 3
 
 
 class TestGoogleSearchImage:
     """Tests for google_search_image() function."""
 
+    @patch("search_image.requests.head")
     @patch("search_image.requests.get")
-    def test_google_search_image_returns_correct_count(self, mock_get):
+    def test_google_search_image_returns_correct_count(self, mock_get, mock_head):
         """Test that google_search_image returns requested number of URLs."""
         # Arrange
         mock_response = Mock()
@@ -37,6 +226,12 @@ class TestGoogleSearchImage:
         }
         mock_get.return_value = mock_response
 
+        # Mock URL validation
+        mock_head_response = Mock()
+        mock_head_response.status_code = 200
+        mock_head_response.headers = {"Content-Type": "image/jpeg"}
+        mock_head.return_value = mock_head_response
+
         # Act
         results = google_search_image("chocolate cookies", count=10)
 
@@ -45,8 +240,9 @@ class TestGoogleSearchImage:
         assert all(isinstance(url, str) for url in results)
         assert all(url.startswith("https://") for url in results)
 
+    @patch("search_image.requests.head")
     @patch("search_image.requests.get")
-    def test_google_search_image_with_beverage_type(self, mock_get):
+    def test_google_search_image_with_beverage_type(self, mock_get, mock_head):
         """Test google_search_image uses beverage-specific search terms."""
         # Arrange
         mock_response = Mock()
@@ -59,6 +255,12 @@ class TestGoogleSearchImage:
         }
         mock_get.return_value = mock_response
 
+        # Mock URL validation
+        mock_head_response = Mock()
+        mock_head_response.status_code = 200
+        mock_head_response.headers = {"Content-Type": "image/jpeg"}
+        mock_head.return_value = mock_head_response
+
         # Act
         results = google_search_image("hot cocoa", count=10, recipe_type="beverage")
 
@@ -67,8 +269,9 @@ class TestGoogleSearchImage:
         # Verify the function was called (implicitly tests search with beverage suffix)
         assert mock_get.called
 
+    @patch("search_image.requests.head")
     @patch("search_image.requests.get")
-    def test_google_search_image_empty_response(self, mock_get):
+    def test_google_search_image_empty_response(self, mock_get, mock_head):
         """Test handling of empty API response."""
         # Arrange
         mock_response = Mock()
@@ -109,6 +312,42 @@ class TestGoogleSearchImage:
 
         # Assert
         assert results == []
+
+    @patch("search_image.requests.head")
+    @patch("search_image.requests.get")
+    def test_google_search_image_filters_invalid_urls(self, mock_get, mock_head):
+        """Test that google_search_image filters out invalid URLs."""
+        # Arrange
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "items": [
+                {"link": "https://example.com/image1.jpg"},
+                {"link": "https://example.com/notanimage.html"},
+                {"link": "https://example.com/image2.jpg"},
+            ]
+        }
+        mock_get.return_value = mock_response
+
+        # Mock URL validation - filter out the HTML file
+        def head_side_effect(url, **kwargs):
+            response = Mock()
+            response.status_code = 200
+            if "notanimage" in url:
+                response.headers = {"Content-Type": "text/html"}
+            else:
+                response.headers = {"Content-Type": "image/jpeg"}
+            return response
+
+        mock_head.side_effect = head_side_effect
+
+        # Act
+        results = google_search_image("test recipe", count=10)
+
+        # Assert - should only return valid image URLs
+        assert len(results) == 2
+        assert "https://example.com/image1.jpg" in results
+        assert "https://example.com/image2.jpg" in results
 
 
 class TestSelectUniqueImageUrl:

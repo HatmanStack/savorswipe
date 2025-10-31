@@ -14,9 +14,7 @@ from botocore.exceptions import ClientError
 
 from image_uploader import (
     fetch_image_from_url,
-    get_fallback_image,
-    upload_image_to_s3,
-    fetch_and_upload_image
+    upload_image_to_s3
 )
 
 
@@ -142,36 +140,6 @@ class TestFetchImageFromUrl:
         assert len(requests_mock.request_history) > 0
         request = requests_mock.request_history[0]
         assert 'User-Agent' in request.headers
-
-
-class TestGetFallbackImage:
-    """Tests for get_fallback_image function."""
-
-    def test_fallback_image_exists(self):
-        """Test reading fallback image when it exists."""
-        # Create a temporary fallback image
-        with patch('os.path.exists', return_value=True):
-            with patch('builtins.open', create=True) as mock_open:
-                mock_open.return_value.__enter__.return_value.read.return_value = b'fallback image data'
-
-                result = get_fallback_image()
-
-        assert result == b'fallback image data'
-
-    def test_fallback_image_not_found(self):
-        """Test handling when fallback image doesn't exist."""
-        with patch('os.path.exists', return_value=False):
-            result = get_fallback_image()
-
-        assert result is None
-
-    def test_fallback_image_read_error(self):
-        """Test handling of file read errors."""
-        with patch('os.path.exists', return_value=True):
-            with patch('builtins.open', side_effect=IOError("Read error")):
-                result = get_fallback_image()
-
-        assert result is None
 
 
 class TestUploadImageToS3:
@@ -316,66 +284,3 @@ class TestUploadImageToS3:
         assert 'max retries exceeded' in error_msg.lower()
 
 
-class TestFetchAndUploadImage:
-    """Tests for fetch_and_upload_image convenience function."""
-
-    def test_successful_fetch_and_upload(self, s3_client, env_vars, requests_mock):
-        """Test successfully fetching and uploading an image."""
-        image_data = b'test image'
-        requests_mock.get(
-            'https://example.com/image.jpg',
-            content=image_data,
-            headers={'Content-Type': 'image/jpeg'}
-        )
-
-        with patch('image_uploader.get_fallback_image', return_value=None):
-            s3_path, error_msg, used_fallback = fetch_and_upload_image(
-                'https://example.com/image.jpg',
-                'recipe_1',
-                s3_client,
-                'test-bucket'
-            )
-
-        assert s3_path == "images/recipe_1.jpg"
-        assert error_msg is None
-        assert used_fallback is False
-
-    def test_fetch_fails_uses_fallback(self, s3_client, env_vars, requests_mock):
-        """Test that fallback is used when fetch fails."""
-        # Google fetch fails
-        requests_mock.get('https://example.com/image.jpg', status_code=404)
-
-        fallback_data = b'fallback image'
-
-        with patch('image_uploader.get_fallback_image', return_value=fallback_data):
-            s3_path, error_msg, used_fallback = fetch_and_upload_image(
-                'https://example.com/image.jpg',
-                'recipe_1',
-                s3_client,
-                'test-bucket'
-            )
-
-        assert s3_path == "images/recipe_1.jpg"
-        assert error_msg is None
-        assert used_fallback is True
-
-        # Verify fallback image was uploaded
-        response = s3_client.get_object(Bucket='test-bucket', Key='images/recipe_1.jpg')
-        assert response['Body'].read() == fallback_data
-
-    def test_both_fetch_and_fallback_fail(self, s3_client, env_vars, requests_mock):
-        """Test error handling when both fetch and fallback fail."""
-        requests_mock.get('https://example.com/image.jpg', status_code=404)
-
-        with patch('image_uploader.get_fallback_image', return_value=None):
-            s3_path, error_msg, used_fallback = fetch_and_upload_image(
-                'https://example.com/image.jpg',
-                'recipe_1',
-                s3_client,
-                'test-bucket'
-            )
-
-        assert s3_path is None
-        assert error_msg is not None
-        assert 'fallback not available' in error_msg.lower()
-        assert used_fallback is True

@@ -16,7 +16,6 @@ class TestPostImageEndpoint:
 
     def test_successful_image_selection(self, s3_client, env_vars):
         """Test successfully selecting and uploading an image."""
-        # Setup: Create initial recipe data
         combined_data = {
             "1": {
                 "Title": "Test Recipe",
@@ -35,7 +34,6 @@ class TestPostImageEndpoint:
             Body=json.dumps(combined_data)
         )
 
-        # Create event
         event = {
             "requestContext": {
                 "http": {
@@ -48,61 +46,23 @@ class TestPostImageEndpoint:
             })
         }
 
-        # Mock the image fetching
-        with patch('lambda_function.fetch_and_upload_image') as mock_fetch:
-            mock_fetch.return_value = ("images/1.jpg", None, False)
+        with patch('lambda_function.fetch_image_from_url') as mock_fetch:
+            with patch('lambda_function.upload_image_to_s3') as mock_upload:
+                mock_fetch.return_value = (b'image data', 'image/jpeg')
+                mock_upload.return_value = ("images/1.jpg", None)
+                response = handle_post_image_request(event, None)
 
-            # Act
-            response = handle_post_image_request(event, None)
-
-        # Assert
         assert response['statusCode'] == 200
         body = json.loads(response['body'])
         assert body['success'] is True
         assert body['recipe']['image_url'] == "https://example.com/selected-image.jpg"
 
-        # Verify recipe updated in S3
         result = s3_client.get_object(Bucket="test-bucket", Key="jsondata/combined_data.json")
         updated_data = json.loads(result['Body'].read())
         assert updated_data["1"]["image_url"] == "https://example.com/selected-image.jpg"
 
-    def test_image_fetch_failure_with_fallback(self, s3_client, env_vars):
-        """Test that endpoint succeeds when fallback image is used."""
-        combined_data = {
-            "1": {"Title": "Test Recipe", "image_url": None}
-        }
-
-        s3_client.put_object(
-            Bucket="test-bucket",
-            Key="jsondata/combined_data.json",
-            Body=json.dumps(combined_data)
-        )
-
-        event = {
-            "requestContext": {
-                "http": {
-                    "method": "POST",
-                    "path": "/recipe/1/image"
-                }
-            },
-            "body": json.dumps({
-                "imageUrl": "https://example.com/bad-image.jpg"
-            })
-        }
-
-        # Mock: Fetch fails but fallback succeeds
-        with patch('lambda_function.fetch_and_upload_image') as mock_fetch:
-            mock_fetch.return_value = ("images/1.jpg", None, True)  # used_fallback=True
-
-            response = handle_post_image_request(event, None)
-
-        # Should still return 200 (fallback was used)
-        assert response['statusCode'] == 200
-        body = json.loads(response['body'])
-        assert body['success'] is True
-
     def test_image_fetch_failure(self, s3_client, env_vars):
-        """Test error when image fetch and fallback both fail."""
+        """Test error when image fetch fails."""
         combined_data = {
             "1": {"Title": "Test Recipe"}
         }
@@ -125,17 +85,14 @@ class TestPostImageEndpoint:
             })
         }
 
-        # Mock: Both fetch and fallback fail
-        with patch('lambda_function.fetch_and_upload_image') as mock_fetch:
-            mock_fetch.return_value = (None, "Failed to fetch and fallback not available", True)
-
+        with patch('lambda_function.fetch_image_from_url') as mock_fetch:
+            mock_fetch.return_value = (None, None)
             response = handle_post_image_request(event, None)
 
-        # Should return 500
         assert response['statusCode'] == 500
         body = json.loads(response['body'])
         assert body['success'] is False
-        assert 'Failed to process image' in body['error']
+        assert 'Failed to fetch image' in body['error']
 
     def test_recipe_not_found(self, s3_client, env_vars):
         """Test error when recipe doesn't exist."""
@@ -161,12 +118,12 @@ class TestPostImageEndpoint:
             })
         }
 
-        with patch('lambda_function.fetch_and_upload_image') as mock_fetch:
-            mock_fetch.return_value = ("images/999.jpg", None, False)
+        with patch('lambda_function.fetch_image_from_url') as mock_fetch:
+            with patch('lambda_function.upload_image_to_s3') as mock_upload:
+                mock_fetch.return_value = (b'image data', 'image/jpeg')
+                mock_upload.return_value = ("images/999.jpg", None)
+                response = handle_post_image_request(event, None)
 
-            response = handle_post_image_request(event, None)
-
-        # Should return 404
         assert response['statusCode'] == 404
         body = json.loads(response['body'])
         assert body['success'] is False
@@ -178,7 +135,7 @@ class TestPostImageEndpoint:
             "requestContext": {
                 "http": {
                     "method": "POST",
-                    "path": "/recipe/1"  # Missing /image
+                    "path": "/recipe/1"
                 }
             },
             "body": json.dumps({
@@ -210,7 +167,7 @@ class TestPostImageEndpoint:
                     "path": "/recipe/1/image"
                 }
             },
-            "body": json.dumps({})  # No imageUrl
+            "body": json.dumps({})
         }
 
         response = handle_post_image_request(event, None)
@@ -297,10 +254,11 @@ class TestPostImageEndpoint:
             })
         }
 
-        with patch('lambda_function.fetch_and_upload_image') as mock_fetch:
-            mock_fetch.return_value = ("images/1.jpg", None, False)
-
-            response = handle_post_image_request(event, None)
+        with patch('lambda_function.fetch_image_from_url') as mock_fetch:
+            with patch('lambda_function.upload_image_to_s3') as mock_upload:
+                mock_fetch.return_value = (b'image data', 'image/jpeg')
+                mock_upload.return_value = ("images/1.jpg", None)
+                response = handle_post_image_request(event, None)
 
         assert 'Access-Control-Allow-Origin' in response['headers']
         assert response['headers']['Access-Control-Allow-Origin'] == '*'
@@ -340,7 +298,6 @@ class TestPostImageEndpoint:
             Body=json.dumps(combined_data)
         )
 
-        # Update recipe 1
         event1 = {
             "requestContext": {
                 "http": {
@@ -353,13 +310,14 @@ class TestPostImageEndpoint:
             })
         }
 
-        with patch('lambda_function.fetch_and_upload_image') as mock_fetch:
-            mock_fetch.return_value = ("images/1.jpg", None, False)
-            response1 = handle_post_image_request(event1, None)
+        with patch('lambda_function.fetch_image_from_url') as mock_fetch:
+            with patch('lambda_function.upload_image_to_s3') as mock_upload:
+                mock_fetch.return_value = (b'image data', 'image/jpeg')
+                mock_upload.return_value = ("images/1.jpg", None)
+                response1 = handle_post_image_request(event1, None)
 
         assert response1['statusCode'] == 200
 
-        # Update recipe 2
         event2 = {
             "requestContext": {
                 "http": {
@@ -372,13 +330,14 @@ class TestPostImageEndpoint:
             })
         }
 
-        with patch('lambda_function.fetch_and_upload_image') as mock_fetch:
-            mock_fetch.return_value = ("images/2.jpg", None, False)
-            response2 = handle_post_image_request(event2, None)
+        with patch('lambda_function.fetch_image_from_url') as mock_fetch:
+            with patch('lambda_function.upload_image_to_s3') as mock_upload:
+                mock_fetch.return_value = (b'image data', 'image/jpeg')
+                mock_upload.return_value = ("images/2.jpg", None)
+                response2 = handle_post_image_request(event2, None)
 
         assert response2['statusCode'] == 200
 
-        # Verify both recipes updated
         result = s3_client.get_object(Bucket="test-bucket", Key="jsondata/combined_data.json")
         updated_data = json.loads(result['Body'].read())
         assert updated_data["1"]["image_url"] == "https://example.com/image1.jpg"
@@ -411,9 +370,11 @@ class TestPostImageEndpoint:
             })
         }
 
-        with patch('lambda_function.fetch_and_upload_image') as mock_fetch:
-            mock_fetch.return_value = ("images/1.jpg", None, False)
-            response = handle_post_image_request(event, None)
+        with patch('lambda_function.fetch_image_from_url') as mock_fetch:
+            with patch('lambda_function.upload_image_to_s3') as mock_upload:
+                mock_fetch.return_value = (b'image data', 'image/jpeg')
+                mock_upload.return_value = ("images/1.jpg", None)
+                response = handle_post_image_request(event, None)
 
         assert response['statusCode'] == 200
         body = json.loads(response['body'])
@@ -447,9 +408,11 @@ class TestPostImageEndpoint:
             })
         }
 
-        with patch('lambda_function.fetch_and_upload_image') as mock_fetch:
-            mock_fetch.return_value = ("images/1.jpg", None, False)
-            response = handle_post_image_request(event, None)
+        with patch('lambda_function.fetch_image_from_url') as mock_fetch:
+            with patch('lambda_function.upload_image_to_s3') as mock_upload:
+                mock_fetch.return_value = (b'image data', 'image/jpeg')
+                mock_upload.return_value = ("images/1.jpg", None)
+                response = handle_post_image_request(event, None)
 
         assert response['statusCode'] == 200
         body = json.loads(response['body'])
@@ -479,8 +442,10 @@ class TestPostImageEndpoint:
             })
         }
 
-        with patch('lambda_function.fetch_and_upload_image') as mock_fetch:
-            mock_fetch.return_value = ("images/1.jpg", None, False)
-            response = handle_post_image_request(event, None)
+        with patch('lambda_function.fetch_image_from_url') as mock_fetch:
+            with patch('lambda_function.upload_image_to_s3') as mock_upload:
+                mock_fetch.return_value = (b'image data', 'image/jpeg')
+                mock_upload.return_value = ("images/1.jpg", None)
+                response = handle_post_image_request(event, None)
 
         assert response['headers']['Content-Type'] == 'application/json'
