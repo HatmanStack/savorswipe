@@ -11,7 +11,7 @@ Provides mocking infrastructure for:
 import os
 import pytest
 from unittest.mock import MagicMock, patch
-from moto import mock_s3
+from moto import mock_aws
 import boto3
 
 
@@ -34,7 +34,7 @@ def aws_credentials():
 @pytest.fixture
 def s3_bucket(aws_credentials):
     """Create a mock S3 bucket for testing."""
-    with mock_s3():
+    with mock_aws():
         conn = boto3.resource("s3", region_name="us-east-1")
         conn.create_bucket(Bucket="test-bucket")
         yield conn
