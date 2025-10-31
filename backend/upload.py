@@ -7,6 +7,7 @@ import io
 import base64
 import random
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 from PIL import Image
 from botocore.exceptions import ClientError
 from typing import List, Dict, Tuple, Optional
@@ -35,11 +36,30 @@ def is_problematic_url(url: str) -> bool:
     Returns:
         True if URL should be skipped, False if OK to try
     """
-    url_lower = url.lower()
-    for domain in PROBLEMATIC_DOMAINS:
-        if domain in url_lower:
-            return True
-    return False
+    try:
+        # Parse URL to extract hostname
+        parsed = urlparse(url)
+        hostname = parsed.hostname
+
+        # Handle missing/invalid hostnames
+        if not hostname:
+            return False
+
+        # Normalize: lowercase and strip "www." prefix
+        hostname = hostname.lower()
+        if hostname.startswith('www.'):
+            hostname = hostname[4:]
+
+        # Check if hostname matches or is subdomain of problematic domain
+        for domain in PROBLEMATIC_DOMAINS:
+            # Exact match or subdomain match (e.g., "m.instagram.com")
+            if hostname == domain or hostname.endswith('.' + domain):
+                return True
+
+        return False
+    except Exception:
+        # If URL parsing fails, treat as non-problematic (don't skip)
+        return False
 
 def to_s3(recipe, search_results, jsonData = None):
     combined_data_key = 'jsondata/combined_data.json'
@@ -102,7 +122,7 @@ def upload_image(search_results, bucket_name, highest_key):
     print(f"[UPLOAD] Have {item_count} valid URLs to try (filtered {len(image_urls) - len(filtered_urls)} problematic URLs)")
 
     if item_count == 0:
-        print(f"[UPLOAD] No valid URLs after filtering, returning None")
+        print("[UPLOAD] No valid URLs after filtering, returning None")
         return None
 
     for idx, image_url in enumerate(filtered_urls):

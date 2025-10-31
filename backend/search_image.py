@@ -46,36 +46,44 @@ def simplify_recipe_title(title: str) -> str:
     return simplified
 
 
-def google_search_image(title: str, count: int = 10) -> List[str]:
+def google_search_image(title: str, count: int = 10, recipe_type: str = None) -> List[str]:
     """
     Search for images using Google Custom Search API with automatic query simplification.
 
-    Tries multiple search strategies to find actual food photos:
-    1. Simplified title + "food dish" (e.g., "Flat Iron Steak food dish")
-    2. If <5 results, tries simplified title + "recipe food"
+    Tries multiple search strategies to find actual photos:
+    1. Simplified title + type-specific suffix (e.g., "Hot Cocoa beverage photo" or "Steak food photo")
+    2. If <5 results, tries simplified title + "recipe photo"
     3. If still <5 results, tries just simplified title
     4. Returns best results found
 
     Args:
         title: Search query (recipe title)
         count: Number of results to return (default 10)
+        recipe_type: Recipe type (e.g., "beverage", "dessert", "main dish") for targeted searches
 
     Returns:
         List of image URLs (up to count results), or empty list if no results
     """
-    print(f"[SEARCH] Original title: '{title}'")
+    print(f"[SEARCH] Original title: '{title}', type: '{recipe_type}'")
 
     # Simplify the title first
     simplified_title = simplify_recipe_title(title)
 
-    # Strategy 1: Try simplified title + "food dish" to prioritize actual food photos
-    print(f"[SEARCH] Strategy 1: Trying '{simplified_title} food dish'...")
-    results = _search_google_images(f"{simplified_title} food dish", count)
+    # Determine search suffix based on recipe type
+    if recipe_type and 'beverage' in recipe_type.lower():
+        suffix1 = "beverage photo"
+        print(f"[SEARCH] Detected beverage type - using beverage-specific search terms")
+    else:
+        suffix1 = "food photo"
 
-    # Strategy 2: If we got very few results, try "recipe food"
+    # Strategy 1: Try simplified title + type-specific suffix
+    print(f"[SEARCH] Strategy 1: Trying '{simplified_title} {suffix1}'...")
+    results = _search_google_images(f"{simplified_title} {suffix1}", count)
+
+    # Strategy 2: If we got very few results, try with "recipe photo"
     if len(results) < 5:
-        print(f"[SEARCH] Only found {len(results)} results, trying strategy 2: '{simplified_title} recipe food'...")
-        recipe_results = _search_google_images(f"{simplified_title} recipe food", count)
+        print(f"[SEARCH] Only found {len(results)} results, trying strategy 2: '{simplified_title} recipe photo'...")
+        recipe_results = _search_google_images(f"{simplified_title} recipe photo", count)
 
         # Use whichever gave us more results
         if len(recipe_results) > len(results):

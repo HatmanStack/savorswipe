@@ -50,8 +50,16 @@ def process_single_recipe(
         - On error: (None, None, None, error_message)
     """
     try:
-        # Extract title
+        # Extract title and type
         title = recipe_data.get('Title', 'Unknown Recipe')
+        recipe_type = recipe_data.get('Type')
+
+        # Normalize recipe type for search (handle both string and list formats)
+        type_str = None
+        if isinstance(recipe_type, list) and len(recipe_type) > 0:
+            type_str = recipe_type[0]  # Use first type
+        elif isinstance(recipe_type, str):
+            type_str = recipe_type
 
         # Generate embedding
         embedding = embedding_generator.generate_recipe_embedding(recipe_data)
@@ -63,8 +71,8 @@ def process_single_recipe(
             error_reason = f"Duplicate of recipe {duplicate_key} (similarity: {similarity_score:.2f})"
             return None, None, None, error_reason
 
-        # Search for images
-        search_results = si.google_search_image(title, count=10)
+        # Search for images with recipe type for better results
+        search_results = si.google_search_image(title, count=10, recipe_type=type_str)
 
         return recipe_data, embedding, search_results, None
 
@@ -484,20 +492,20 @@ def handle_post_request(event, context):
             # Extract used URLs
             used_urls = si.extract_used_image_urls(json_data)
 
-            # Filter unique URLs for each recipe (preserve all unused URLs as fallbacks)
+            # Filter URLs for each recipe (preserve all unused URLs as fallbacks)
             unique_search_results = []
             for search_results in search_results_list:
-                # Filter out already-used URLs, but keep all unused ones as fallbacks
+                # Filter out already-used URLs, keep all unused ones as fallbacks
                 unused_urls = [url for url in search_results if url not in used_urls]
 
                 if unused_urls:
-                    # Convert to format expected by upload_image (keep all unused URLs)
-                    unique_search_results.append({'items': [{'link': url} for url in unused_urls]})
-                    # Mark first URL as used for next recipe (but keep others as fallbacks)
+                    # Pass all unused URLs as list (upload_image handles list format)
+                    unique_search_results.append(unused_urls)
+                    # Mark first URL as used to avoid reuse in next recipe
                     used_urls.add(unused_urls[0])
                 else:
-                    # All URLs already used - pass original list and let upload_image handle it
-                    unique_search_results.append({'items': [{'link': url} for url in search_results[:5]]})
+                    # All URLs already used - pass first 5 as fallback
+                    unique_search_results.append(search_results[:5])
 
             # Batch upload
             json_data, success_keys, position_to_key, upload_errors = batch_to_s3_atomic(
