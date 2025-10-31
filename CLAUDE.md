@@ -190,6 +190,43 @@ Located in `backend/` directory (Python):
 
 **Image Search** (`search_image.py`):
 - Uses Google Custom Search JSON API to find recipe images
+- Validates image URLs with HTTP HEAD requests before returning
+- Returns variable number of images (1-9) depending on availability after validation
+
+### Lambda API Endpoints
+
+**POST /recipe/upload** (Upload & Process Recipes):
+- Accepts: base64-encoded images (JPG, PNG) or PDFs in request body
+- Processing: Parallel OCR (3 workers), embedding generation, duplicate detection
+- Returns: JSON with success count, failure count, new recipe keys, errors
+- Status Code: 200 (success), 400 (invalid input), 500 (server error)
+- Implementation: `handle_post_upload_request()` in `lambda_function.py`
+
+**GET /recipes** (Fetch All Recipes):
+- Accepts: No parameters
+- Returns: Recipe metadata and image URLs from `combined_data.json`
+- Status Code: 200 (success), 500 (error)
+- Caching: CloudFront distribution caches responses
+- Implementation: `handle_get_request()` in `lambda_function.py`
+
+**DELETE /recipe/{recipe_key}** (Delete Recipe):
+- Accepts: Recipe key in URL path (alphanumeric, hyphens, underscores)
+- Removes: Recipe from `combined_data.json` and embedding from `recipe_embeddings.json`
+- Returns: JSON with success status and message
+- Status Code: 200 (success), 400 (invalid format), 404 (recipe not found), 500 (error)
+- Idempotent: Safely callable multiple times (returns 200 even if already deleted)
+- Implementation: `handle_delete_request()` in `lambda_function.py`
+- Files Modified: `backend/recipe_deletion.py` (atomic deletion logic)
+
+**POST /recipe/{recipe_key}/image** (Select Image for Recipe):
+- Accepts: Recipe key in URL path, imageUrl in JSON body
+- Process: Fetches image from URL, uploads to S3, updates recipe metadata
+- Returns: JSON with success status and updated recipe data
+- Status Code: 200 (success), 400 (invalid input), 404 (recipe not found), 500 (error)
+- Implementation: `handle_post_image_request()` in `lambda_function.py`
+- URL Validation: Validates image URLs are accessible (HTTP 200, Content-Type: image/*)
+- Deduplication: Tracks used image URLs to prevent duplication
+- Files Modified: `backend/image_uploader.py` (fetch and upload functions)
 
 ### Multi-File Upload Architecture
 
