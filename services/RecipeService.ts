@@ -137,6 +137,124 @@ export class RecipeService {
       throw error;
     }
   }
+
+  /**
+   * Selects an image for a recipe with pending image selection
+   * Calls the backend endpoint to fetch the image from Google and store it in S3
+   * @param recipeKey - The recipe key
+   * @param imageUrl - The Google image URL to select
+   * @returns Updated recipe object with image_url set
+   * @throws Error if network request fails or recipe not found
+   */
+  static async selectRecipeImage(recipeKey: string, imageUrl: string): Promise<Recipe> {
+    const lambdaUrl = process.env.EXPO_PUBLIC_LAMBDA_FUNCTION_URL;
+
+    if (!lambdaUrl) {
+      throw new Error('EXPO_PUBLIC_LAMBDA_FUNCTION_URL environment variable not set');
+    }
+
+    const endpoint = `${lambdaUrl}/recipe/${recipeKey}/image`;
+
+    try {
+      console.log(`[RecipeService] Selecting image for recipe: ${recipeKey}`);
+
+      const response = await Promise.race([
+        fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ imageUrl }),
+        }),
+        new Promise<Response>((_, reject) =>
+          setTimeout(() => reject(new Error('Request timeout')), 30000)
+        ),
+      ]);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[RecipeService] Image selection failed with status ${response.status}:`, errorText);
+
+        if (response.status === 404) {
+          throw new Error('Recipe not found');
+        }
+        if (response.status === 400) {
+          throw new Error('Invalid image URL');
+        }
+        throw new Error(`Failed to select image. Status: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        const errorMessage = result.error || 'Failed to select image';
+        console.error('[RecipeService] Image selection error:', errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      console.log(`[RecipeService] Image selected successfully for recipe: ${recipeKey}`);
+
+      // Return recipe with key attached
+      return { ...result.recipe, key: recipeKey };
+    } catch (error) {
+      console.error('[RecipeService] Error selecting recipe image:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Deletes a recipe from the database
+   * Removes the recipe from combined_data.json and recipe_embeddings.json
+   * @param recipeKey - The recipe key to delete
+   * @returns true if deletion was successful
+   * @throws Error if network request fails or recipe not found
+   */
+  static async deleteRecipe(recipeKey: string): Promise<boolean> {
+    const lambdaUrl = process.env.EXPO_PUBLIC_LAMBDA_FUNCTION_URL;
+
+    if (!lambdaUrl) {
+      throw new Error('EXPO_PUBLIC_LAMBDA_FUNCTION_URL environment variable not set');
+    }
+
+    const endpoint = `${lambdaUrl}/recipe/${recipeKey}`;
+
+    try {
+      console.log(`[RecipeService] Deleting recipe: ${recipeKey}`);
+
+      const response = await Promise.race([
+        fetch(endpoint, {
+          method: 'DELETE',
+        }),
+        new Promise<Response>((_, reject) =>
+          setTimeout(() => reject(new Error('Request timeout')), 30000)
+        ),
+      ]);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[RecipeService] Recipe deletion failed with status ${response.status}:`, errorText);
+
+        if (response.status === 404) {
+          throw new Error('Recipe not found');
+        }
+        throw new Error(`Failed to delete recipe. Status: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        const errorMessage = result.error || 'Failed to delete recipe';
+        console.error('[RecipeService] Recipe deletion error:', errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      console.log(`[RecipeService] Recipe deleted successfully: ${recipeKey}`);
+      return true;
+    } catch (error) {
+      console.error('[RecipeService] Error deleting recipe:', error);
+      throw error;
+    }
+  }
 }
 
 /**
