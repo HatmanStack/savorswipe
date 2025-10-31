@@ -6,6 +6,7 @@ import time
 import io
 import base64
 import random
+from datetime import datetime, timezone
 from PIL import Image
 from botocore.exceptions import ClientError
 from typing import List, Dict, Tuple, Optional
@@ -34,6 +35,8 @@ def to_s3(recipe, search_results, jsonData = None):
     if image_url:
         recipe['key'] = highest_key
         recipe['image_url'] = image_url  # Save the source image URL
+        # NEW_RECIPE_FEATURE: Add uploadedAt timestamp for frontend "new" indicator
+        recipe['uploadedAt'] = datetime.now(timezone.utc).isoformat()
         existing_data_json[str(highest_key)] = recipe
         updated_data_json = json.dumps(existing_data_json)
         s3_client.put_object(Bucket=bucket_name, Key=combined_data_key, Body=updated_data_json, ContentType='application/json')
@@ -274,6 +277,8 @@ def batch_to_s3_atomic(
                 # Add recipe to data
                 recipe['key'] = next_key
                 recipe['image_url'] = image_url  # Save the source image URL
+                # NEW_RECIPE_FEATURE: Add uploadedAt timestamp for frontend "new" indicator
+                recipe['uploadedAt'] = datetime.now(timezone.utc).isoformat()
                 existing_data[str(next_key)] = recipe
                 success_keys.append(str(next_key))
                 position_to_key[file_idx] = str(next_key)  # Track position mapping

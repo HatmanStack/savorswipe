@@ -109,7 +109,7 @@ export class RecipeService {
    */
   static async uploadRecipe(base64Image: string): Promise<UploadResponse> {
     const uploadUrl = process.env.EXPO_PUBLIC_UPLOAD_URL;
-    
+
     if (!uploadUrl) {
       throw new Error('Upload URL not configured');
     }
@@ -126,7 +126,7 @@ export class RecipeService {
       });
 
       const result = await response.json();
-      
+
       return {
         statusCode: response.status,
         body: JSON.stringify(result),
@@ -136,5 +136,45 @@ export class RecipeService {
       console.error('Error uploading recipe:', error);
       throw error;
     }
+  }
+}
+
+/**
+ * Determines if a recipe is "new" (uploaded within last 72 hours)
+ * @param recipe - Recipe object with optional uploadedAt timestamp
+ * @returns True if recipe was uploaded within 72 hours, false otherwise
+ */
+export function isNewRecipe(recipe: Recipe): boolean {
+  // Return false if no uploadedAt field
+  if (!recipe.uploadedAt) {
+    return false;
+  }
+
+  try {
+    // Parse ISO 8601 timestamp
+    const uploadTime = new Date(recipe.uploadedAt).getTime();
+
+    // Check for invalid date (NaN)
+    if (isNaN(uploadTime)) {
+      return false;
+    }
+
+    const currentTime = Date.now();
+
+    // Handle future timestamps (with 1-minute tolerance for clock skew)
+    const ONE_MINUTE_MS = 60 * 1000;
+    if (uploadTime > currentTime + ONE_MINUTE_MS) {
+      return false;
+    }
+
+    // Calculate hours elapsed
+    const msElapsed = currentTime - uploadTime;
+    const hoursElapsed = msElapsed / (1000 * 60 * 60);
+
+    // Return true if within 72 hours (exactly 72 hours returns false)
+    return hoursElapsed < 72;
+  } catch (error) {
+    // Invalid timestamp format
+    return false;
   }
 }
