@@ -54,8 +54,10 @@ class TestIntegrationEndpoints:
             })
         }
 
-        with patch('lambda_function.fetch_and_upload_image') as mock_fetch:
-            mock_fetch.return_value = ("images/1.jpg", None, False)
+        with patch('lambda_function.fetch_image_from_url') as mock_fetch_img, \
+             patch('lambda_function.upload_image_to_s3') as mock_upload:
+            mock_fetch_img.return_value = (b'fake image data', 'image/jpeg')
+            mock_upload.return_value = ("images/1.jpg", None)
             select_response = handle_post_image_request(select_event, None)
 
         assert select_response['statusCode'] == 200
@@ -114,8 +116,10 @@ class TestIntegrationEndpoints:
         )
 
         # Select image for recipe 1
-        with patch('lambda_function.fetch_and_upload_image') as mock_fetch:
-            mock_fetch.return_value = ("images/1.jpg", None, False)
+        with patch('lambda_function.fetch_image_from_url') as mock_fetch_img, \
+             patch('lambda_function.upload_image_to_s3') as mock_upload:
+            mock_fetch_img.return_value = (b'fake image data', 'image/jpeg')
+            mock_upload.return_value = ("images/1.jpg", None)
 
             select_event_1 = {
                 "requestContext": {
@@ -137,8 +141,10 @@ class TestIntegrationEndpoints:
         assert response_2['statusCode'] == 200
 
         # Select image for recipe 3
-        with patch('lambda_function.fetch_and_upload_image') as mock_fetch:
-            mock_fetch.return_value = ("images/3.jpg", None, False)
+        with patch('lambda_function.fetch_image_from_url') as mock_fetch_img, \
+             patch('lambda_function.upload_image_to_s3') as mock_upload:
+            mock_fetch_img.return_value = (b'fake image data', 'image/jpeg')
+            mock_upload.return_value = ("images/3.jpg", None)
 
             select_event_3 = {
                 "requestContext": {
@@ -188,8 +194,10 @@ class TestIntegrationEndpoints:
         assert delete_response['statusCode'] == 200
 
         # Try to select image for deleted recipe
-        with patch('lambda_function.fetch_and_upload_image') as mock_fetch:
-            mock_fetch.return_value = ("images/1.jpg", None, False)
+        with patch('lambda_function.fetch_image_from_url') as mock_fetch_img, \
+             patch('lambda_function.upload_image_to_s3') as mock_upload:
+            mock_fetch_img.return_value = (b'fake image data', 'image/jpeg')
+            mock_upload.return_value = ("images/1.jpg", None)
 
             select_event = {
                 "requestContext": {
@@ -221,8 +229,10 @@ class TestIntegrationEndpoints:
         )
 
         # Select first image
-        with patch('lambda_function.fetch_and_upload_image') as mock_fetch:
-            mock_fetch.return_value = ("images/1.jpg", None, False)
+        with patch('lambda_function.fetch_image_from_url') as mock_fetch_img, \
+             patch('lambda_function.upload_image_to_s3') as mock_upload:
+            mock_fetch_img.return_value = (b'fake image data', 'image/jpeg')
+            mock_upload.return_value = ("images/1.jpg", None)
 
             select_event_1 = {
                 "requestContext": {
@@ -235,8 +245,10 @@ class TestIntegrationEndpoints:
         assert response_1['statusCode'] == 200
 
         # Select second image (should overwrite)
-        with patch('lambda_function.fetch_and_upload_image') as mock_fetch:
-            mock_fetch.return_value = ("images/1.jpg", None, False)
+        with patch('lambda_function.fetch_image_from_url') as mock_fetch_img, \
+             patch('lambda_function.upload_image_to_s3') as mock_upload:
+            mock_fetch_img.return_value = (b'fake image data', 'image/jpeg')
+            mock_upload.return_value = ("images/1.jpg", None)
 
             select_event_2 = {
                 "requestContext": {
@@ -264,8 +276,10 @@ class TestIntegrationEndpoints:
         )
 
         # Simulate concurrent selects
-        with patch('lambda_function.fetch_and_upload_image') as mock_fetch:
-            mock_fetch.return_value = ("images/1.jpg", None, False)
+        with patch('lambda_function.fetch_image_from_url') as mock_fetch_img, \
+             patch('lambda_function.upload_image_to_s3') as mock_upload:
+            mock_fetch_img.return_value = (b'fake image data', 'image/jpeg')
+            mock_upload.return_value = ("images/1.jpg", None)
 
             # First select
             event_1 = {
@@ -320,8 +334,10 @@ class TestIntegrationEndpoints:
         assert delete_response['statusCode'] == 200
 
         # Select image for existing recipe (should still work)
-        with patch('lambda_function.fetch_and_upload_image') as mock_fetch:
-            mock_fetch.return_value = ("images/1.jpg", None, False)
+        with patch('lambda_function.fetch_image_from_url') as mock_fetch_img, \
+             patch('lambda_function.upload_image_to_s3') as mock_upload:
+            mock_fetch_img.return_value = (b'fake image data', 'image/jpeg')
+            mock_upload.return_value = ("images/1.jpg", None)
 
             select_event = {
                 "requestContext": {
@@ -352,8 +368,10 @@ class TestIntegrationEndpoints:
         )
 
         # Select image
-        with patch('lambda_function.fetch_and_upload_image') as mock_fetch:
-            mock_fetch.return_value = ("images/1.jpg", None, False)
+        with patch('lambda_function.fetch_image_from_url') as mock_fetch_img, \
+             patch('lambda_function.upload_image_to_s3') as mock_upload:
+            mock_fetch_img.return_value = (b'fake image data', 'image/jpeg')
+            mock_upload.return_value = ("images/1.jpg", None)
 
             select_event = {
                 "requestContext": {
