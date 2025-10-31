@@ -484,16 +484,20 @@ def handle_post_request(event, context):
             # Extract used URLs
             used_urls = si.extract_used_image_urls(json_data)
 
-            # Select unique URLs for each recipe
+            # Filter unique URLs for each recipe (preserve all unused URLs as fallbacks)
             unique_search_results = []
             for search_results in search_results_list:
-                unique_url = si.select_unique_image_url(search_results, used_urls)
-                if unique_url:
-                    # Convert back to format expected by upload_image
-                    unique_search_results.append({'items': [{'link': unique_url}]})
-                    used_urls.add(unique_url)  # Add to used set for next iteration
+                # Filter out already-used URLs, but keep all unused ones as fallbacks
+                unused_urls = [url for url in search_results if url not in used_urls]
+
+                if unused_urls:
+                    # Convert to format expected by upload_image (keep all unused URLs)
+                    unique_search_results.append({'items': [{'link': url} for url in unused_urls]})
+                    # Mark first URL as used for next recipe (but keep others as fallbacks)
+                    used_urls.add(unused_urls[0])
                 else:
-                    unique_search_results.append({'items': []})
+                    # All URLs already used - pass original list and let upload_image handle it
+                    unique_search_results.append({'items': [{'link': url} for url in search_results[:5]]})
 
             # Batch upload
             json_data, success_keys, position_to_key, upload_errors = batch_to_s3_atomic(
