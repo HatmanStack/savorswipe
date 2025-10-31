@@ -30,6 +30,8 @@ export interface ImageQueueHook {
   pendingRecipe: Recipe | null;       // Recipe awaiting image selection
   showImagePickerModal: boolean;      // Modal visibility flag
   resetPendingRecipe: () => void;     // Clear pending recipe state
+  onConfirmImage: (imageUrl: string) => Promise<void>;  // Handle image selection
+  onDeleteRecipe: () => Promise<void>;                  // Handle recipe deletion
 }
 
 // Result of a batch fetch operation

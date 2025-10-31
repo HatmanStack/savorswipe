@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRecipe } from '@/context/RecipeContext';
 import { ImageQueueService } from '@/services/ImageQueueService';
 import { ImageService } from '@/services/ImageService';
+import { RecipeService } from '@/services/RecipeService';
+import { ToastQueue } from '@/components/Toast';
 import { ImageFile, Recipe } from '@/types';
 import { ImageQueueHook } from '@/types/queue';
 
@@ -74,6 +76,91 @@ export function useImageQueue(): ImageQueueHook {
     setPendingRecipe(null);
     setShowImagePickerModal(false);
   }, []);
+
+  // Handle image selection confirmation
+  const onConfirmImage = useCallback(
+    async (imageUrl: string) => {
+      if (!pendingRecipe || !jsonData) {
+        console.warn('[QUEUE] No pending recipe to confirm');
+        return;
+      }
+
+      ToastQueue.show('Saving image selection...');
+
+      try {
+        console.log('[QUEUE] Confirming image selection for:', pendingRecipe.key);
+
+        // Call backend to select image
+        const updatedRecipe = await RecipeService.selectRecipeImage(
+          pendingRecipe.key,
+          imageUrl
+        );
+
+        // Update local jsonData with the returned recipe
+        const updatedJsonData = {
+          ...jsonData,
+          [pendingRecipe.key]: updatedRecipe,
+        };
+        const { setJsonData } = useRecipe();
+        if (setJsonData) {
+          setJsonData(updatedJsonData);
+        }
+
+        // Inject recipe into queue
+        await injectRecipes([pendingRecipe.key]);
+
+        // Clear pending state
+        resetPendingRecipe();
+
+        ToastQueue.show('Image saved');
+        console.log('[QUEUE] Image selection confirmed for:', pendingRecipe.key);
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error occurred';
+        console.error('[QUEUE] Image selection failed:', error);
+        ToastQueue.show(`Failed to save image: ${errorMessage}`);
+        // Keep modal visible for retry
+      }
+    },
+    [pendingRecipe, jsonData, injectRecipes, resetPendingRecipe]
+  );
+
+  // Handle recipe deletion
+  const onDeleteRecipe = useCallback(async () => {
+    if (!pendingRecipe) {
+      console.warn('[QUEUE] No pending recipe to delete');
+      return;
+    }
+
+    ToastQueue.show('Deleting recipe...');
+
+    try {
+      console.log('[QUEUE] Deleting recipe:', pendingRecipe.key);
+
+      // Call backend to delete recipe
+      await RecipeService.deleteRecipe(pendingRecipe.key);
+
+      // Remove recipe from local jsonData
+      const updatedJsonData = { ...jsonData };
+      delete updatedJsonData[pendingRecipe.key];
+      const { setJsonData } = useRecipe();
+      if (setJsonData) {
+        setJsonData(updatedJsonData);
+      }
+
+      // Clear pending state
+      resetPendingRecipe();
+
+      ToastQueue.show('Recipe deleted');
+      console.log('[QUEUE] Recipe deleted:', pendingRecipe.key);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error('[QUEUE] Recipe deletion failed:', error);
+      ToastQueue.show(`Failed to delete recipe: ${errorMessage}`);
+      // Keep modal visible for retry
+    }
+  }, [pendingRecipe, jsonData, resetPendingRecipe]);
 
   // Initialize queue on first load
   const initializeQueue = useCallback(async () => {
@@ -501,5 +588,7 @@ export function useImageQueue(): ImageQueueHook {
     pendingRecipe,
     showImagePickerModal,
     resetPendingRecipe,
+    onConfirmImage,
+    onDeleteRecipe,
   };
 }

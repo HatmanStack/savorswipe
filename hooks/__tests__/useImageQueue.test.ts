@@ -1,12 +1,16 @@
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { useImageQueue } from '../useImageQueue';
 import { ImageQueueService } from '@/services/ImageQueueService';
+import { RecipeService } from '@/services/RecipeService';
 import { useRecipe } from '@/context/RecipeContext';
+import { ToastQueue } from '@/components/Toast';
 import { S3JsonData } from '@/types';
 
 // Mock dependencies
 jest.mock('@/services/ImageQueueService');
+jest.mock('@/services/RecipeService');
 jest.mock('@/context/RecipeContext');
+jest.mock('@/components/Toast');
 
 describe('useImageQueue', () => {
   const mockJsonData: S3JsonData = {
@@ -18,6 +22,7 @@ describe('useImageQueue', () => {
   };
 
   const mockSetCurrentRecipe = jest.fn();
+  const mockSetJsonData = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -26,8 +31,21 @@ describe('useImageQueue', () => {
     (useRecipe as jest.Mock).mockReturnValue({
       jsonData: mockJsonData,
       setCurrentRecipe: mockSetCurrentRecipe,
+      setJsonData: mockSetJsonData,
       mealTypeFilters: ['main dish', 'dessert'],
     });
+
+    // Mock RecipeService methods
+    (RecipeService.selectRecipeImage as jest.Mock).mockResolvedValue({
+      key: 'recipe1',
+      Title: 'Recipe 1',
+      image_url: 'https://example.com/image.jpg',
+    });
+
+    (RecipeService.deleteRecipe as jest.Mock).mockResolvedValue(true);
+
+    // Mock ToastQueue
+    (ToastQueue.show as jest.Mock).mockImplementation(() => {});
 
     // Mock ImageQueueService methods
     (ImageQueueService.createRecipeKeyPool as jest.Mock).mockReturnValue([
@@ -920,6 +938,177 @@ describe('useImageQueue', () => {
       // Should show pending recipe in modal, not inject both
       expect(result.current.showImagePickerModal).toBe(true);
       expect(result.current.pendingRecipe?.key).toBe('pending_new');
+    });
+  });
+
+  describe('modal callbacks - onConfirmImage', () => {
+    it('should confirm image selection and inject recipe', async () => {
+      // Setup: Pending recipe
+      const pendingRecipeData: S3JsonData = {
+        ...mockJsonData,
+        pending_recipe: {
+          key: 'pending_recipe',
+          Title: 'Pending Recipe',
+          image_search_results: ['https://example.com/img1.jpg'],
+          image_url: null,
+        },
+      };
+
+      (useRecipe as jest.Mock).mockReturnValue({
+        jsonData: pendingRecipeData,
+        setCurrentRecipe: mockSetCurrentRecipe,
+        setJsonData: mockSetJsonData,
+        mealTypeFilters: ['main dish', 'dessert'],
+      });
+
+      const { result } = renderHook(() => useImageQueue());
+
+      await waitFor(() => {
+        expect(result.current.showImagePickerModal).toBe(true);
+      }, { timeout: 3000 });
+
+      const imageUrl = 'https://example.com/selected.jpg';
+
+      // Call onConfirmImage
+      await act(async () => {
+        await result.current.onConfirmImage(imageUrl);
+      });
+
+      // Should have called RecipeService.selectRecipeImage
+      expect(RecipeService.selectRecipeImage).toHaveBeenCalledWith(
+        'pending_recipe',
+        imageUrl
+      );
+
+      // Should show success toast
+      expect(ToastQueue.show).toHaveBeenCalledWith('Image saved');
+
+      // Should have cleared pending state
+      expect(result.current.pendingRecipe).toBeNull();
+      expect(result.current.showImagePickerModal).toBe(false);
+    });
+
+    it('should show error toast on image selection failure', async () => {
+      // Setup: Pending recipe
+      const pendingRecipeData: S3JsonData = {
+        ...mockJsonData,
+        pending_recipe: {
+          key: 'pending_recipe',
+          Title: 'Pending Recipe',
+          image_search_results: ['https://example.com/img1.jpg'],
+          image_url: null,
+        },
+      };
+
+      (useRecipe as jest.Mock).mockReturnValue({
+        jsonData: pendingRecipeData,
+        setCurrentRecipe: mockSetCurrentRecipe,
+        setJsonData: mockSetJsonData,
+        mealTypeFilters: ['main dish', 'dessert'],
+      });
+
+      const error = new Error('Network error');
+      (RecipeService.selectRecipeImage as jest.Mock).mockRejectedValue(error);
+
+      const { result } = renderHook(() => useImageQueue());
+
+      await waitFor(() => {
+        expect(result.current.showImagePickerModal).toBe(true);
+      }, { timeout: 3000 });
+
+      // Call onConfirmImage
+      await act(async () => {
+        await result.current.onConfirmImage('https://example.com/selected.jpg');
+      });
+
+      // Should show error toast
+      expect(ToastQueue.show).toHaveBeenCalledWith('Failed to save image: Network error');
+
+      // Modal should remain visible
+      expect(result.current.showImagePickerModal).toBe(true);
+    });
+  });
+
+  describe('modal callbacks - onDeleteRecipe', () => {
+    it('should delete recipe successfully', async () => {
+      // Setup: Pending recipe
+      const pendingRecipeData: S3JsonData = {
+        ...mockJsonData,
+        pending_recipe: {
+          key: 'pending_recipe',
+          Title: 'Pending Recipe',
+          image_search_results: ['https://example.com/img1.jpg'],
+          image_url: null,
+        },
+      };
+
+      (useRecipe as jest.Mock).mockReturnValue({
+        jsonData: pendingRecipeData,
+        setCurrentRecipe: mockSetCurrentRecipe,
+        setJsonData: mockSetJsonData,
+        mealTypeFilters: ['main dish', 'dessert'],
+      });
+
+      const { result } = renderHook(() => useImageQueue());
+
+      await waitFor(() => {
+        expect(result.current.showImagePickerModal).toBe(true);
+      }, { timeout: 3000 });
+
+      // Call onDeleteRecipe
+      await act(async () => {
+        await result.current.onDeleteRecipe();
+      });
+
+      // Should have called RecipeService.deleteRecipe
+      expect(RecipeService.deleteRecipe).toHaveBeenCalledWith('pending_recipe');
+
+      // Should show success toast
+      expect(ToastQueue.show).toHaveBeenCalledWith('Recipe deleted');
+
+      // Should have cleared pending state
+      expect(result.current.pendingRecipe).toBeNull();
+      expect(result.current.showImagePickerModal).toBe(false);
+    });
+
+    it('should show error toast on deletion failure', async () => {
+      // Setup: Pending recipe
+      const pendingRecipeData: S3JsonData = {
+        ...mockJsonData,
+        pending_recipe: {
+          key: 'pending_recipe',
+          Title: 'Pending Recipe',
+          image_search_results: ['https://example.com/img1.jpg'],
+          image_url: null,
+        },
+      };
+
+      (useRecipe as jest.Mock).mockReturnValue({
+        jsonData: pendingRecipeData,
+        setCurrentRecipe: mockSetCurrentRecipe,
+        setJsonData: mockSetJsonData,
+        mealTypeFilters: ['main dish', 'dessert'],
+      });
+
+      const error = new Error('Recipe not found');
+      (RecipeService.deleteRecipe as jest.Mock).mockRejectedValue(error);
+
+      const { result } = renderHook(() => useImageQueue());
+
+      await waitFor(() => {
+        expect(result.current.showImagePickerModal).toBe(true);
+      }, { timeout: 3000 });
+
+      // Call onDeleteRecipe
+      await act(async () => {
+        await result.current.onDeleteRecipe();
+      });
+
+      // Should show error toast
+      expect(ToastQueue.show).toHaveBeenCalledWith('Failed to delete recipe: Recipe not found');
+
+      // Modal should remain visible
+      expect(result.current.showImagePickerModal).toBe(true);
     });
   });
 });
