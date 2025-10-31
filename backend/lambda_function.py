@@ -36,7 +36,10 @@ def process_single_recipe(
     duplicate_detector: DuplicateDetector
 ) -> Tuple[Optional[Dict], Optional[List[float]], Optional[List[str]], Optional[str]]:
     """
-    Process a single recipe: generate embedding, check for duplicates, search for image.
+    Process a single recipe: generate embedding, check for duplicates, search for images.
+
+    Fetches 10 images from Google but returns only the first 9 for the picker grid.
+    The frontend will display these 9 images in a 3x3 grid for user selection.
 
     Args:
         recipe_data: Recipe dictionary with Title, Ingredients, etc.
@@ -45,7 +48,7 @@ def process_single_recipe(
 
     Returns:
         Tuple of (recipe, embedding, search_results, error_reason)
-        - On success: (recipe_dict, embedding_vector, image_urls_list, None)
+        - On success: (recipe_dict, embedding_vector, image_urls_list[0:9], None)
         - On duplicate: (None, None, None, error_message)
         - On error: (None, None, None, error_message)
     """
@@ -71,8 +74,10 @@ def process_single_recipe(
             error_reason = f"Duplicate of recipe {duplicate_key} (similarity: {similarity_score:.2f})"
             return None, None, None, error_reason
 
-        # Search for images with recipe type for better results
-        search_results = si.google_search_image(title, count=10, recipe_type=type_str)
+        # Search for images with recipe type for better results (fetch 10, use first 9)
+        all_search_results = si.google_search_image(title, count=10, recipe_type=type_str)
+        # Return only first 9 for the 3x3 grid picker
+        search_results = all_search_results[0:9]
 
         return recipe_data, embedding, search_results, None
 
