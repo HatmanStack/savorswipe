@@ -10,7 +10,7 @@
  * - Loading and error states for thumbnails
  */
 
-import React, { useState } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import {
   View,
   Text,
@@ -50,8 +50,9 @@ interface ThumbnailState {
  * - Image caching to prevent re-fetching
  * - Error handling with fallback UI
  * - Tap to preview full-size
+ * - Memoized to prevent unnecessary re-renders
  */
-export const ImageGrid: React.FC<ImageGridProps> = ({
+const ImageGridComponent: React.FC<ImageGridProps> = ({
   recipeTitle,
   imageUrls,
   onSelectImage,
@@ -69,12 +70,12 @@ export const ImageGrid: React.FC<ImageGridProps> = ({
   })
 
   // Handle thumbnail selection
-  const handleThumbnailPress = (imageUrl: string) => {
+  const handleThumbnailPress = useCallback((imageUrl: string) => {
     onSelectImage(imageUrl)
-  }
+  }, [onSelectImage])
 
   // Handle delete with confirmation
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     Alert.alert(
       'Delete Recipe',
       'Are you sure you want to permanently delete this recipe?',
@@ -91,10 +92,10 @@ export const ImageGrid: React.FC<ImageGridProps> = ({
         },
       ]
     )
-  }
+  }, [onDelete])
 
   // Handle image load start
-  const handleImageLoadStart = (imageUrl: string) => {
+  const handleImageLoadStart = useCallback((imageUrl: string) => {
     setLoadingStates((prev) => {
       const current = prev[imageUrl]
       // Only set loading if not already loaded (caching)
@@ -106,26 +107,26 @@ export const ImageGrid: React.FC<ImageGridProps> = ({
         [imageUrl]: { isLoading: true, hasError: false, isLoaded: false },
       }
     })
-  }
+  }, [])
 
   // Handle image load complete
-  const handleImageLoadEnd = (imageUrl: string) => {
+  const handleImageLoadEnd = useCallback((imageUrl: string) => {
     setLoadingStates((prev) => ({
       ...prev,
       [imageUrl]: { isLoading: false, hasError: false, isLoaded: true },
     }))
-  }
+  }, [])
 
   // Handle image load error
-  const handleImageError = (imageUrl: string) => {
+  const handleImageError = useCallback((imageUrl: string) => {
     setLoadingStates((prev) => ({
       ...prev,
       [imageUrl]: { isLoading: false, hasError: true, isLoaded: false },
     }))
-  }
+  }, [])
 
   // Render individual thumbnail
-  const renderThumbnail = ({ item: imageUrl }: { item: string }) => {
+  const renderThumbnail = useCallback(({ item: imageUrl }: { item: string }) => {
     const state = loadingStates[imageUrl] || { isLoading: true, hasError: false, isLoaded: false }
 
     return (
@@ -158,7 +159,7 @@ export const ImageGrid: React.FC<ImageGridProps> = ({
         )}
       </TouchableOpacity>
     )
-  }
+  }, [loadingStates, handleThumbnailPress, handleImageLoadStart, handleImageLoadEnd, handleImageError])
 
   return (
     <TouchableOpacity
@@ -201,6 +202,12 @@ export const ImageGrid: React.FC<ImageGridProps> = ({
     </TouchableOpacity>
   )
 }
+
+/**
+ * Memoized ImageGrid component to prevent unnecessary re-renders
+ * when parent props haven't changed
+ */
+export const ImageGrid = React.memo(ImageGridComponent)
 
 const styles = StyleSheet.create({
   overlay: {

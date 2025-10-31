@@ -35,7 +35,7 @@
  * - Cancel: Clicking overlay or onCancel closes modal without action
  */
 
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { Modal, View, StyleSheet } from 'react-native'
 import { Recipe } from '@/types/index'
 import { ImageGrid } from './ImageGrid'
@@ -74,8 +74,10 @@ export interface ImagePickerModalProps {
  * States:
  * - Grid View: Shows 3x3 grid of 9 image thumbnails
  * - Preview View: Shows full-size image with confirm button
+ *
+ * Memoized to prevent unnecessary re-renders
  */
-export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
+const ImagePickerModalComponent: React.FC<ImagePickerModalProps> = ({
   recipe,
   isVisible,
   onConfirm,
@@ -86,32 +88,32 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null)
 
   // Reset state when modal closes
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     setSelectedImageUrl(null)
     onCancel()
-  }
+  }, [onCancel])
 
   // Handle image selection from grid
-  const handleSelectImage = (imageUrl: string) => {
+  const handleSelectImage = useCallback((imageUrl: string) => {
     setSelectedImageUrl(imageUrl)
-  }
+  }, [])
 
   // Handle back from preview to grid
-  const handleBackToGrid = () => {
+  const handleBackToGrid = useCallback(() => {
     setSelectedImageUrl(null)
-  }
+  }, [])
 
   // Handle confirm selection
-  const handleConfirm = (imageUrl: string) => {
+  const handleConfirm = useCallback((imageUrl: string) => {
     setSelectedImageUrl(null)
     onConfirm(imageUrl)
-  }
+  }, [onConfirm])
 
   // Handle delete recipe
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     setSelectedImageUrl(null)
     onDelete()
-  }
+  }, [onDelete])
 
   if (!recipe || !recipe.image_search_results || recipe.image_search_results.length === 0) {
     return null
@@ -146,6 +148,11 @@ export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
     </Modal>
   )
 }
+
+/**
+ * Memoized ImagePickerModal component to prevent unnecessary re-renders
+ */
+export const ImagePickerModal = React.memo(ImagePickerModalComponent)
 
 const styles = StyleSheet.create({
   container: {

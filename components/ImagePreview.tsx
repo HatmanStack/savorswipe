@@ -10,7 +10,7 @@
  * - Confirm button to apply image
  */
 
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import {
   View,
   Image,
@@ -32,8 +32,9 @@ export interface ImagePreviewProps {
 /**
  * ImagePreview displays a full-size image preview.
  * Includes loading state and error handling.
+ * Memoized to prevent unnecessary re-renders.
  */
-export const ImagePreview: React.FC<ImagePreviewProps> = ({
+const ImagePreviewComponent: React.FC<ImagePreviewProps> = ({
   imageUrl,
   onConfirm,
   onBack,
@@ -42,26 +43,26 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({
   const [hasError, setHasError] = useState(false)
 
   // Handle image load start
-  const handleLoadStart = () => {
+  const handleLoadStart = useCallback(() => {
     setIsLoading(true)
     setHasError(false)
-  }
+  }, [])
 
   // Handle image load complete
-  const handleLoadEnd = () => {
+  const handleLoadEnd = useCallback(() => {
     setIsLoading(false)
-  }
+  }, [])
 
   // Handle image load error
-  const handleError = () => {
+  const handleError = useCallback(() => {
     setIsLoading(false)
     setHasError(true)
-  }
+  }, [])
 
   // Handle confirm button
-  const handleConfirm = () => {
+  const handleConfirm = useCallback(() => {
     onConfirm(imageUrl)
-  }
+  }, [onConfirm, imageUrl])
 
   return (
     <View style={styles.container}>
@@ -117,6 +118,11 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({
     </View>
   )
 }
+
+/**
+ * Memoized ImagePreview component to prevent unnecessary re-renders
+ */
+export const ImagePreview = React.memo(ImagePreviewComponent)
 
 const styles = StyleSheet.create({
   container: {
