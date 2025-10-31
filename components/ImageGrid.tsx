@@ -38,11 +38,18 @@ export interface ImageGridProps {
 interface ThumbnailState {
   isLoading: boolean;
   hasError: boolean;
+  isLoaded: boolean; // Track if image has successfully loaded (for caching)
 }
 
 /**
  * ImageGrid displays a 3x3 grid of image thumbnails.
  * Each thumbnail can be tapped to preview full-size.
+ *
+ * Features:
+ * - Skeleton/placeholder while loading
+ * - Image caching to prevent re-fetching
+ * - Error handling with fallback UI
+ * - Tap to preview full-size
  */
 export const ImageGrid: React.FC<ImageGridProps> = ({
   recipeTitle,
@@ -51,8 +58,15 @@ export const ImageGrid: React.FC<ImageGridProps> = ({
   onDelete,
   onCancel,
 }) => {
-  // Track loading state per image URL
-  const [loadingStates, setLoadingStates] = useState<Record<string, ThumbnailState>>({})
+  // Track loading/caching state per image URL
+  const [loadingStates, setLoadingStates] = useState<Record<string, ThumbnailState>>(() => {
+    // Initialize all images as loading
+    const initial: Record<string, ThumbnailState> = {}
+    imageUrls.forEach((url) => {
+      initial[url] = { isLoading: true, hasError: false, isLoaded: false }
+    })
+    return initial
+  })
 
   // Handle thumbnail selection
   const handleThumbnailPress = (imageUrl: string) => {
@@ -81,17 +95,24 @@ export const ImageGrid: React.FC<ImageGridProps> = ({
 
   // Handle image load start
   const handleImageLoadStart = (imageUrl: string) => {
-    setLoadingStates((prev) => ({
-      ...prev,
-      [imageUrl]: { isLoading: true, hasError: false },
-    }))
+    setLoadingStates((prev) => {
+      const current = prev[imageUrl]
+      // Only set loading if not already loaded (caching)
+      if (current?.isLoaded) {
+        return prev
+      }
+      return {
+        ...prev,
+        [imageUrl]: { isLoading: true, hasError: false, isLoaded: false },
+      }
+    })
   }
 
   // Handle image load complete
   const handleImageLoadEnd = (imageUrl: string) => {
     setLoadingStates((prev) => ({
       ...prev,
-      [imageUrl]: { isLoading: false, hasError: false },
+      [imageUrl]: { isLoading: false, hasError: false, isLoaded: true },
     }))
   }
 
@@ -99,13 +120,13 @@ export const ImageGrid: React.FC<ImageGridProps> = ({
   const handleImageError = (imageUrl: string) => {
     setLoadingStates((prev) => ({
       ...prev,
-      [imageUrl]: { isLoading: false, hasError: true },
+      [imageUrl]: { isLoading: false, hasError: true, isLoaded: false },
     }))
   }
 
   // Render individual thumbnail
   const renderThumbnail = ({ item: imageUrl }: { item: string }) => {
-    const state = loadingStates[imageUrl] || { isLoading: true, hasError: false }
+    const state = loadingStates[imageUrl] || { isLoading: true, hasError: false, isLoaded: false }
 
     return (
       <TouchableOpacity
@@ -114,27 +135,26 @@ export const ImageGrid: React.FC<ImageGridProps> = ({
         activeOpacity={0.8}
       >
         {state.hasError ? (
-          // Error placeholder
+          // Error placeholder - use skillet.png as fallback
           <View style={styles.thumbnailError}>
-            <Text style={styles.errorIcon}>⚠️</Text>
-            <Text style={styles.errorText}>Failed to load</Text>
+            <Text style={styles.errorIcon}>🍳</Text>
+            <Text style={styles.errorText}>No image</Text>
+          </View>
+        ) : state.isLoading && !state.isLoaded ? (
+          // Skeleton placeholder while loading
+          <View style={styles.skeletonPlaceholder}>
+            <View style={styles.skeletonShimmer} />
           </View>
         ) : (
-          <>
-            <Image
-              source={{ uri: imageUrl }}
-              style={styles.thumbnail}
-              onLoadStart={() => handleImageLoadStart(imageUrl)}
-              onLoad={() => handleImageLoadEnd(imageUrl)}
-              onError={() => handleImageError(imageUrl)}
-              resizeMode="cover"
-            />
-            {state.isLoading && (
-              <View style={styles.loadingOverlay}>
-                <ActivityIndicator size="small" color="#0a7ea4" />
-              </View>
-            )}
-          </>
+          // Actual image (cached or freshly loaded)
+          <Image
+            source={{ uri: imageUrl }}
+            style={styles.thumbnail}
+            onLoadStart={() => handleImageLoadStart(imageUrl)}
+            onLoad={() => handleImageLoadEnd(imageUrl)}
+            onError={() => handleImageError(imageUrl)}
+            resizeMode="cover"
+          />
         )}
       </TouchableOpacity>
     )
@@ -251,11 +271,17 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: '#e8e8e8',
   },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
+  skeletonPlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#e8e8e8',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+  },
+  skeletonShimmer: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#d0d0d0',
   },
   thumbnailError: {
     width: '100%',
