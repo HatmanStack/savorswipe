@@ -23,6 +23,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Allowed domains for image fetching (whitelist to prevent SSRF)
+# Restricted to Google image CDN subdomains from Google Search results
+# CloudFront or other CDN domains should be added explicitly when configured
 ALLOWED_DOMAINS = {
     'lh3.googleusercontent.com',  # Google image results
     'lh4.googleusercontent.com',
@@ -30,10 +32,6 @@ ALLOWED_DOMAINS = {
     'lh6.googleusercontent.com',
     'lh7.googleusercontent.com',
     'images.google.com',
-    'www.google.com',
-    'google.com',
-    # CloudFront domains if using CloudFront for image hosting
-    # 'dcxyz.cloudfront.net',  # Add your CloudFront domains here
 }
 
 

@@ -23,8 +23,8 @@ class TestIntegrationEndpoints:
                 "Ingredients": ["chocolate", "flour"],
                 "image_url": None,
                 "image_search_results": [
-                    "https://example.com/cake1.jpg",
-                    "https://example.com/cake2.jpg",
+                    "https://lh3.googleusercontent.com/cake1abc123def456",
+                    "https://lh3.googleusercontent.com/cake2xyz789qrs012",
                 ]
             }
         }
@@ -50,7 +50,7 @@ class TestIntegrationEndpoints:
                 }
             },
             "body": json.dumps({
-                "imageUrl": "https://example.com/cake1.jpg"
+                "imageUrl": "https://lh3.googleusercontent.com/cake1abc123def456"
             })
         }
 
@@ -62,7 +62,7 @@ class TestIntegrationEndpoints:
 
         assert select_response['statusCode'] == 200
         body = json.loads(select_response['body'])
-        assert body['recipe']['image_url'] == "https://example.com/cake1.jpg"
+        assert body['recipe']['image_url'] == "https://lh3.googleusercontent.com/cake1abc123def456"
 
         # Step 2: User deletes recipe
         delete_event = {
@@ -92,11 +92,19 @@ class TestIntegrationEndpoints:
 
     def test_multiple_recipes_mixed_operations(self, s3_client, env_vars):
         """Test multiple recipes with mixed select/delete operations."""
-        # Setup: Create 3 recipes
+        # Setup: Create 3 recipes with image search results
         combined_data = {
-            "1": {"Title": "Recipe 1", "image_url": None},
+            "1": {
+                "Title": "Recipe 1",
+                "image_url": None,
+                "image_search_results": ["https://lh3.googleusercontent.com/image1.jpg"]
+            },
             "2": {"Title": "Recipe 2", "image_url": None},
-            "3": {"Title": "Recipe 3", "image_url": None},
+            "3": {
+                "Title": "Recipe 3",
+                "image_url": None,
+                "image_search_results": ["https://lh3.googleusercontent.com/image3.jpg"]
+            },
         }
         embeddings = {
             "1": [0.1] * 1536,
@@ -125,7 +133,7 @@ class TestIntegrationEndpoints:
                 "requestContext": {
                     "http": {"method": "POST", "path": "/recipe/1/image"}
                 },
-                "body": json.dumps({"imageUrl": "https://example.com/image1.jpg"})
+                "body": json.dumps({"imageUrl": "https://lh3.googleusercontent.com/image1.jpg"})
             }
             response_1 = handle_post_image_request(select_event_1, None)
 
@@ -150,7 +158,7 @@ class TestIntegrationEndpoints:
                 "requestContext": {
                     "http": {"method": "POST", "path": "/recipe/3/image"}
                 },
-                "body": json.dumps({"imageUrl": "https://example.com/image3.jpg"})
+                "body": json.dumps({"imageUrl": "https://lh3.googleusercontent.com/image3.jpg"})
             }
             response_3 = handle_post_image_request(select_event_3, None)
 
@@ -161,15 +169,19 @@ class TestIntegrationEndpoints:
         final_data = json.loads(result['Body'].read())
 
         assert "1" in final_data
-        assert final_data["1"]["image_url"] == "https://example.com/image1.jpg"
+        assert final_data["1"]["image_url"] == "https://lh3.googleusercontent.com/image1.jpg"
         assert "2" not in final_data
         assert "3" in final_data
-        assert final_data["3"]["image_url"] == "https://example.com/image3.jpg"
+        assert final_data["3"]["image_url"] == "https://lh3.googleusercontent.com/image3.jpg"
 
     def test_delete_then_try_select_image(self, s3_client, env_vars):
         """Test that selecting image for deleted recipe fails gracefully."""
         combined_data = {
-            "1": {"Title": "Recipe 1", "image_url": None}
+            "1": {
+                "Title": "Recipe 1",
+                "image_url": None,
+                "image_search_results": ["https://lh3.googleusercontent.com/image.jpg"]
+            }
         }
         embeddings = {"1": [0.1] * 1536}
 
@@ -203,7 +215,7 @@ class TestIntegrationEndpoints:
                 "requestContext": {
                     "http": {"method": "POST", "path": "/recipe/1/image"}
                 },
-                "body": json.dumps({"imageUrl": "https://example.com/image.jpg"})
+                "body": json.dumps({"imageUrl": "https://lh3.googleusercontent.com/image.jpg"})
             }
             select_response = handle_post_image_request(select_event, None)
 
@@ -218,7 +230,11 @@ class TestIntegrationEndpoints:
         combined_data = {
             "1": {
                 "Title": "Recipe",
-                "image_url": "https://example.com/old.jpg"
+                "image_url": "https://lh3.googleusercontent.com/old.jpg",
+                "image_search_results": [
+                    "https://lh3.googleusercontent.com/first.jpg",
+                    "https://lh3.googleusercontent.com/second.jpg"
+                ]
             }
         }
 
@@ -238,7 +254,7 @@ class TestIntegrationEndpoints:
                 "requestContext": {
                     "http": {"method": "POST", "path": "/recipe/1/image"}
                 },
-                "body": json.dumps({"imageUrl": "https://example.com/first.jpg"})
+                "body": json.dumps({"imageUrl": "https://lh3.googleusercontent.com/first.jpg"})
             }
             response_1 = handle_post_image_request(select_event_1, None)
 
@@ -254,7 +270,7 @@ class TestIntegrationEndpoints:
                 "requestContext": {
                     "http": {"method": "POST", "path": "/recipe/1/image"}
                 },
-                "body": json.dumps({"imageUrl": "https://example.com/second.jpg"})
+                "body": json.dumps({"imageUrl": "https://lh3.googleusercontent.com/second.jpg"})
             }
             response_2 = handle_post_image_request(select_event_2, None)
 
@@ -263,11 +279,20 @@ class TestIntegrationEndpoints:
         # Verify second image was stored
         result = s3_client.get_object(Bucket="test-bucket", Key="jsondata/combined_data.json")
         final_data = json.loads(result['Body'].read())
-        assert final_data["1"]["image_url"] == "https://example.com/second.jpg"
+        assert final_data["1"]["image_url"] == "https://lh3.googleusercontent.com/second.jpg"
 
     def test_sequential_selects_last_wins(self, s3_client, env_vars):
         """Test that sequential image selections result in last one winning."""
-        combined_data = {"1": {"Title": "Recipe", "image_url": None}}
+        combined_data = {
+            "1": {
+                "Title": "Recipe",
+                "image_url": None,
+                "image_search_results": [
+                    "https://lh3.googleusercontent.com/image1.jpg",
+                    "https://lh3.googleusercontent.com/image2.jpg"
+                ]
+            }
+        }
 
         s3_client.put_object(
             Bucket="test-bucket",
@@ -286,7 +311,7 @@ class TestIntegrationEndpoints:
                 "requestContext": {
                     "http": {"method": "POST", "path": "/recipe/1/image"}
                 },
-                "body": json.dumps({"imageUrl": "https://example.com/image1.jpg"})
+                "body": json.dumps({"imageUrl": "https://lh3.googleusercontent.com/image1.jpg"})
             }
             response_1 = handle_post_image_request(event_1, None)
             assert response_1['statusCode'] == 200
@@ -296,7 +321,7 @@ class TestIntegrationEndpoints:
                 "requestContext": {
                     "http": {"method": "POST", "path": "/recipe/1/image"}
                 },
-                "body": json.dumps({"imageUrl": "https://example.com/image2.jpg"})
+                "body": json.dumps({"imageUrl": "https://lh3.googleusercontent.com/image2.jpg"})
             }
             response_2 = handle_post_image_request(event_2, None)
             assert response_2['statusCode'] == 200
@@ -304,12 +329,16 @@ class TestIntegrationEndpoints:
         # Verify last one won
         result = s3_client.get_object(Bucket="test-bucket", Key="jsondata/combined_data.json")
         data = json.loads(result['Body'].read())
-        assert data["1"]["image_url"] == "https://example.com/image2.jpg"
+        assert data["1"]["image_url"] == "https://lh3.googleusercontent.com/image2.jpg"
 
     def test_delete_nonexistent_then_select_existing(self, s3_client, env_vars):
         """Test idempotent delete followed by valid select."""
         combined_data = {
-            "1": {"Title": "Recipe 1", "image_url": None}
+            "1": {
+                "Title": "Recipe 1",
+                "image_url": None,
+                "image_search_results": ["https://lh3.googleusercontent.com/image.jpg"]
+            }
         }
         embeddings = {"1": [0.1] * 1536}
 
@@ -343,7 +372,7 @@ class TestIntegrationEndpoints:
                 "requestContext": {
                     "http": {"method": "POST", "path": "/recipe/1/image"}
                 },
-                "body": json.dumps({"imageUrl": "https://example.com/image.jpg"})
+                "body": json.dumps({"imageUrl": "https://lh3.googleusercontent.com/image.jpg"})
             }
             select_response = handle_post_image_request(select_event, None)
 
@@ -357,7 +386,8 @@ class TestIntegrationEndpoints:
                 "Ingredients": ["flour", "sugar"],
                 "Directions": ["Mix", "Bake"],
                 "image_url": None,
-                "Type": "dessert"
+                "Type": "dessert",
+                "image_search_results": ["https://lh3.googleusercontent.com/cake.jpg"]
             }
         }
 
@@ -377,7 +407,7 @@ class TestIntegrationEndpoints:
                 "requestContext": {
                     "http": {"method": "POST", "path": "/recipe/1/image"}
                 },
-                "body": json.dumps({"imageUrl": "https://example.com/cake.jpg"})
+                "body": json.dumps({"imageUrl": "https://lh3.googleusercontent.com/cake.jpg"})
             }
             select_response = handle_post_image_request(select_event, None)
 
@@ -392,4 +422,4 @@ class TestIntegrationEndpoints:
         assert recipe["Ingredients"] == ["flour", "sugar"]
         assert recipe["Directions"] == ["Mix", "Bake"]
         assert recipe["Type"] == "dessert"
-        assert recipe["image_url"] == "https://example.com/cake.jpg"
+        assert recipe["image_url"] == "https://lh3.googleusercontent.com/cake.jpg"

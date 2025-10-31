@@ -168,7 +168,8 @@ def lambda_handler(event, context):
         return handle_delete_request(event, context)
     elif http_method == 'POST':
         # Check if this is an image update request or a file upload
-        if '/image' in request_path:
+        # Use regex to match /recipe/{key}/image to avoid false positives
+        if re.match(r'^/recipe/[^/]+/image$', request_path):
             return handle_post_image_request(event, context)
         else:
             return handle_post_request(event, context)
@@ -416,6 +417,8 @@ def _validate_image_url_for_api(image_url: str) -> Tuple[bool, Optional[str]]:
         Tuple of (is_valid, error_message) where error_message is None if valid
     """
     # Whitelist of allowed domains for image sources
+    # Restricted to Google image CDN subdomains from Google Search results
+    # CloudFront or other CDN domains should be added explicitly when configured
     ALLOWED_DOMAINS = {
         'lh3.googleusercontent.com',
         'lh4.googleusercontent.com',
@@ -423,9 +426,6 @@ def _validate_image_url_for_api(image_url: str) -> Tuple[bool, Optional[str]]:
         'lh6.googleusercontent.com',
         'lh7.googleusercontent.com',
         'images.google.com',
-        'www.google.com',
-        'google.com',
-        # Add CloudFront domains if using CloudFront for image hosting
     }
 
     try:
@@ -575,6 +575,56 @@ def handle_post_image_request(event, context):
             })
         }
 
+    # Validate that imageUrl is one of the recipe's search results
+    # Load recipe to verify the imageUrl was from our search results (not injected)
+    try:
+        s3_client = boto3.client('s3')
+        response = s3_client.get_object(Bucket=bucket_name, Key='jsondata/combined_data.json')
+        json_data = json.loads(response['Body'].read())
+
+        recipe = json_data.get(recipe_key)
+        if not recipe or 'image_search_results' not in recipe:
+            print(f"[POST-IMAGE] Recipe {recipe_key} not found or has no search results")
+            return {
+                'statusCode': 404,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({
+                    'success': False,
+                    'error': 'Recipe not found'
+                })
+            }
+
+        # Check if imageUrl is in the recipe's search results
+        if image_url not in recipe.get('image_search_results', []):
+            print(f"[POST-IMAGE] Image URL not in recipe's search results")
+            return {
+                'statusCode': 400,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({
+                    'success': False,
+                    'error': 'Image URL is not from this recipe\'s search results'
+                })
+            }
+    except ClientError as e:
+        print(f"[POST-IMAGE] Error validating image URL against search results: {str(e)}")
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({
+                'success': False,
+                'error': 'Failed to validate image selection'
+            })
+        }
+
     print(f"[POST-IMAGE] Fetching and uploading image: {image_url[:100]}...")
 
     try:
@@ -617,6 +667,12 @@ def handle_post_image_request(event, context):
             }
 
         print(f"[POST-IMAGE] Image uploaded successfully: {s3_path}")
+
+        # NOTE: Image has been uploaded to S3. If JSON update fails below, the image
+        # becomes orphaned with no reference in combined_data.json. The retry logic
+        # handles most failures, but if all retries fail, the image remains in S3.
+        # Future cleanup job or manual intervention may be needed for orphaned images.
+        # This is acceptable given low failure likelihood with retry logic.
 
         # Load combined_data.json and update recipe with Google URL for dedup
         MAX_RETRIES = 3

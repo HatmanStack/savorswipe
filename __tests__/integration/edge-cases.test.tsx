@@ -56,7 +56,23 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         mealTypeFilters: [],
       });
 
-      const { result } = renderHook(() => useImageQueue());
+      const { result, rerender } = renderHook(() => useImageQueue());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      }, { timeout: 3000 });
+
+      // Add pending recipe with empty search results to trigger the check
+      mockData = { ...mockData, missing_images_recipe: pendingRecipe };
+      const mockSetJsonData2 = jest.fn((data: S3JsonData) => { mockData = data; });
+      (useRecipe as jest.Mock).mockReturnValue({
+        jsonData: mockData,
+        setJsonData: mockSetJsonData2,
+        setCurrentRecipe: mockSetCurrentRecipe,
+        mealTypeFilters: [],
+      });
+
+      rerender();
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
