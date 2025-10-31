@@ -147,8 +147,10 @@ def test_post_image_selection():
     print(f"  Body: {json.dumps(json.loads(event['body']), indent=4)}")
 
     # Mock image fetching
-    with patch('lambda_function.fetch_and_upload_image') as mock_fetch:
-        mock_fetch.return_value = ("images/1.jpg", None, False)
+    with patch('lambda_function.fetch_image_from_url') as mock_fetch, \
+         patch('lambda_function.upload_image_to_s3') as mock_upload:
+        mock_fetch.return_value = (b"fake image data", "image/jpeg")
+        mock_upload.return_value = ("images/1.jpg", None)
 
         # Execute
         response = handle_post_image_request(event, None)
@@ -199,8 +201,10 @@ def test_complete_workflow():
         })
     }
 
-    with patch('lambda_function.fetch_and_upload_image') as mock_fetch:
-        mock_fetch.return_value = ("images/2.jpg", None, False)
+    with patch('lambda_function.fetch_image_from_url') as mock_fetch, \
+         patch('lambda_function.upload_image_to_s3') as mock_upload:
+        mock_fetch.return_value = (b"fake image data", "image/jpeg")
+        mock_upload.return_value = ("images/2.jpg", None)
         select_response = handle_post_image_request(select_event, None)
 
     print(f"  Status: {select_response['statusCode']}")

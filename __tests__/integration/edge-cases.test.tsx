@@ -48,9 +48,10 @@ describe('Integration: Edge Cases & Data Integrity', () => {
       };
 
       let mockData = { recipe1: { Title: 'Recipe 1', image_url: 'https://s3.../recipe1.jpg' } };
+      const mockSetJsonData = jest.fn((data: S3JsonData) => { mockData = data; });
       (useRecipe as jest.Mock).mockReturnValue({
         jsonData: mockData,
-        setJsonData: (data: S3JsonData) => { mockData = data; },
+        setJsonData: mockSetJsonData,
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
       });
@@ -75,9 +76,10 @@ describe('Integration: Edge Cases & Data Integrity', () => {
       };
 
       let mockData = { recipe1: { Title: 'Recipe 1', image_url: 'https://s3.../recipe1.jpg' } };
+      const mockSetJsonData = jest.fn((data: S3JsonData) => { mockData = data; });
       (useRecipe as jest.Mock).mockReturnValue({
         jsonData: mockData,
-        setJsonData: (data: S3JsonData) => { mockData = data; },
+        setJsonData: mockSetJsonData,
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
       });
@@ -101,9 +103,10 @@ describe('Integration: Edge Cases & Data Integrity', () => {
 
       // Add pending recipe
       mockData = { ...mockData, null_image_url_recipe: pendingRecipe };
+      const mockSetJsonData2 = jest.fn((data: S3JsonData) => { mockData = data; });
       (useRecipe as jest.Mock).mockReturnValue({
         jsonData: mockData,
-        setJsonData: (data: S3JsonData) => { mockData = data; },
+        setJsonData: mockSetJsonData2,
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
       });
@@ -128,9 +131,10 @@ describe('Integration: Edge Cases & Data Integrity', () => {
       };
 
       let mockData = { recipe1: { Title: 'Recipe 1', image_url: 'https://s3.../recipe1.jpg' } };
+      const mockSetJsonData = jest.fn((data: S3JsonData) => { mockData = data; });
       (useRecipe as jest.Mock).mockReturnValue({
         jsonData: mockData,
-        setJsonData: (data: S3JsonData) => { mockData = data; },
+        setJsonData: mockSetJsonData,
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
       });
@@ -153,9 +157,10 @@ describe('Integration: Edge Cases & Data Integrity', () => {
       }, { timeout: 3000 });
 
       mockData = { ...mockData, 'recipe-with-special_chars-123': pendingRecipe };
+      const mockSetJsonData2 = jest.fn((data: S3JsonData) => { mockData = data; });
       (useRecipe as jest.Mock).mockReturnValue({
         jsonData: mockData,
-        setJsonData: (data: S3JsonData) => { mockData = data; },
+        setJsonData: mockSetJsonData2,
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
       });
@@ -179,9 +184,10 @@ describe('Integration: Edge Cases & Data Integrity', () => {
       };
 
       let mockData = { recipe1: { Title: 'Recipe 1', image_url: 'https://s3.../recipe1.jpg' } };
+      const mockSetJsonData = jest.fn((data: S3JsonData) => { mockData = data; });
       (useRecipe as jest.Mock).mockReturnValue({
         jsonData: mockData,
-        setJsonData: (data: S3JsonData) => { mockData = data; },
+        setJsonData: mockSetJsonData,
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
       });
@@ -198,9 +204,10 @@ describe('Integration: Edge Cases & Data Integrity', () => {
       }, { timeout: 3000 });
 
       mockData = { ...mockData, unicode_recipe: pendingRecipe };
+      const mockSetJsonData2 = jest.fn((data: S3JsonData) => { mockData = data; });
       (useRecipe as jest.Mock).mockReturnValue({
         jsonData: mockData,
-        setJsonData: (data: S3JsonData) => { mockData = data; },
+        setJsonData: mockSetJsonData2,
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
       });
@@ -231,9 +238,10 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         delete_consistency_recipe: pendingRecipe,
       };
 
+      const mockSetJsonDataLocal = jest.fn((data: S3JsonData) => { mockData = data; });
       (useRecipe as jest.Mock).mockReturnValue({
         jsonData: mockData,
-        setJsonData: (data: S3JsonData) => { mockData = data; },
+        setJsonData: mockSetJsonDataLocal,
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
       });
@@ -263,7 +271,7 @@ describe('Integration: Edge Cases & Data Integrity', () => {
       });
 
       // Verify setJsonData was called to remove recipe
-      expect(mockSetJsonData).toHaveBeenCalled();
+      expect(mockSetJsonDataLocal).toHaveBeenCalled();
       // Modal should be closed
       expect(result.current.showImagePickerModal).toBe(false);
     });
@@ -277,9 +285,10 @@ describe('Integration: Edge Cases & Data Integrity', () => {
       };
 
       let mockData = { recipe1: { Title: 'Recipe 1', image_url: 'https://s3.../recipe1.jpg' } };
+      const mockSetJsonData = jest.fn((data: S3JsonData) => { mockData = data; });
       (useRecipe as jest.Mock).mockReturnValue({
         jsonData: mockData,
-        setJsonData: (data: S3JsonData) => { mockData = data; },
+        setJsonData: mockSetJsonData,
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
       });
