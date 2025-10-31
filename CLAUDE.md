@@ -375,6 +375,61 @@ SEARCH_KEY=<Google Custom Search API key>
 AWS_S3_BUCKET=<S3 bucket name>
 ```
 
+### Image Picker Feature (Picture-Pick)
+
+**Overview**:
+User-driven image selection system for recipes after OCR upload. When a recipe is detected with pending image selection (`image_search_results` but no `image_url`), users see a 3x3 grid of 9 image options from Google Custom Search.
+
+**Components**:
+- `ImagePickerModal` (`components/ImagePickerModal.tsx`): Main modal container, manages state
+- `ImageGrid` (`components/ImageGrid.tsx`): 3x3 thumbnail grid with caching and error handling
+- `ImagePreview` (`components/ImagePreview.tsx`): Full-size preview with confirmation
+
+**Integration Points**:
+- `useImageQueue` hook: Detects pending recipes, manages modal lifecycle
+- `RecipeService`: Two new methods for image selection and recipe deletion
+  - `selectRecipeImage(recipeKey, imageUrl)`: Fetch image from Google, save to S3
+  - `deleteRecipe(recipeKey)`: Remove from `combined_data.json` and embeddings
+- Backend Lambda: Two new endpoints
+  - POST `/recipe/{recipe_key}/image`: Handle image selection
+  - DELETE `/recipe/{recipe_key}`: Handle recipe deletion
+
+**User Flow**:
+1. Upload recipe via image/PDF → OCR processing
+2. Recipe added with `image_search_results` array (9 Google URLs)
+3. Modal auto-appears, showing thumbnail grid
+4. User taps thumbnail → full-size preview
+5. User confirms → image fetched from Google, uploaded to S3
+6. Recipe injected into swipe queue with image
+7. User can delete recipe if unwanted
+
+**Key Features**:
+- Progressive image loading with skeleton placeholders
+- Image caching to prevent refetches
+- Error handling with fallback icon (🍳)
+- Swipe queue pauses until selection or deletion
+- Graceful error recovery (modal stays open for retry)
+- Idempotent operations (prevent duplicate submissions)
+
+**Performance**:
+- Modal opens: < 500ms
+- Thumbnails load: < 1s
+- Full-size preview: < 2s
+- All components memoized with React.memo
+- Callbacks wrapped in useCallback
+- Smooth 60fps animations
+
+**Documentation**:
+- Design decisions: `docs/plans/phase-0.md`
+- QA checklist: `docs/image-picker-qa.md` (18 test categories)
+- Implementation details: `docs/image-picker-implementation.md`
+
+**Testing**:
+- Error scenarios: `__tests__/integration/error-scenarios.test.tsx` (13 cases)
+- Edge cases: `__tests__/integration/edge-cases.test.tsx` (10 cases)
+- Integration: `__tests__/integration/image-picker-flow.test.tsx` (3 scenarios)
+- Total: 26 test cases covering happy path, errors, and edge cases
+
 ## Key Technical Details
 
 ### Image Queue Management
