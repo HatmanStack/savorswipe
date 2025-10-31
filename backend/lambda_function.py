@@ -30,6 +30,7 @@ from embedding_generator import EmbeddingGenerator
 from duplicate_detector import DuplicateDetector
 from upload import batch_to_s3_atomic
 from recipe_deletion import delete_recipe_atomic
+from image_uploader import fetch_and_upload_image
 
 
 def process_single_recipe(
@@ -161,6 +162,12 @@ def lambda_handler(event, context):
         return handle_get_request(event, context)
     elif http_method == 'DELETE':
         return handle_delete_request(event, context)
+    elif http_method == 'POST':
+        # Check if this is an image update request or a file upload
+        if '/image' in request_path:
+            return handle_post_image_request(event, context)
+        else:
+            return handle_post_request(event, context)
     else:
         return handle_post_request(event, context)
 
@@ -368,6 +375,295 @@ def handle_delete_request(event, context):
             'body': json.dumps({
                 'success': False,
                 'error': f'Failed to delete recipe: {str(e)}'
+            })
+        }
+
+
+def handle_post_image_request(event, context):
+    """
+    Handle POST requests for image selection and update.
+
+    Updates a recipe with a selected image from Google Custom Search,
+    fetching the image and storing it in S3, then updating the recipe's
+    image_url field for deduplication tracking.
+
+    Request body format:
+    {
+        "imageUrl": "https://google-cdn.com/selected-image.jpg"
+    }
+
+    Args:
+        event: API Gateway Lambda proxy integration request
+        context: Lambda context object
+
+    Returns:
+        {
+            "statusCode": 200 or 400 or 404 or 500,
+            "headers": {...},
+            "body": JSON string with response
+        }
+    """
+    bucket_name = os.getenv('S3_BUCKET')
+
+    if not bucket_name:
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json'
+            },
+            'body': json.dumps({'success': False, 'error': 'S3_BUCKET environment variable not set'})
+        }
+
+    # Extract recipe_key from request path
+    request_path = event.get('requestContext', {}).get('http', {}).get('path', '')
+    print(f"[POST-IMAGE] Request path: {request_path}")
+
+    # Parse path like "/recipe/chicken_parmesan/image" to extract recipe_key
+    match = re.match(r'^/recipe/([a-zA-Z0-9_-]+)/image$', request_path)
+
+    if not match:
+        return {
+            'statusCode': 400,
+            'headers': {
+                'Content-Type': 'application/json'
+            },
+            'body': json.dumps({
+                'success': False,
+                'error': 'Invalid path format. Expected: /recipe/{recipe_key}/image'
+            })
+        }
+
+    recipe_key = match.group(1)
+    print(f"[POST-IMAGE] Parsed recipe_key: {recipe_key}")
+
+    # Parse request body
+    try:
+        body_content = event.get('body')
+        if body_content:
+            # API Gateway format - body is a JSON string
+            body = json.loads(body_content)
+        else:
+            # Direct invocation format - event is the body
+            body = event
+    except json.JSONDecodeError as e:
+        print(f"[POST-IMAGE] JSON decode error: {e}")
+        return {
+            'statusCode': 400,
+            'headers': {
+                'Content-Type': 'application/json'
+            },
+            'body': json.dumps({
+                'success': False,
+                'error': f'Invalid JSON in request body: {str(e)}'
+            })
+        }
+
+    # Extract and validate imageUrl
+    image_url = body.get('imageUrl', '')
+    if not image_url:
+        return {
+            'statusCode': 400,
+            'headers': {
+                'Content-Type': 'application/json'
+            },
+            'body': json.dumps({
+                'success': False,
+                'error': 'imageUrl is required'
+            })
+        }
+
+    print(f"[POST-IMAGE] Fetching and uploading image: {image_url[:100]}...")
+
+    try:
+        s3_client = boto3.client('s3')
+
+        # Fetch image from Google and upload to S3
+        s3_path, error_msg, used_fallback = fetch_and_upload_image(
+            image_url,
+            recipe_key,
+            s3_client,
+            bucket_name
+        )
+
+        if s3_path is None:
+            print(f"[POST-IMAGE] Failed to fetch/upload image: {error_msg}")
+            return {
+                'statusCode': 500,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({
+                    'success': False,
+                    'error': f'Failed to process image: {error_msg}'
+                })
+            }
+
+        print(f"[POST-IMAGE] Image uploaded successfully: {s3_path}")
+
+        # Load combined_data.json and update recipe with Google URL for dedup
+        MAX_RETRIES = 3
+        for attempt in range(MAX_RETRIES):
+            try:
+                print(f"[POST-IMAGE] Attempt {attempt + 1}/{MAX_RETRIES} to update recipe")
+
+                # Load existing data with ETag
+                try:
+                    response = s3_client.get_object(Bucket=bucket_name, Key='jsondata/combined_data.json')
+                    json_data = json.loads(response['Body'].read())
+                    etag = response['ETag'].strip('"')
+                    print(f"[POST-IMAGE] Loaded combined_data with {len(json_data)} recipes, ETag: {etag}")
+                except ClientError as e:
+                    if e.response['Error']['Code'] == 'NoSuchKey':
+                        print(f"[POST-IMAGE] combined_data.json not found")
+                        return {
+                            'statusCode': 404,
+                            'headers': {
+                                'Content-Type': 'application/json',
+                                'Access-Control-Allow-Origin': '*'
+                            },
+                            'body': json.dumps({
+                                'success': False,
+                                'error': 'Recipe data not found'
+                            })
+                        }
+                    else:
+                        return {
+                            'statusCode': 500,
+                            'headers': {
+                                'Content-Type': 'application/json',
+                                'Access-Control-Allow-Origin': '*'
+                            },
+                            'body': json.dumps({
+                                'success': False,
+                                'error': f'Failed to load recipe data: {str(e)}'
+                            })
+                        }
+
+                # Find and update recipe
+                if recipe_key not in json_data:
+                    print(f"[POST-IMAGE] Recipe '{recipe_key}' not found in combined_data")
+                    return {
+                        'statusCode': 404,
+                        'headers': {
+                            'Content-Type': 'application/json',
+                            'Access-Control-Allow-Origin': '*'
+                        },
+                        'body': json.dumps({
+                            'success': False,
+                            'error': f'Recipe {recipe_key} not found'
+                        })
+                    }
+
+                # Update recipe's image_url with Google URL for deduplication tracking
+                recipe = json_data[recipe_key]
+                recipe['image_url'] = image_url
+                print(f"[POST-IMAGE] Updated recipe '{recipe_key}' with image_url: {image_url[:100]}...")
+
+                # Atomic write back to S3
+                try:
+                    updated_json = json.dumps(json_data)
+
+                    params = {
+                        'Bucket': bucket_name,
+                        'Key': 'jsondata/combined_data.json',
+                        'Body': updated_json,
+                        'ContentType': 'application/json'
+                    }
+
+                    if etag is not None:
+                        params['IfMatch'] = etag
+
+                    s3_client.put_object(**params)
+                    print(f"[POST-IMAGE] Successfully updated combined_data.json")
+
+                    # Success!
+                    return {
+                        'statusCode': 200,
+                        'headers': {
+                            'Content-Type': 'application/json',
+                            'Access-Control-Allow-Origin': '*'
+                        },
+                        'body': json.dumps({
+                            'success': True,
+                            'message': 'Image saved and recipe updated',
+                            'recipe': recipe
+                        })
+                    }
+
+                except ClientError as e:
+                    if e.response['Error']['Code'] == 'PreconditionFailed':
+                        # Race condition detected
+                        print(f"[POST-IMAGE] Race condition on attempt {attempt + 1}, retrying...")
+                        if attempt < MAX_RETRIES - 1:
+                            delay = random.uniform(0.1, 0.5) * (2 ** attempt)
+                            print(f"[POST-IMAGE] Retrying after {delay:.2f}s...")
+                            time.sleep(delay)
+                            continue
+                        else:
+                            return {
+                                'statusCode': 500,
+                                'headers': {
+                                    'Content-Type': 'application/json',
+                                    'Access-Control-Allow-Origin': '*'
+                                },
+                                'body': json.dumps({
+                                    'success': False,
+                                    'error': 'Failed to update recipe after multiple retries'
+                                })
+                            }
+                    else:
+                        print(f"[POST-IMAGE] S3 error: {str(e)}")
+                        return {
+                            'statusCode': 500,
+                            'headers': {
+                                'Content-Type': 'application/json',
+                                'Access-Control-Allow-Origin': '*'
+                            },
+                            'body': json.dumps({
+                                'success': False,
+                                'error': f'Failed to update recipe: {str(e)}'
+                            })
+                        }
+
+            except Exception as e:
+                print(f"[POST-IMAGE] Unexpected error: {str(e)}")
+                return {
+                    'statusCode': 500,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'body': json.dumps({
+                        'success': False,
+                        'error': f'Unexpected error: {str(e)}'
+                    })
+                }
+
+        # Should not reach here
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({
+                'success': False,
+                'error': 'Failed to update recipe after multiple attempts'
+            })
+        }
+
+    except Exception as e:
+        print(f"[POST-IMAGE] Unexpected error processing image: {str(e)}")
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({
+                'success': False,
+                'error': f'Failed to process image: {str(e)}'
             })
         }
 
