@@ -47,8 +47,8 @@ export function useImageQueue(): ImageQueueHook {
   const lastInjectionTimeRef = useRef<number>(0); // Track last injection time to block refills
   const seenRecipeKeysRef = useRef<Set<string>>(new Set()); // Track seen recipes to avoid duplicates
 
-  // Context
-  const { jsonData, setCurrentRecipe, mealTypeFilters } = useRecipe();
+  // Context - extract all needed values at top level (React Hook Rules)
+  const { jsonData, setCurrentRecipe, setJsonData, mealTypeFilters } = useRecipe();
 
   // Keep queueRef and nextImageRef in sync with state
   useEffect(() => {
@@ -80,7 +80,7 @@ export function useImageQueue(): ImageQueueHook {
   // Handle image selection confirmation
   const onConfirmImage = useCallback(
     async (imageUrl: string) => {
-      if (!pendingRecipe || !jsonData) {
+      if (!pendingRecipe || !jsonData || !setJsonData) {
         console.warn('[QUEUE] No pending recipe to confirm');
         return;
       }
@@ -101,10 +101,7 @@ export function useImageQueue(): ImageQueueHook {
           ...jsonData,
           [pendingRecipe.key]: updatedRecipe,
         };
-        const { setJsonData } = useRecipe();
-        if (setJsonData) {
-          setJsonData(updatedJsonData);
-        }
+        setJsonData(updatedJsonData);
 
         // Inject recipe into queue
         await injectRecipes([pendingRecipe.key]);
@@ -122,12 +119,12 @@ export function useImageQueue(): ImageQueueHook {
         // Keep modal visible for retry
       }
     },
-    [pendingRecipe, jsonData, injectRecipes, resetPendingRecipe]
+    [pendingRecipe, jsonData, setJsonData, injectRecipes, resetPendingRecipe]
   );
 
   // Handle recipe deletion
   const onDeleteRecipe = useCallback(async () => {
-    if (!pendingRecipe) {
+    if (!pendingRecipe || !jsonData || !setJsonData) {
       console.warn('[QUEUE] No pending recipe to delete');
       return;
     }
@@ -143,10 +140,7 @@ export function useImageQueue(): ImageQueueHook {
       // Remove recipe from local jsonData
       const updatedJsonData = { ...jsonData };
       delete updatedJsonData[pendingRecipe.key];
-      const { setJsonData } = useRecipe();
-      if (setJsonData) {
-        setJsonData(updatedJsonData);
-      }
+      setJsonData(updatedJsonData);
 
       // Clear pending state
       resetPendingRecipe();
@@ -160,7 +154,7 @@ export function useImageQueue(): ImageQueueHook {
       ToastQueue.show(`Failed to delete recipe: ${errorMessage}`);
       // Keep modal visible for retry
     }
-  }, [pendingRecipe, jsonData, resetPendingRecipe]);
+  }, [pendingRecipe, jsonData, setJsonData, resetPendingRecipe]);
 
   // Initialize queue on first load
   const initializeQueue = useCallback(async () => {
