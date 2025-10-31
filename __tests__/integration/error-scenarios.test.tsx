@@ -90,6 +90,10 @@ describe('Integration: Error Scenario Testing', () => {
       expect(ToastQueue.show).toHaveBeenCalledWith(
         expect.stringContaining('Failed to save image')
       );
+      // Verify user-friendly message transformation
+      expect(ToastQueue.show).toHaveBeenCalledWith(
+        expect.stringContaining('Taking longer than expected')
+      );
       expect(result.current.showImagePickerModal).toBe(true);
       expect(result.current.pendingRecipe).toBeTruthy();
     });
@@ -135,6 +139,10 @@ describe('Integration: Error Scenario Testing', () => {
       expect(ToastQueue.show).toHaveBeenCalledWith(
         expect.stringContaining('Failed to delete recipe')
       );
+      // Verify user-friendly message transformation
+      expect(ToastQueue.show).toHaveBeenCalledWith(
+        expect.stringContaining('Taking longer than expected')
+      );
       expect(result.current.showImagePickerModal).toBe(true);
     });
   });
@@ -179,7 +187,11 @@ describe('Integration: Error Scenario Testing', () => {
       });
 
       expect(ToastQueue.show).toHaveBeenCalledWith(
-        expect.stringContaining('Recipe not found')
+        expect.stringContaining('Failed to save image')
+      );
+      // Verify user-friendly message transformation
+      expect(ToastQueue.show).toHaveBeenCalledWith(
+        expect.stringContaining('Recipe not found. It may have been deleted')
       );
       expect(result.current.showImagePickerModal).toBe(true);
     });
@@ -223,7 +235,11 @@ describe('Integration: Error Scenario Testing', () => {
       });
 
       expect(ToastQueue.show).toHaveBeenCalledWith(
-        expect.stringContaining('Invalid image URL')
+        expect.stringContaining('Failed to save image')
+      );
+      // Verify user-friendly message transformation
+      expect(ToastQueue.show).toHaveBeenCalledWith(
+        expect.stringContaining("Image couldn't be loaded. Please select another image")
       );
       expect(result.current.showImagePickerModal).toBe(true);
     });
@@ -269,6 +285,10 @@ describe('Integration: Error Scenario Testing', () => {
       expect(ToastQueue.show).toHaveBeenCalledWith(
         expect.stringContaining('Failed to save image')
       );
+      // Verify user-friendly message transformation
+      expect(ToastQueue.show).toHaveBeenCalledWith(
+        expect.stringContaining('Server error. Please try again later')
+      );
       expect(result.current.showImagePickerModal).toBe(true);
     });
 
@@ -311,7 +331,11 @@ describe('Integration: Error Scenario Testing', () => {
       });
 
       expect(ToastQueue.show).toHaveBeenCalledWith(
-        expect.stringContaining('Recipe not found')
+        expect.stringContaining('Failed to delete recipe')
+      );
+      // Verify user-friendly message transformation
+      expect(ToastQueue.show).toHaveBeenCalledWith(
+        expect.stringContaining('Recipe not found. It may have been deleted')
       );
       expect(result.current.showImagePickerModal).toBe(true);
     });
@@ -460,6 +484,10 @@ describe('Integration: Error Scenario Testing', () => {
       expect(ToastQueue.show).toHaveBeenCalledWith(
         expect.stringContaining('Failed to save image')
       );
+      // Verify user-friendly message transformation
+      expect(ToastQueue.show).toHaveBeenCalledWith(
+        expect.stringContaining('Unable to connect')
+      );
       expect(result.current.showImagePickerModal).toBe(true);
       expect(result.current.pendingRecipe).toBeTruthy();
     });
@@ -504,6 +532,10 @@ describe('Integration: Error Scenario Testing', () => {
 
       expect(ToastQueue.show).toHaveBeenCalledWith(
         expect.stringContaining('Failed to delete recipe')
+      );
+      // Verify user-friendly message transformation
+      expect(ToastQueue.show).toHaveBeenCalledWith(
+        expect.stringContaining('Unable to connect')
       );
       expect(result.current.showImagePickerModal).toBe(true);
     });

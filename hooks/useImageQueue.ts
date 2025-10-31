@@ -25,6 +25,53 @@ function isPendingImageSelection(recipe: Recipe | undefined): boolean {
   );
 }
 
+/**
+ * Transform raw error messages into user-friendly messages.
+ * Maps technical errors to actionable, non-technical language.
+ *
+ * @param rawError - Raw error message from backend or network
+ * @returns User-friendly error message
+ */
+function transformErrorMessage(rawError: string): string {
+  const errorLower = rawError.toLowerCase();
+
+  // Network and timeout errors
+  if (errorLower.includes('timeout') || errorLower.includes('request timeout')) {
+    return 'Taking longer than expected. Please check your internet and try again.';
+  }
+
+  if (errorLower.includes('network') || errorLower.includes('failed')) {
+    return 'Unable to connect. Please check your internet connection.';
+  }
+
+  // Recipe not found
+  if (errorLower.includes('recipe not found') || errorLower.includes('404')) {
+    return 'Recipe not found. It may have been deleted.';
+  }
+
+  // Invalid image URL
+  if (
+    errorLower.includes('invalid image url') ||
+    errorLower.includes('invalid url') ||
+    errorLower.includes('400')
+  ) {
+    return "Image couldn't be loaded. Please select another image.";
+  }
+
+  // Server errors
+  if (errorLower.includes('500') || errorLower.includes('server error')) {
+    return 'Server error. Please try again later.';
+  }
+
+  // Google image fetch failures
+  if (errorLower.includes('fetch image from google')) {
+    return "Image couldn't be loaded from source. Please select another image.";
+  }
+
+  // Fallback for unknown errors
+  return 'An error occurred. Please try again.';
+}
+
 export function useImageQueue(): ImageQueueHook {
   // Local state
   const [queue, setQueue] = useState<ImageFile[]>([]);
@@ -112,10 +159,11 @@ export function useImageQueue(): ImageQueueHook {
         ToastQueue.show('Image saved');
         console.log('[QUEUE] Image selection confirmed for:', pendingRecipe.key);
       } catch (error) {
-        const errorMessage =
+        const rawError =
           error instanceof Error ? error.message : 'Unknown error occurred';
+        const userFriendlyError = transformErrorMessage(rawError);
         console.error('[QUEUE] Image selection failed:', error);
-        ToastQueue.show(`Failed to save image: ${errorMessage}`);
+        ToastQueue.show(`Failed to save image: ${userFriendlyError}`);
         // Keep modal visible for retry
       }
     },
@@ -148,10 +196,11 @@ export function useImageQueue(): ImageQueueHook {
       ToastQueue.show('Recipe deleted');
       console.log('[QUEUE] Recipe deleted:', pendingRecipe.key);
     } catch (error) {
-      const errorMessage =
+      const rawError =
         error instanceof Error ? error.message : 'Unknown error occurred';
+      const userFriendlyError = transformErrorMessage(rawError);
       console.error('[QUEUE] Recipe deletion failed:', error);
-      ToastQueue.show(`Failed to delete recipe: ${errorMessage}`);
+      ToastQueue.show(`Failed to delete recipe: ${userFriendlyError}`);
       // Keep modal visible for retry
     }
   }, [pendingRecipe, jsonData, setJsonData, resetPendingRecipe]);
