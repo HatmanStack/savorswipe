@@ -86,7 +86,9 @@ class TestGoogleSearchImage:
     def test_google_search_image_api_error(self, mock_get):
         """Test handling of API error."""
         # Arrange
-        mock_get.side_effect = Exception("API Error")
+        import requests
+
+        mock_get.side_effect = requests.exceptions.RequestException("API Error")
 
         # Act
         results = google_search_image("test recipe")
