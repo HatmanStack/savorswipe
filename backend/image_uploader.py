@@ -78,30 +78,6 @@ def fetch_image_from_url(image_url: str, timeout: int = 10) -> Tuple[Optional[by
         return None, None
 
 
-def get_fallback_image() -> Optional[bytes]:
-    """
-    Read fallback image from assets/images/skillet.png.
-
-    Returns:
-        Image bytes on success, None on failure
-    """
-    fallback_path = "assets/images/skillet.png"
-    logger.info(f"[IMAGE] Reading fallback image from {fallback_path}")
-
-    try:
-        if not os.path.exists(fallback_path):
-            logger.error(f"[IMAGE] Fallback image not found at {fallback_path}")
-            return None
-
-        with open(fallback_path, 'rb') as f:
-            image_bytes = f.read()
-
-        logger.info(f"[IMAGE] Fallback image loaded: {len(image_bytes)} bytes")
-        return image_bytes
-
-    except Exception as e:
-        logger.error(f"[IMAGE] Error reading fallback image: {str(e)}")
-        return None
 
 
 def upload_image_to_s3(
@@ -173,47 +149,3 @@ def upload_image_to_s3(
     return None, f"Max retries ({max_retries}) exceeded"
 
 
-def fetch_and_upload_image(
-    google_image_url: str,
-    recipe_key: str,
-    s3_client,
-    bucket: str
-) -> Tuple[Optional[str], Optional[str], bool]:
-    """
-    Fetch image from Google URL and upload to S3 with fallback handling.
-
-    This is a convenience function that combines fetching and uploading,
-    with automatic fallback to skillet.png on fetch failure.
-
-    Args:
-        google_image_url: Google image URL to fetch
-        recipe_key: Recipe key for S3 path
-        s3_client: Boto3 S3 client
-        bucket: S3 bucket name
-
-    Returns:
-        Tuple of (s3_path, error_message, used_fallback)
-        - s3_path: S3 path of uploaded image (images/{recipe_key}.jpg)
-        - error_message: None on success, error string on failure
-        - used_fallback: True if fallback image was used, False for original
-    """
-    logger.info(f"[IMAGE] Fetching and uploading image for recipe '{recipe_key}'")
-
-    # Try to fetch the original image
-    image_bytes, content_type = fetch_image_from_url(google_image_url)
-
-    # If fetch fails, use fallback
-    if image_bytes is None:
-        logger.warning(f"[IMAGE] Failed to fetch from Google, using fallback image")
-        image_bytes = get_fallback_image()
-        used_fallback = True
-
-        if image_bytes is None:
-            return None, "Failed to fetch image and fallback not available", True
-    else:
-        used_fallback = False
-
-    # Upload to S3
-    s3_path, error_msg = upload_image_to_s3(recipe_key, image_bytes, s3_client, bucket)
-
-    return s3_path, error_msg, used_fallback
