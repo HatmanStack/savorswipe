@@ -30,7 +30,7 @@ from embedding_generator import EmbeddingGenerator
 from duplicate_detector import DuplicateDetector
 from upload import batch_to_s3_atomic
 from recipe_deletion import delete_recipe_atomic
-from image_uploader import fetch_and_upload_image
+from image_uploader import fetch_image_from_url, upload_image_to_s3
 
 
 def process_single_recipe(
@@ -477,16 +477,11 @@ def handle_post_image_request(event, context):
     try:
         s3_client = boto3.client('s3')
 
-        # Fetch image from Google and upload to S3
-        s3_path, error_msg, used_fallback = fetch_and_upload_image(
-            image_url,
-            recipe_key,
-            s3_client,
-            bucket_name
-        )
+        # Step 1: Fetch image from Google URL
+        image_bytes, content_type = fetch_image_from_url(image_url)
 
-        if s3_path is None:
-            print(f"[POST-IMAGE] Failed to fetch/upload image: {error_msg}")
+        if image_bytes is None:
+            print(f"[POST-IMAGE] Failed to fetch image from URL")
             return {
                 'statusCode': 500,
                 'headers': {
@@ -495,7 +490,26 @@ def handle_post_image_request(event, context):
                 },
                 'body': json.dumps({
                     'success': False,
-                    'error': f'Failed to process image: {error_msg}'
+                    'error': 'Failed to fetch image from the provided URL'
+                })
+            }
+
+        print(f"[POST-IMAGE] Image fetched: {len(image_bytes)} bytes, content-type: {content_type}")
+
+        # Step 2: Upload image to S3
+        s3_path, error_msg = upload_image_to_s3(recipe_key, image_bytes, s3_client, bucket_name)
+
+        if s3_path is None:
+            print(f"[POST-IMAGE] Failed to upload image to S3: {error_msg}")
+            return {
+                'statusCode': 500,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({
+                    'success': False,
+                    'error': f'Failed to upload image to S3: {error_msg}'
                 })
             }
 
