@@ -7,12 +7,59 @@ import io
 import base64
 import random
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 from PIL import Image
 from botocore.exceptions import ClientError
 from typing import List, Dict, Tuple, Optional
 
 s3_client = boto3.client('s3')
-bucket_name = os.getenv('S3_BUCKET') 
+bucket_name = os.getenv('S3_BUCKET')
+
+# Problematic domains that often return HTML/redirects instead of images
+PROBLEMATIC_DOMAINS = [
+    'lookaside.instagram.com',  # Instagram SEO gateway (returns HTML)
+    'instagram.com',            # Requires login
+    'pinterest.com',            # Redirects/login walls
+    'facebook.com',             # Login walls
+    'twitter.com',              # Login walls
+    'x.com',                    # Twitter/X login walls
+    'tiktok.com',               # Login walls
+]
+
+def is_problematic_url(url: str) -> bool:
+    """
+    Check if URL is from a problematic domain that likely won't return an actual image.
+
+    Args:
+        url: Image URL to check
+
+    Returns:
+        True if URL should be skipped, False if OK to try
+    """
+    try:
+        # Parse URL to extract hostname
+        parsed = urlparse(url)
+        hostname = parsed.hostname
+
+        # Handle missing/invalid hostnames
+        if not hostname:
+            return False
+
+        # Normalize: lowercase and strip "www." prefix
+        hostname = hostname.lower()
+        if hostname.startswith('www.'):
+            hostname = hostname[4:]
+
+        # Check if hostname matches or is subdomain of problematic domain
+        for domain in PROBLEMATIC_DOMAINS:
+            # Exact match or subdomain match (e.g., "m.instagram.com")
+            if hostname == domain or hostname.endswith('.' + domain):
+                return True
+
+        return False
+    except Exception:
+        # If URL parsing fails, treat as non-problematic (don't skip)
+        return False
 
 def to_s3(recipe, search_results, jsonData = None):
     combined_data_key = 'jsondata/combined_data.json'
@@ -63,14 +110,22 @@ def upload_image(search_results, bucket_name, highest_key):
         print(f"[UPLOAD ERROR] Invalid search_results format: {type(search_results)}")
         return None
 
-    item_count = len(image_urls)
-    print(f"[UPLOAD] Have {item_count} search result URLs to try")
+    # Filter out problematic URLs before trying to fetch
+    filtered_urls = []
+    for url in image_urls:
+        if is_problematic_url(url):
+            print(f"[UPLOAD] Skipping problematic URL (known to return HTML): {url[:100]}...")
+        else:
+            filtered_urls.append(url)
+
+    item_count = len(filtered_urls)
+    print(f"[UPLOAD] Have {item_count} valid URLs to try (filtered {len(image_urls) - len(filtered_urls)} problematic URLs)")
 
     if item_count == 0:
-        print(f"[UPLOAD] No search results provided, returning None")
+        print("[UPLOAD] No valid URLs after filtering, returning None")
         return None
 
-    for idx, image_url in enumerate(image_urls):
+    for idx, image_url in enumerate(filtered_urls):
         print(f"[UPLOAD] Trying image {idx + 1}/{item_count} from URL: {image_url[:100]}...")
 
         try:
