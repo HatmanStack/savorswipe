@@ -1,6 +1,12 @@
 import unittest
 from unittest.mock import MagicMock, patch, call, Mock
 import json
+import sys
+import os
+
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from lambda_function import process_single_recipe, lambda_handler
 
 
@@ -14,7 +20,19 @@ class TestLambdaFunction(unittest.TestCase):
             'Ingredients': ['flour', 'sugar']
         }
         self.test_embedding = [0.1, 0.2, 0.3]
-        self.test_search_results = {'items': [{'link': 'http://example.com/image.jpg'}]}
+        # google_search_image returns List[str], not dict
+        self.test_search_results = [
+            'http://example.com/image1.jpg',
+            'http://example.com/image2.jpg',
+            'http://example.com/image3.jpg',
+            'http://example.com/image4.jpg',
+            'http://example.com/image5.jpg',
+            'http://example.com/image6.jpg',
+            'http://example.com/image7.jpg',
+            'http://example.com/image8.jpg',
+            'http://example.com/image9.jpg',
+            'http://example.com/image10.jpg',
+        ]
 
     @patch('lambda_function.si.google_search_image')
     def test_process_single_recipe_success(self, mock_search):
@@ -38,7 +56,9 @@ class TestLambdaFunction(unittest.TestCase):
         # Verify
         self.assertEqual(recipe, self.test_recipe)
         self.assertEqual(embedding, self.test_embedding)
-        self.assertEqual(search_results, self.test_search_results)
+        # process_single_recipe returns first 9 of 10 search results (for 3x3 grid)
+        self.assertEqual(len(search_results), 9)
+        self.assertEqual(search_results, self.test_search_results[0:9])
         self.assertIsNone(error)
 
     @patch('lambda_function.si.google_search_image')

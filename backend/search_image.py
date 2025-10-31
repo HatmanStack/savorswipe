@@ -2,6 +2,11 @@ import os
 import requests
 import re
 from typing import List, Set, Dict
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def simplify_recipe_title(title: str) -> str:
@@ -44,6 +49,66 @@ def simplify_recipe_title(title: str) -> str:
 
     print(f"[SEARCH] Simplified to: '{simplified}'")
     return simplified
+
+
+def validate_image_urls(image_urls: List[str], timeout: int = 5) -> List[str]:
+    """
+    Validate that image URLs are actually accessible.
+
+    Checks each URL to ensure:
+    - HTTP 200 response
+    - Content-Type header contains 'image'
+
+    Args:
+        image_urls: List of image URLs to validate
+        timeout: Request timeout in seconds (default: 5)
+
+    Returns:
+        List of valid image URLs (may be fewer than input)
+    """
+    if not image_urls:
+        logger.info("[SEARCH] No image URLs to validate")
+        return []
+
+    logger.info(f"[SEARCH] Validating {len(image_urls)} image URLs...")
+    valid_urls = []
+
+    for url in image_urls:
+        if not url:
+            logger.warning("[SEARCH] Skipping empty URL")
+            continue
+
+        try:
+            logger.info(f"[SEARCH] Validating URL: {url[:100]}...")
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            }
+
+            # Send HEAD request first (faster than GET)
+            response = requests.head(url, headers=headers, timeout=timeout, allow_redirects=True)
+
+            if response.status_code == 200:
+                # Verify content-type is an image
+                content_type = response.headers.get('Content-Type', '')
+                if 'image' in content_type.lower():
+                    logger.info(f"[SEARCH] URL validated successfully: {content_type}")
+                    valid_urls.append(url)
+                else:
+                    logger.warning(
+                        f"[SEARCH] URL has invalid content-type (not an image): {content_type}"
+                    )
+            else:
+                logger.warning(f"[SEARCH] URL returned non-200 status: {response.status_code}")
+
+        except requests.exceptions.Timeout:
+            logger.warning(f"[SEARCH] URL validation timeout after {timeout}s")
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"[SEARCH] URL validation failed: {str(e)}")
+        except Exception as e:
+            logger.error(f"[SEARCH] Unexpected error validating URL: {str(e)}")
+
+    logger.info(f"[SEARCH] URL validation complete: {len(valid_urls)}/{len(image_urls)} URLs are valid")
+    return valid_urls
 
 
 def google_search_image(title: str, count: int = 10, recipe_type: str = None) -> List[str]:
@@ -100,8 +165,12 @@ def google_search_image(title: str, count: int = 10, recipe_type: str = None) ->
             print(f"[SEARCH] Strategy 3 (simplified only) found more results: {len(simple_results)}")
             results = simple_results
 
-    print(f"[SEARCH] Final result count: {len(results)}")
-    return results
+    # Validate URLs to ensure they're actually accessible
+    print(f"[SEARCH] Validating {len(results)} URLs before returning...")
+    validated_results = validate_image_urls(results)
+
+    print(f"[SEARCH] Final validated result count: {len(validated_results)}")
+    return validated_results
 
 
 def _search_google_images(query: str, count: int = 10) -> List[str]:
@@ -192,13 +261,28 @@ def select_unique_image_url(search_results: List[str], used_urls: Set[str]) -> s
     """
     Select the first unused image URL from search results.
 
+    This function implements image URL deduplication to ensure that
+    different recipes don't use the same image. It's used during both
+    initial upload (legacy auto-selection) and new image picker workflow
+    (user selection from grid).
+
     Args:
-        search_results: List of image URLs from Google search
-        used_urls: Set of image URLs already in use
+        search_results: List of image URLs from Google search (typically 9 from picker)
+        used_urls: Set of image URLs already in use by existing recipes
 
     Returns:
-        First unused URL, or first URL as fallback if all are used,
-        or empty string if no results
+        First unused URL from search results, first URL as fallback if all are used,
+        or empty string if no search results provided
+
+    Examples:
+        >>> urls = ["url1", "url2", "url3"]
+        >>> used = {"url1"}
+        >>> select_unique_image_url(urls, used)
+        'url2'  # First unused
+        >>> select_unique_image_url(urls, {"url1", "url2", "url3"})
+        'url1'  # All used, fallback to first
+        >>> select_unique_image_url([], set())
+        ''  # Empty results
     """
     print(f"[SEARCH] Selecting unique URL from {len(search_results)} results, {len(used_urls)} URLs already used")
     if not search_results:

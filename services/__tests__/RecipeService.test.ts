@@ -359,4 +359,250 @@ describe('RecipeService', () => {
       expect(result).toBe(true);
     });
   });
+
+  describe('selectRecipeImage', () => {
+    it('should select image for recipe successfully', async () => {
+      // Arrange
+      const recipeKey = 'test-recipe';
+      const imageUrl = 'https://example.com/image.jpg';
+      const updatedRecipe: Recipe = {
+        key: recipeKey,
+        Title: 'Test Recipe',
+        image_url: imageUrl,
+      };
+
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          success: true,
+          recipe: updatedRecipe,
+        }),
+      });
+
+      // Act
+      const result = await RecipeService.selectRecipeImage(recipeKey, imageUrl);
+
+      // Assert
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${MOCK_LAMBDA_URL}/recipe/${recipeKey}/image`,
+        expect.objectContaining({
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ imageUrl }),
+        })
+      );
+      expect(result).toEqual(updatedRecipe);
+    });
+
+    it('should throw error when recipe not found', async () => {
+      // Arrange
+      const recipeKey = 'nonexistent-recipe';
+      const imageUrl = 'https://example.com/image.jpg';
+
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: false,
+        status: 404,
+        text: async () => 'Recipe not found',
+      });
+
+      // Act & Assert
+      await expect(RecipeService.selectRecipeImage(recipeKey, imageUrl)).rejects.toThrow(
+        'Recipe not found'
+      );
+    });
+
+    it('should throw error on invalid image URL', async () => {
+      // Arrange
+      const recipeKey = 'test-recipe';
+      const imageUrl = 'invalid-url';
+
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: false,
+        status: 400,
+        text: async () => 'Invalid image URL',
+      });
+
+      // Act & Assert
+      await expect(RecipeService.selectRecipeImage(recipeKey, imageUrl)).rejects.toThrow(
+        'Invalid image URL'
+      );
+    });
+
+    it('should throw error on network failure', async () => {
+      // Arrange
+      const recipeKey = 'test-recipe';
+      const imageUrl = 'https://example.com/image.jpg';
+
+      (global.fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
+
+      // Act & Assert
+      await expect(RecipeService.selectRecipeImage(recipeKey, imageUrl)).rejects.toThrow(
+        'Network error'
+      );
+    });
+
+    it('should throw error when LAMBDA_FUNCTION_URL not set', async () => {
+      // Arrange
+      delete process.env.EXPO_PUBLIC_LAMBDA_FUNCTION_URL;
+
+      // Act & Assert
+      await expect(
+        RecipeService.selectRecipeImage('test-recipe', 'https://example.com/image.jpg')
+      ).rejects.toThrow('EXPO_PUBLIC_LAMBDA_FUNCTION_URL environment variable not set');
+
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('should throw error on backend failure response', async () => {
+      // Arrange
+      const recipeKey = 'test-recipe';
+      const imageUrl = 'https://example.com/image.jpg';
+
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          success: false,
+          error: 'Failed to fetch image from Google',
+        }),
+      });
+
+      // Act & Assert
+      await expect(RecipeService.selectRecipeImage(recipeKey, imageUrl)).rejects.toThrow(
+        'Failed to fetch image from Google'
+      );
+    });
+
+    it('should handle timeout gracefully', async () => {
+      // Arrange
+      const recipeKey = 'test-recipe';
+      const imageUrl = 'https://example.com/image.jpg';
+
+      (global.fetch as jest.Mock).mockImplementation(
+        () =>
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Request timeout')), 100)
+          )
+      );
+
+      // Act & Assert
+      await expect(RecipeService.selectRecipeImage(recipeKey, imageUrl)).rejects.toThrow(
+        'Request timeout'
+      );
+    });
+  });
+
+  describe('deleteRecipe', () => {
+    it('should delete recipe successfully', async () => {
+      // Arrange
+      const recipeKey = 'test-recipe';
+
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          success: true,
+          message: 'Recipe deleted',
+          recipesRemaining: 427,
+        }),
+      });
+
+      // Act
+      const result = await RecipeService.deleteRecipe(recipeKey);
+
+      // Assert
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${MOCK_LAMBDA_URL}/recipe/${recipeKey}`,
+        expect.objectContaining({
+          method: 'DELETE',
+        })
+      );
+      expect(result).toBe(true);
+    });
+
+    it('should throw error when recipe not found', async () => {
+      // Arrange
+      const recipeKey = 'nonexistent-recipe';
+
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: false,
+        status: 404,
+        text: async () => 'Recipe not found',
+      });
+
+      // Act & Assert
+      await expect(RecipeService.deleteRecipe(recipeKey)).rejects.toThrow('Recipe not found');
+    });
+
+    it('should throw error on network failure', async () => {
+      // Arrange
+      const recipeKey = 'test-recipe';
+
+      (global.fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
+
+      // Act & Assert
+      await expect(RecipeService.deleteRecipe(recipeKey)).rejects.toThrow('Network error');
+    });
+
+    it('should throw error when LAMBDA_FUNCTION_URL not set', async () => {
+      // Arrange
+      delete process.env.EXPO_PUBLIC_LAMBDA_FUNCTION_URL;
+
+      // Act & Assert
+      await expect(RecipeService.deleteRecipe('test-recipe')).rejects.toThrow(
+        'EXPO_PUBLIC_LAMBDA_FUNCTION_URL environment variable not set'
+      );
+
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('should throw error on backend failure response', async () => {
+      // Arrange
+      const recipeKey = 'test-recipe';
+
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          success: false,
+          error: 'Failed to delete recipe',
+        }),
+      });
+
+      // Act & Assert
+      await expect(RecipeService.deleteRecipe(recipeKey)).rejects.toThrow(
+        'Failed to delete recipe'
+      );
+    });
+
+    it('should throw error on server error response', async () => {
+      // Arrange
+      const recipeKey = 'test-recipe';
+
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: false,
+        status: 500,
+        text: async () => 'Internal server error',
+      });
+
+      // Act & Assert
+      await expect(RecipeService.deleteRecipe(recipeKey)).rejects.toThrow(
+        'Failed to delete recipe. Status: 500'
+      );
+    });
+
+    it('should handle timeout gracefully', async () => {
+      // Arrange
+      const recipeKey = 'test-recipe';
+
+      (global.fetch as jest.Mock).mockImplementation(
+        () =>
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Request timeout')), 100)
+          )
+      );
+
+      // Act & Assert
+      await expect(RecipeService.deleteRecipe(recipeKey)).rejects.toThrow('Request timeout');
+    });
+  });
 });

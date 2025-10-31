@@ -2,7 +2,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRecipe } from '@/context/RecipeContext';
 import { ImageQueueService } from '@/services/ImageQueueService';
 import { ImageService } from '@/services/ImageService';
-import { ImageFile } from '@/types';
+import { RecipeService } from '@/services/RecipeService';
+import { ToastQueue } from '@/components/Toast';
+import { ImageFile, Recipe } from '@/types';
 import { ImageQueueHook } from '@/types/queue';
 
 // Constants for queue injection
@@ -10,12 +12,76 @@ const MAX_QUEUE_SIZE = 30;  // Prevent memory leaks
 const INJECT_RETRY_MAX = 3;
 const INJECT_RETRY_DELAY = 1000;  // milliseconds
 
+/**
+ * Check if a recipe is pending image selection.
+ * A recipe is pending if it has image_search_results but no image_url set.
+ */
+function isPendingImageSelection(recipe: Recipe | undefined): boolean {
+  if (!recipe) return false;
+  return (
+    Array.isArray(recipe.image_search_results) &&
+    recipe.image_search_results.length > 0 &&
+    !recipe.image_url
+  );
+}
+
+/**
+ * Transform raw error messages into user-friendly messages.
+ * Maps technical errors to actionable, non-technical language.
+ *
+ * @param rawError - Raw error message from backend or network
+ * @returns User-friendly error message
+ */
+function transformErrorMessage(rawError: string): string {
+  const errorLower = rawError.toLowerCase();
+
+  // Network and timeout errors
+  if (errorLower.includes('timeout') || errorLower.includes('request timeout')) {
+    return 'Taking longer than expected. Please check your internet and try again.';
+  }
+
+  if (errorLower.includes('network') || errorLower.includes('failed')) {
+    return 'Unable to connect. Please check your internet connection.';
+  }
+
+  // Recipe not found
+  if (errorLower.includes('recipe not found') || errorLower.includes('404')) {
+    return 'Recipe not found. It may have been deleted.';
+  }
+
+  // Invalid image URL
+  if (
+    errorLower.includes('invalid image url') ||
+    errorLower.includes('invalid url') ||
+    errorLower.includes('400')
+  ) {
+    return "Image couldn't be loaded. Please select another image.";
+  }
+
+  // Server errors
+  if (errorLower.includes('500') || errorLower.includes('server error')) {
+    return 'Server error. Please try again later.';
+  }
+
+  // Google image fetch failures
+  if (errorLower.includes('fetch image from google')) {
+    return "Image couldn't be loaded from source. Please select another image.";
+  }
+
+  // Fallback for unknown errors
+  return 'An error occurred. Please try again.';
+}
+
 export function useImageQueue(): ImageQueueHook {
   // Local state
   const [queue, setQueue] = useState<ImageFile[]>([]);
   const [currentImage, setCurrentImage] = useState<ImageFile | null>(null);
   const [nextImage, setNextImage] = useState<ImageFile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Image picker modal state
+  const [pendingRecipe, setPendingRecipe] = useState<Recipe | null>(null);
+  const [showImagePickerModal, setShowImagePickerModal] = useState(false);
 
   // Recipe key pool (mutable ref, doesn't trigger re-renders)
   const recipeKeyPoolRef = useRef<string[]>([]);
@@ -28,8 +94,8 @@ export function useImageQueue(): ImageQueueHook {
   const lastInjectionTimeRef = useRef<number>(0); // Track last injection time to block refills
   const seenRecipeKeysRef = useRef<Set<string>>(new Set()); // Track seen recipes to avoid duplicates
 
-  // Context
-  const { jsonData, setCurrentRecipe, mealTypeFilters } = useRecipe();
+  // Context - extract all needed values at top level (React Hook Rules)
+  const { jsonData, setCurrentRecipe, setJsonData, mealTypeFilters } = useRecipe();
 
   // Keep queueRef and nextImageRef in sync with state
   useEffect(() => {
@@ -51,6 +117,93 @@ export function useImageQueue(): ImageQueueHook {
       setCurrentRecipe({ ...recipe, key: recipeKey });
     }
   }, [jsonData, setCurrentRecipe]);
+
+  // Reset pending recipe state
+  const resetPendingRecipe = useCallback(() => {
+    setPendingRecipe(null);
+    setShowImagePickerModal(false);
+  }, []);
+
+  // Handle image selection confirmation
+  const onConfirmImage = useCallback(
+    async (imageUrl: string) => {
+      if (!pendingRecipe || !jsonData || !setJsonData) {
+        console.warn('[QUEUE] No pending recipe to confirm');
+        return;
+      }
+
+      ToastQueue.show('Saving image selection...');
+
+      try {
+        console.log('[QUEUE] Confirming image selection for:', pendingRecipe.key);
+
+        // Call backend to select image
+        const updatedRecipe = await RecipeService.selectRecipeImage(
+          pendingRecipe.key,
+          imageUrl
+        );
+
+        // Update local jsonData with the returned recipe
+        const updatedJsonData = {
+          ...jsonData,
+          [pendingRecipe.key]: updatedRecipe,
+        };
+        setJsonData(updatedJsonData);
+
+        // Inject recipe into queue
+        await injectRecipes([pendingRecipe.key]);
+
+        // Clear pending state
+        resetPendingRecipe();
+
+        ToastQueue.show('Image saved');
+        console.log('[QUEUE] Image selection confirmed for:', pendingRecipe.key);
+      } catch (error) {
+        const rawError =
+          error instanceof Error ? error.message : 'Unknown error occurred';
+        const userFriendlyError = transformErrorMessage(rawError);
+        console.error('[QUEUE] Image selection failed:', error);
+        ToastQueue.show(`Failed to save image: ${userFriendlyError}`);
+        // Keep modal visible for retry
+      }
+    },
+    [pendingRecipe, jsonData, setJsonData, injectRecipes, resetPendingRecipe]
+  );
+
+  // Handle recipe deletion
+  const onDeleteRecipe = useCallback(async () => {
+    if (!pendingRecipe || !jsonData || !setJsonData) {
+      console.warn('[QUEUE] No pending recipe to delete');
+      return;
+    }
+
+    ToastQueue.show('Deleting recipe...');
+
+    try {
+      console.log('[QUEUE] Deleting recipe:', pendingRecipe.key);
+
+      // Call backend to delete recipe
+      await RecipeService.deleteRecipe(pendingRecipe.key);
+
+      // Remove recipe from local jsonData
+      const updatedJsonData = { ...jsonData };
+      delete updatedJsonData[pendingRecipe.key];
+      setJsonData(updatedJsonData);
+
+      // Clear pending state
+      resetPendingRecipe();
+
+      ToastQueue.show('Recipe deleted');
+      console.log('[QUEUE] Recipe deleted:', pendingRecipe.key);
+    } catch (error) {
+      const rawError =
+        error instanceof Error ? error.message : 'Unknown error occurred';
+      const userFriendlyError = transformErrorMessage(rawError);
+      console.error('[QUEUE] Recipe deletion failed:', error);
+      ToastQueue.show(`Failed to delete recipe: ${userFriendlyError}`);
+      // Keep modal visible for retry
+    }
+  }, [pendingRecipe, jsonData, setJsonData, resetPendingRecipe]);
 
   // Initialize queue on first load
   const initializeQueue = useCallback(async () => {
@@ -434,7 +587,21 @@ export function useImageQueue(): ImageQueueHook {
     // Find new keys
     const newKeys = Array.from(currentKeys).filter(key => !previousKeys.has(key));
 
-    // If new keys found, inject them
+    // Check for pending recipes (recipes with image_search_results but no image_url)
+    // Prioritize pending recipes over injecting all new recipes
+    for (const key of newKeys) {
+      const recipe = jsonData[key];
+      if (isPendingImageSelection(recipe)) {
+        console.log('[QUEUE] Pending recipe detected:', key);
+        setPendingRecipe({ ...recipe, key });
+        setShowImagePickerModal(true);
+        // Don't inject pending recipe into queue yet - pause until selection is complete
+        prevJsonDataKeysRef.current = currentKeys;
+        return;
+      }
+    }
+
+    // If new keys found and no pending recipes, inject them
     if (newKeys.length > 0) {
       injectRecipes(newKeys);
     }
@@ -461,5 +628,10 @@ export function useImageQueue(): ImageQueueHook {
     advanceQueue,
     resetQueue,
     injectRecipes,
+    pendingRecipe,
+    showImagePickerModal,
+    resetPendingRecipe,
+    onConfirmImage,
+    onDeleteRecipe,
   };
 }
