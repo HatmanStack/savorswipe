@@ -192,13 +192,28 @@ def select_unique_image_url(search_results: List[str], used_urls: Set[str]) -> s
     """
     Select the first unused image URL from search results.
 
+    This function implements image URL deduplication to ensure that
+    different recipes don't use the same image. It's used during both
+    initial upload (legacy auto-selection) and new image picker workflow
+    (user selection from grid).
+
     Args:
-        search_results: List of image URLs from Google search
-        used_urls: Set of image URLs already in use
+        search_results: List of image URLs from Google search (typically 9 from picker)
+        used_urls: Set of image URLs already in use by existing recipes
 
     Returns:
-        First unused URL, or first URL as fallback if all are used,
-        or empty string if no results
+        First unused URL from search results, first URL as fallback if all are used,
+        or empty string if no search results provided
+
+    Examples:
+        >>> urls = ["url1", "url2", "url3"]
+        >>> used = {"url1"}
+        >>> select_unique_image_url(urls, used)
+        'url2'  # First unused
+        >>> select_unique_image_url(urls, {"url1", "url2", "url3"})
+        'url1'  # All used, fallback to first
+        >>> select_unique_image_url([], set())
+        ''  # Empty results
     """
     print(f"[SEARCH] Selecting unique URL from {len(search_results)} results, {len(used_urls)} URLs already used")
     if not search_results:
