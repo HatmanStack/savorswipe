@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRecipe } from '@/context/RecipeContext';
 import { ImageQueueService } from '@/services/ImageQueueService';
 import { ImageService } from '@/services/ImageService';
-import { ImageFile } from '@/types';
+import { ImageFile, Recipe } from '@/types';
 import { ImageQueueHook } from '@/types/queue';
 
 // Constants for queue injection
@@ -10,12 +10,29 @@ const MAX_QUEUE_SIZE = 30;  // Prevent memory leaks
 const INJECT_RETRY_MAX = 3;
 const INJECT_RETRY_DELAY = 1000;  // milliseconds
 
+/**
+ * Check if a recipe is pending image selection.
+ * A recipe is pending if it has image_search_results but no image_url set.
+ */
+function isPendingImageSelection(recipe: Recipe | undefined): boolean {
+  if (!recipe) return false;
+  return (
+    Array.isArray(recipe.image_search_results) &&
+    recipe.image_search_results.length > 0 &&
+    !recipe.image_url
+  );
+}
+
 export function useImageQueue(): ImageQueueHook {
   // Local state
   const [queue, setQueue] = useState<ImageFile[]>([]);
   const [currentImage, setCurrentImage] = useState<ImageFile | null>(null);
   const [nextImage, setNextImage] = useState<ImageFile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Image picker modal state
+  const [pendingRecipe, setPendingRecipe] = useState<Recipe | null>(null);
+  const [showImagePickerModal, setShowImagePickerModal] = useState(false);
 
   // Recipe key pool (mutable ref, doesn't trigger re-renders)
   const recipeKeyPoolRef = useRef<string[]>([]);
@@ -51,6 +68,12 @@ export function useImageQueue(): ImageQueueHook {
       setCurrentRecipe({ ...recipe, key: recipeKey });
     }
   }, [jsonData, setCurrentRecipe]);
+
+  // Reset pending recipe state
+  const resetPendingRecipe = useCallback(() => {
+    setPendingRecipe(null);
+    setShowImagePickerModal(false);
+  }, []);
 
   // Initialize queue on first load
   const initializeQueue = useCallback(async () => {
@@ -434,7 +457,21 @@ export function useImageQueue(): ImageQueueHook {
     // Find new keys
     const newKeys = Array.from(currentKeys).filter(key => !previousKeys.has(key));
 
-    // If new keys found, inject them
+    // Check for pending recipes (recipes with image_search_results but no image_url)
+    // Prioritize pending recipes over injecting all new recipes
+    for (const key of newKeys) {
+      const recipe = jsonData[key];
+      if (isPendingImageSelection(recipe)) {
+        console.log('[QUEUE] Pending recipe detected:', key);
+        setPendingRecipe({ ...recipe, key });
+        setShowImagePickerModal(true);
+        // Don't inject pending recipe into queue yet - pause until selection is complete
+        prevJsonDataKeysRef.current = currentKeys;
+        return;
+      }
+    }
+
+    // If new keys found and no pending recipes, inject them
     if (newKeys.length > 0) {
       injectRecipes(newKeys);
     }
@@ -461,5 +498,8 @@ export function useImageQueue(): ImageQueueHook {
     advanceQueue,
     resetQueue,
     injectRecipes,
+    pendingRecipe,
+    showImagePickerModal,
+    resetPendingRecipe,
   };
 }

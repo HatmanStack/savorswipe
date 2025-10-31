@@ -1,4 +1,4 @@
-import { ImageFile } from './index';
+import { ImageFile, Recipe } from './index';
 
 // Configuration constants for queue behavior
 export interface QueueConfig {
@@ -25,6 +25,11 @@ export interface ImageQueueHook {
   advanceQueue: () => void;           // Call on swipe left
   resetQueue: () => Promise<void>;    // Call on filter change
   injectRecipes: (recipeKeys: string[]) => Promise<void>;  // Inject new recipes into queue
+
+  // Image picker modal state
+  pendingRecipe: Recipe | null;       // Recipe awaiting image selection
+  showImagePickerModal: boolean;      // Modal visibility flag
+  resetPendingRecipe: () => void;     // Clear pending recipe state
 }
 
 // Result of a batch fetch operation
