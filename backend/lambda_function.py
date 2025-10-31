@@ -13,6 +13,7 @@ Processes multiple images and PDFs containing recipes with:
 import base64
 import json
 import os
+import re
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -28,6 +29,7 @@ from embeddings import EmbeddingStore
 from embedding_generator import EmbeddingGenerator
 from duplicate_detector import DuplicateDetector
 from upload import batch_to_s3_atomic
+from recipe_deletion import delete_recipe_atomic
 
 
 def process_single_recipe(
@@ -108,15 +110,39 @@ def lambda_handler(event, context):
         }
     }
 
+    Event format for DELETE (delete recipe):
+    {
+        "requestContext": {
+            "http": {
+                "method": "DELETE",
+                "path": "/recipe/{recipe_key}"
+            }
+        }
+    }
+
+    Event format for POST image (update recipe image):
+    {
+        "requestContext": {
+            "http": {
+                "method": "POST",
+                "path": "/recipe/{recipe_key}/image"
+            }
+        },
+        "body": JSON string with imageUrl
+    }
+
     Returns:
         POST: Upload result with successCount, failCount, errors
         GET: Recipe JSON with cache-prevention headers
+        DELETE: Success/error response
+        POST /image: Success/error response with updated recipe
     """
 
     # Detect HTTP method from requestContext
     http_method = event.get('requestContext', {}).get('http', {}).get('method', 'POST')
+    request_path = event.get('requestContext', {}).get('http', {}).get('path', '')
 
-    print(f"[DEBUG] lambda_handler: Detected HTTP method: {http_method}")
+    print(f"[DEBUG] lambda_handler: Detected HTTP method: {http_method}, path: {request_path}")
 
     # Handle CORS preflight OPTIONS request
     if http_method == 'OPTIONS':
@@ -124,7 +150,7 @@ def lambda_handler(event, context):
             'statusCode': 200,
             'headers': {
                 'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type',
                 'Access-Control-Max-Age': '86400'
             },
@@ -133,6 +159,8 @@ def lambda_handler(event, context):
 
     if http_method == 'GET':
         return handle_get_request(event, context)
+    elif http_method == 'DELETE':
+        return handle_delete_request(event, context)
     else:
         return handle_post_request(event, context)
 
@@ -222,6 +250,125 @@ def handle_get_request(event, context):
                 'Content-Type': 'application/json'
             },
             'body': json.dumps({'error': f'Failed to fetch recipes: {str(e)}'})
+        }
+
+
+def handle_delete_request(event, context):
+    """
+    Handle DELETE requests for recipe deletion.
+
+    Deletes a recipe from both combined_data.json and recipe_embeddings.json
+    using atomic writes with ETag-based optimistic locking.
+
+    Args:
+        event: API Gateway Lambda proxy integration request
+        context: Lambda context object
+
+    Returns:
+        {
+            "statusCode": 200 or 400 or 500,
+            "headers": {...},
+            "body": JSON string with response
+        }
+    """
+    bucket_name = os.getenv('S3_BUCKET')
+
+    if not bucket_name:
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json'
+            },
+            'body': json.dumps({'success': False, 'error': 'S3_BUCKET environment variable not set'})
+        }
+
+    # Extract recipe_key from request path
+    request_path = event.get('requestContext', {}).get('http', {}).get('path', '')
+    print(f"[DELETE] Request path: {request_path}")
+
+    # Parse path like "/recipe/chicken_parmesan" to extract recipe_key
+    match = re.match(r'^/recipe/([a-zA-Z0-9_-]+)$', request_path)
+
+    if not match:
+        return {
+            'statusCode': 400,
+            'headers': {
+                'Content-Type': 'application/json'
+            },
+            'body': json.dumps({
+                'success': False,
+                'error': 'Invalid path format. Expected: /recipe/{recipe_key}'
+            })
+        }
+
+    recipe_key = match.group(1)
+    print(f"[DELETE] Parsed recipe_key: {recipe_key}")
+
+    # Validate recipe_key format (alphanumeric, underscore, hyphen)
+    if not re.match(r'^[a-zA-Z0-9_-]+$', recipe_key):
+        return {
+            'statusCode': 400,
+            'headers': {
+                'Content-Type': 'application/json'
+            },
+            'body': json.dumps({
+                'success': False,
+                'error': f'Invalid recipe_key format: {recipe_key}'
+            })
+        }
+
+    try:
+        s3_client = boto3.client('s3')
+
+        # Perform atomic deletion
+        success, error_message = delete_recipe_atomic(
+            recipe_key,
+            s3_client,
+            bucket_name,
+            combined_data_key='jsondata/combined_data.json',
+            embeddings_key='jsondata/recipe_embeddings.json'
+        )
+
+        if success:
+            print(f"[DELETE] Successfully deleted recipe '{recipe_key}'")
+            return {
+                'statusCode': 200,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({
+                    'success': True,
+                    'message': f'Recipe {recipe_key} deleted successfully'
+                })
+            }
+        else:
+            print(f"[DELETE] Failed to delete recipe '{recipe_key}': {error_message}")
+            # Idempotent: return 200 success even if recipe was already deleted
+            return {
+                'statusCode': 200,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({
+                    'success': True,
+                    'message': f'Recipe {recipe_key} deletion completed (idempotent)'
+                })
+            }
+
+    except Exception as e:
+        print(f"[DELETE] Unexpected error deleting recipe '{recipe_key}': {str(e)}")
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({
+                'success': False,
+                'error': f'Failed to delete recipe: {str(e)}'
+            })
         }
 
 
