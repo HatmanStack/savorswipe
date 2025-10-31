@@ -36,7 +36,7 @@ class TestUploadTimestamp(unittest.TestCase):
         mock_upload_image.return_value = 'http://example.com/image.jpg'
 
         # Call batch_to_s3_atomic
-        result_data, success_keys, position_to_key, errors = batch_to_s3_atomic(
+        result_data, success_keys, _, _ = batch_to_s3_atomic(
             [self.mock_recipe],
             self.mock_search_results
         )

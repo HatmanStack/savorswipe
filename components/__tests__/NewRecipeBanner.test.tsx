@@ -21,14 +21,13 @@ describe('NewRecipeBanner', () => {
   });
 
   it('should have correct accessibility attributes', () => {
-    const { getByText } = render(<NewRecipeBanner visible={true} />);
+    const { getByLabelText } = render(<NewRecipeBanner visible={true} />);
 
-    const bannerText = getByText('NEW');
-    const parent = bannerText.parent;
+    const container = getByLabelText('New recipe');
 
-    // Check that the parent View has accessibility attributes
-    expect(parent?.props.accessibilityLabel).toBe('New recipe');
-    expect(parent?.props.accessibilityRole).toBe('text');
+    // Check that the container View has accessibility attributes
+    expect(container.props.accessibilityLabel).toBe('New recipe');
+    expect(container.props.accessibilityRole).toBe('text');
   });
 
   it('should use theme colors', () => {

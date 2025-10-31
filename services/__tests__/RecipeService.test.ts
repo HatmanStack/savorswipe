@@ -298,11 +298,11 @@ describe('RecipeService', () => {
 
     it('should return false for recipe uploaded exactly 72 hours ago', () => {
       // Arrange - exactly 72 hours ago
-      const exactlySixtyTwoHoursAgo = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString();
+      const exactlySeventyTwoHoursAgo = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString();
       const recipe: Recipe = {
         key: 'recipe-1',
         Title: 'Test Recipe',
-        uploadedAt: exactlySixtyTwoHoursAgo,
+        uploadedAt: exactlySeventyTwoHoursAgo,
       };
 
       // Act
