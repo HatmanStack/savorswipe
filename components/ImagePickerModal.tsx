@@ -20,9 +20,23 @@ export interface ImagePickerModalProps {
   recipe: Recipe | null;
   /** Whether modal is visible */
   isVisible: boolean;
-  /** Called when user selects an image URL to confirm */
+  /**
+   * Called when user selects an image URL to confirm.
+   * Parent component should:
+   * - Fetch the selected image from Google
+   * - Upload to S3 at `images/{recipe_key}.jpg`
+   * - Show toast: "Image saved"
+   * - Inject recipe into image queue
+   */
   onConfirm: (imageUrl: string) => void;
-  /** Called when user chooses to delete the recipe */
+  /**
+   * Called when user chooses to delete the recipe.
+   * Parent component should:
+   * - Delete recipe from `combined_data.json`
+   * - Delete embedding from `recipe_embeddings.json`
+   * - Show toast: "Recipe deleted"
+   * - Continue with next recipe if available
+   */
   onDelete: () => void;
   /** Called when user cancels without action */
   onCancel: () => void;

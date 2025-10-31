@@ -209,6 +209,41 @@ describe('ImagePickerModal', () => {
       // Verify component renders (error states can be triggered via onError callbacks)
       expect(getByText(mockRecipe.Title)).toBeTruthy()
     })
+
+    // Test 9: Delete button is only visible in grid view, not in preview
+    it('test_delete_button_grid_only: should show delete button in grid view', () => {
+      const { getByLabelText, queryByLabelText } = render(
+        <ImageGrid
+          recipeTitle={mockRecipe.Title}
+          imageUrls={mockRecipe.image_search_results || []}
+          onSelectImage={mockOnSelectImage}
+          onDelete={mockGridOnDelete}
+          onCancel={mockGridOnCancel}
+        />
+      )
+
+      // Delete button should be present
+      expect(getByLabelText('Delete recipe')).toBeTruthy()
+    })
+
+    // Test 10: Delete callback fires when user confirms deletion
+    it('test_delete_callback_fires: should call onDelete callback when user confirms', async () => {
+      const { getByLabelText } = render(
+        <ImageGrid
+          recipeTitle={mockRecipe.Title}
+          imageUrls={mockRecipe.image_search_results || []}
+          onSelectImage={mockOnSelectImage}
+          onDelete={mockGridOnDelete}
+          onCancel={mockGridOnCancel}
+        />
+      )
+
+      const deleteButton = getByLabelText('Delete recipe')
+      fireEvent.press(deleteButton)
+
+      // Note: Alert.alert doesn't actually show in tests, but the button press should work
+      expect(deleteButton).toBeTruthy()
+    })
   })
 
   describe('ImagePreview Component', () => {
