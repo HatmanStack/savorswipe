@@ -21,7 +21,8 @@ class TestUploadTimestamp(unittest.TestCase):
             'Ingredients': {'flour': '2 cups'},
             'Directions': ['Mix ingredients']
         }
-        self.mock_search_results = [['http://example.com/image.jpg']]
+        # Google Custom Search API format: list of result objects with 'items' containing links
+        self.mock_search_results = [{'items': [{'link': 'http://example.com/image.jpg'}]}]
 
     def _setup_mocks(self, mock_s3, mock_upload_image, existing_data=None):
         """
@@ -153,10 +154,11 @@ class TestUploadTimestamp(unittest.TestCase):
             {'Title': 'Recipe 2', 'Servings': 4, 'Ingredients': {'milk': '1 cup'}, 'Directions': ['Heat']},
             {'Title': 'Recipe 3', 'Servings': 6, 'Ingredients': {'sugar': '2 tbsp'}, 'Directions': ['Mix']}
         ]
+        # Google Custom Search API format for each recipe
         search_results = [
-            ['http://example.com/image1.jpg'],
-            ['http://example.com/image2.jpg'],
-            ['http://example.com/image3.jpg']
+            {'items': [{'link': 'http://example.com/image1.jpg'}]},
+            {'items': [{'link': 'http://example.com/image2.jpg'}]},
+            {'items': [{'link': 'http://example.com/image3.jpg'}]}
         ]
 
         # Call batch_to_s3_atomic
