@@ -7,6 +7,32 @@
  * - Confirm selection to apply image to recipe
  * - Delete recipe entirely
  * - Cancel without action
+ *
+ * PHASE 4 INTEGRATION GUIDE:
+ * =========================
+ * This is a controlled component that expects parent (useImageQueue hook) to provide:
+ *
+ * 1. recipe: Recipe with image_search_results array (9 Google image URLs)
+ * 2. isVisible: boolean flag controlling modal visibility
+ * 3. Callback implementations:
+ *    - onConfirm(imageUrl): Fetch image from Google, save to S3, inject recipe into queue
+ *    - onDelete(): Delete recipe atomically from combined_data.json and embeddings
+ *    - onCancel(): Close modal, resume swipe queue
+ *
+ * Expected Recipe Structure:
+ * {
+ *   key: "recipe-key-123",
+ *   Title: "Recipe Title",
+ *   image_search_results: ["url1", "url2", ..., "url9"],
+ *   ... other fields
+ * }
+ *
+ * Modal Behavior:
+ * - Grid View: Shows 3x3 thumbnail grid with delete button
+ * - Preview View: User taps thumbnail to preview full-size with confirm button
+ * - Back Button: Returns to grid view
+ * - Delete Button: Shows confirmation alert before calling onDelete
+ * - Cancel: Clicking overlay or onCancel closes modal without action
  */
 
 import React, { useState } from 'react'
