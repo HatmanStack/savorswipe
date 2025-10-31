@@ -121,9 +121,11 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    backgroundColor: '#000',
     justifyContent: 'space-between',
-    padding: 16,
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 20,
   },
   backButton: {
     width: 44,
@@ -131,10 +133,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
   },
   backIcon: {
-    fontSize: 32,
+    fontSize: 28,
     color: 'white',
     fontWeight: '300',
   },
@@ -142,6 +144,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    marginVertical: 16,
   },
   image: {
     width: '100%',
@@ -151,7 +154,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
   errorContent: {
     justifyContent: 'center',
@@ -165,11 +168,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: 'white',
     marginBottom: 8,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   errorHint: {
     fontSize: 14,
-    color: '#bbb',
+    color: '#ccc',
   },
   confirmButton: {
     backgroundColor: '#0a7ea4',
@@ -178,7 +181,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 16,
+    minHeight: 48,
   },
   confirmButtonText: {
     color: 'white',
