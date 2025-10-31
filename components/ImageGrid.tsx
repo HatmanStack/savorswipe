@@ -189,7 +189,7 @@ export const ImageGrid: React.FC<ImageGridProps> = ({
         <FlatList
           data={imageUrls}
           renderItem={renderThumbnail}
-          keyExtractor={(item, index) => `thumbnail-${index}`}
+          keyExtractor={(item) => item}
           numColumns={3}
           scrollEnabled={true}
           style={styles.gridContainer}
