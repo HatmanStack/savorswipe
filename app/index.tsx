@@ -8,6 +8,7 @@ import { useImageQueue } from '@/hooks/useImageQueue';
 import { useResponsiveLayout } from '@/hooks';
 import { isNewRecipe } from '@/services/RecipeService';
 import NewRecipeBanner from '@/components/NewRecipeBanner';
+import ImagePickerModal from '@/components/ImagePickerModal';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const holderImg = require('@/assets/images/skillet.png');
 
@@ -23,7 +24,16 @@ export default function HomeScreen() {
   const { currentRecipe } = useRecipe();
 
   // Use new queue hook
-  const { currentImage, advanceQueue, isLoading } = useImageQueue();
+  const {
+    currentImage,
+    advanceQueue,
+    isLoading,
+    pendingRecipe,
+    showImagePickerModal,
+    onConfirmImage,
+    onDeleteRecipe,
+    resetPendingRecipe,
+  } = useImageQueue();
 
   // Animation value for simple translateX
   const currentImageTranslateX = useRef(new Animated.Value(0)).current;
@@ -90,6 +100,11 @@ export default function HomeScreen() {
 
   // Handle swipe gestures
   const handleSwipe = useCallback((direction: 'left' | 'right') => {
+    // Don't allow swiping while image picker modal is open
+    if (showImagePickerModal) {
+      return;
+    }
+
     if (direction === 'left') {
       // Swipe left: advance to next recipe
       advanceQueue();
@@ -99,7 +114,7 @@ export default function HomeScreen() {
         router.push(`/recipe/${currentRecipe.key}`);
       }
     }
-  }, [advanceQueue, currentRecipe?.key, router]);
+  }, [advanceQueue, currentRecipe?.key, router, showImagePickerModal]);
 
   // Debounce function (keep existing)
   const debounce = <T extends (...args: any[]) => void>(func: T, delay: number): ((...args: Parameters<T>) => void) => {
@@ -151,6 +166,15 @@ export default function HomeScreen() {
         </Animated.View>
       </PanGestureHandler>
       <NewRecipeBanner visible={showBanner} />
+
+      {/* Image Picker Modal for recipes pending image selection */}
+      <ImagePickerModal
+        isVisible={showImagePickerModal}
+        recipe={pendingRecipe}
+        onConfirm={onConfirmImage}
+        onDelete={onDeleteRecipe}
+        onCancel={resetPendingRecipe}
+      />
     </View>
   );
 }
