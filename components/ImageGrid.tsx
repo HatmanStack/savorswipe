@@ -1,0 +1,276 @@
+/**
+ * ImageGrid Component
+ * Displays a 3x3 grid of recipe image thumbnails from Google search results.
+ *
+ * Features:
+ * - Recipe title at top
+ * - Delete button (top-right)
+ * - 3-column grid of square thumbnail images
+ * - Tap thumbnail to preview full-size
+ * - Loading and error states for thumbnails
+ */
+
+import React, { useState } from 'react'
+import {
+  View,
+  Text,
+  FlatList,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+} from 'react-native'
+
+export interface ImageGridProps {
+  /** Recipe title to display at top */
+  recipeTitle: string;
+  /** Array of 9 Google image URLs */
+  imageUrls: string[];
+  /** Called when user taps a thumbnail */
+  onSelectImage: (imageUrl: string) => void;
+  /** Called when user taps delete button */
+  onDelete: () => void;
+  /** Called when user dismisses modal */
+  onCancel: () => void;
+}
+
+interface ThumbnailState {
+  isLoading: boolean;
+  hasError: boolean;
+}
+
+/**
+ * ImageGrid displays a 3x3 grid of image thumbnails.
+ * Each thumbnail can be tapped to preview full-size.
+ */
+export const ImageGrid: React.FC<ImageGridProps> = ({
+  recipeTitle,
+  imageUrls,
+  onSelectImage,
+  onDelete,
+  onCancel,
+}) => {
+  // Track loading state per image URL
+  const [loadingStates, setLoadingStates] = useState<Record<string, ThumbnailState>>({})
+
+  // Handle thumbnail selection
+  const handleThumbnailPress = (imageUrl: string) => {
+    onSelectImage(imageUrl)
+  }
+
+  // Handle delete with confirmation
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete Recipe',
+      'Are you sure you want to permanently delete this recipe?',
+      [
+        {
+          text: 'Cancel',
+          onPress: () => {},
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          onPress: onDelete,
+          style: 'destructive',
+        },
+      ]
+    )
+  }
+
+  // Handle image load start
+  const handleImageLoadStart = (imageUrl: string) => {
+    setLoadingStates((prev) => ({
+      ...prev,
+      [imageUrl]: { isLoading: true, hasError: false },
+    }))
+  }
+
+  // Handle image load complete
+  const handleImageLoadEnd = (imageUrl: string) => {
+    setLoadingStates((prev) => ({
+      ...prev,
+      [imageUrl]: { isLoading: false, hasError: false },
+    }))
+  }
+
+  // Handle image load error
+  const handleImageError = (imageUrl: string) => {
+    setLoadingStates((prev) => ({
+      ...prev,
+      [imageUrl]: { isLoading: false, hasError: true },
+    }))
+  }
+
+  // Render individual thumbnail
+  const renderThumbnail = ({ item: imageUrl }: { item: string }) => {
+    const state = loadingStates[imageUrl] || { isLoading: true, hasError: false }
+
+    return (
+      <TouchableOpacity
+        style={styles.thumbnailWrapper}
+        onPress={() => handleThumbnailPress(imageUrl)}
+        activeOpacity={0.8}
+      >
+        {state.hasError ? (
+          // Error placeholder
+          <View style={styles.thumbnailError}>
+            <Text style={styles.errorIcon}>⚠️</Text>
+            <Text style={styles.errorText}>Failed to load</Text>
+          </View>
+        ) : (
+          <>
+            <Image
+              source={{ uri: imageUrl }}
+              style={styles.thumbnail}
+              onLoadStart={() => handleImageLoadStart(imageUrl)}
+              onLoad={() => handleImageLoadEnd(imageUrl)}
+              onError={() => handleImageError(imageUrl)}
+              resizeMode="cover"
+            />
+            {state.isLoading && (
+              <View style={styles.loadingOverlay}>
+                <ActivityIndicator size="small" color="#0a7ea4" />
+              </View>
+            )}
+          </>
+        )}
+      </TouchableOpacity>
+    )
+  }
+
+  return (
+    <TouchableOpacity
+      style={styles.overlay}
+      activeOpacity={1}
+      onPress={onCancel}
+    >
+      <TouchableOpacity
+        style={styles.contentCard}
+        activeOpacity={1}
+        onPress={(e) => e.stopPropagation()}
+      >
+        {/* Header with recipe title and delete button */}
+        <View style={styles.header}>
+          <Text style={styles.recipeTitle}>{recipeTitle}</Text>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={handleDelete}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityLabel="Delete recipe"
+            accessibilityRole="button"
+          >
+            <Text style={styles.deleteIcon}>✕</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Grid of thumbnails */}
+        <FlatList
+          data={imageUrls}
+          renderItem={renderThumbnail}
+          keyExtractor={(item, index) => `thumbnail-${index}`}
+          numColumns={3}
+          scrollEnabled={true}
+          style={styles.gridContainer}
+          columnWrapperStyle={styles.gridRow}
+          ItemSeparatorComponent={() => <View style={styles.spacer} />}
+          scrollIndicatorInsets={{ right: 1 }}
+        />
+      </TouchableOpacity>
+    </TouchableOpacity>
+  )
+}
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  contentCard: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
+    width: '100%',
+    maxWidth: 500,
+    maxHeight: '85%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  recipeTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    flex: 1,
+    marginRight: 12,
+  },
+  deleteButton: {
+    padding: 4,
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteIcon: {
+    fontSize: 24,
+    color: '#999',
+    fontWeight: '300',
+  },
+  gridContainer: {
+    flex: 1,
+  },
+  gridRow: {
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  spacer: {
+    height: 8,
+  },
+  thumbnailWrapper: {
+    flex: 1,
+    aspectRatio: 1,
+    marginRight: 8,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: '#f5f5f5',
+  },
+  thumbnail: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#e8e8e8',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+  },
+  thumbnailError: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  errorIcon: {
+    fontSize: 32,
+    marginBottom: 4,
+  },
+  errorText: {
+    fontSize: 11,
+    color: '#999',
+    textAlign: 'center',
+  },
+})

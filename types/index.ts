@@ -18,6 +18,18 @@ export interface Recipe {
    * Defaults to 4 if not specified.
    */
   Servings?: number;
+  /**
+   * Google image URL selected for this recipe.
+   * Stored for deduplication tracking to prevent same image on multiple recipes.
+   * Used only as metadata, not for display (display uses recipe_key path).
+   */
+  image_url?: string | null;
+  /**
+   * Array of Google image search result URLs for image picker modal.
+   * Contains 9 candidate images for user selection.
+   * Populated when recipe pending image selection, cleared after selection.
+   */
+  image_search_results?: string[];
 }
 
 // Recipe Ingredients can be:

@@ -1,0 +1,114 @@
+/**
+ * ImagePickerModal Component
+ * Modal for selecting a recipe image from Google search results.
+ *
+ * Displays a 3x3 grid of thumbnail images, allowing user to:
+ * - Select a thumbnail to preview full-size
+ * - Confirm selection to apply image to recipe
+ * - Delete recipe entirely
+ * - Cancel without action
+ */
+
+import React, { useState } from 'react'
+import { Modal, View, StyleSheet } from 'react-native'
+import { Recipe } from '@/types/index'
+import { ImageGrid } from './ImageGrid'
+import { ImagePreview } from './ImagePreview'
+
+export interface ImagePickerModalProps {
+  /** Recipe being displayed for image selection */
+  recipe: Recipe | null;
+  /** Whether modal is visible */
+  isVisible: boolean;
+  /** Called when user selects an image URL to confirm */
+  onConfirm: (imageUrl: string) => void;
+  /** Called when user chooses to delete the recipe */
+  onDelete: () => void;
+  /** Called when user cancels without action */
+  onCancel: () => void;
+}
+
+/**
+ * ImagePickerModal displays recipe image selection flow.
+ *
+ * States:
+ * - Grid View: Shows 3x3 grid of 9 image thumbnails
+ * - Preview View: Shows full-size image with confirm button
+ */
+export const ImagePickerModal: React.FC<ImagePickerModalProps> = ({
+  recipe,
+  isVisible,
+  onConfirm,
+  onDelete,
+  onCancel,
+}) => {
+  // Track selected image URL (null = grid view, set = preview view)
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null)
+
+  // Reset state when modal closes
+  const handleCancel = () => {
+    setSelectedImageUrl(null)
+    onCancel()
+  }
+
+  // Handle image selection from grid
+  const handleSelectImage = (imageUrl: string) => {
+    setSelectedImageUrl(imageUrl)
+  }
+
+  // Handle back from preview to grid
+  const handleBackToGrid = () => {
+    setSelectedImageUrl(null)
+  }
+
+  // Handle confirm selection
+  const handleConfirm = (imageUrl: string) => {
+    setSelectedImageUrl(null)
+    onConfirm(imageUrl)
+  }
+
+  // Handle delete recipe
+  const handleDelete = () => {
+    setSelectedImageUrl(null)
+    onDelete()
+  }
+
+  if (!recipe || !recipe.image_search_results || recipe.image_search_results.length === 0) {
+    return null
+  }
+
+  return (
+    <Modal
+      visible={isVisible}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={handleCancel}
+    >
+      <View style={styles.container}>
+        {selectedImageUrl === null ? (
+          // Grid view - show thumbnail selection
+          <ImageGrid
+            recipeTitle={recipe.Title}
+            imageUrls={recipe.image_search_results}
+            onSelectImage={handleSelectImage}
+            onDelete={handleDelete}
+            onCancel={handleCancel}
+          />
+        ) : (
+          // Preview view - show full-size image with confirm button
+          <ImagePreview
+            imageUrl={selectedImageUrl}
+            onConfirm={handleConfirm}
+            onBack={handleBackToGrid}
+          />
+        )}
+      </View>
+    </Modal>
+  )
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+})
