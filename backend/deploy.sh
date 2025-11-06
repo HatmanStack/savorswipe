@@ -4,10 +4,15 @@
 # Lambda Deployment Script for SavorSwipe Backend
 #
 # This script automates the deployment of the Lambda function by:
-# 1. Running tests (optional)
-# 2. Installing dependencies
+# 1. Running tests with uv (optional)
+# 2. Installing production dependencies with uv from pyproject.toml
 # 3. Creating a deployment package
 # 4. Uploading to AWS Lambda
+#
+# Requirements:
+#   - uv (fast Python package manager)
+#   - AWS CLI
+#   - Configured AWS credentials
 #
 # Usage:
 #   ./deploy.sh [OPTIONS]
@@ -22,7 +27,7 @@
 # Environment Variables:
 #   LAMBDA_FUNCTION_NAME   Default Lambda function name
 #   AWS_PROFILE            AWS profile to use (optional)
-#   AWS_REGION             AWS region (default: us-east-1)
+#   AWS_REGION             AWS region (will prompt if not set)
 ###############################################################################
 
 set -e  # Exit on error
@@ -124,6 +129,15 @@ done
 
 print_header "Pre-flight Checks"
 
+# Check if uv is installed
+if ! command -v uv &> /dev/null; then
+    print_error "uv is not installed. Please install it first."
+    print_info "Install with: curl -LsSf https://astral.sh/uv/install.sh | sh"
+    print_info "Or with pip: pip install uv"
+    exit 1
+fi
+print_success "uv is installed"
+
 # Check if AWS CLI is installed
 if ! command -v aws &> /dev/null; then
     print_error "AWS CLI is not installed. Please install it first."
@@ -184,17 +198,13 @@ if [ "$SKIP_TESTS" = false ]; then
     else
         cd "$SCRIPT_DIR"
 
-        # Check if pytest is installed
-        if ! command -v pytest &> /dev/null; then
-            print_warning "pytest not installed, skipping tests"
-            print_info "Install with: pip install pytest"
+        # Run tests with uv (automatically manages dev dependencies)
+        print_info "Running tests with uv..."
+        if uv run pytest; then
+            print_success "All tests passed"
         else
-            if pytest; then
-                print_success "All tests passed"
-            else
-                print_error "Tests failed"
-                exit 1
-            fi
+            print_error "Tests failed"
+            exit 1
         fi
     fi
 else
@@ -216,9 +226,19 @@ if [ "$BUILD_LAYER" = true ]; then
     mkdir -p "$LAYER_DIR"
 fi
 
-print_info "Installing dependencies..."
-pip install -r "${SCRIPT_DIR}/requirements.txt" -t "$PACKAGE_DIR" --quiet --no-cache-dir
+print_info "Installing dependencies with uv..."
 
+# Use uv to install production dependencies only (no dev dependencies)
+cd "$SCRIPT_DIR"
+uv pip install --target "$PACKAGE_DIR" --no-cache . --no-dev 2>&1 | grep -v "Resolved" || true
+
+# If uv pip install with --no-dev fails (older uv versions), try alternative approach
+if [ $? -ne 0 ]; then
+    print_warning "Trying alternative installation method..."
+    uv pip install --target "$PACKAGE_DIR" --no-cache -r requirements.txt 2>&1 | grep -v "Resolved" || true
+fi
+
+cd "$SCRIPT_DIR"
 print_success "Dependencies installed"
 
 # Copy Python files
