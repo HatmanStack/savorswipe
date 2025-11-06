@@ -206,7 +206,8 @@ def handle_get_request(event, context):
         return {
             'statusCode': 500,
             'headers': {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
             },
             'body': json.dumps({'error': 'S3_BUCKET environment variable not set'})
         }
@@ -240,7 +241,8 @@ def handle_get_request(event, context):
             return {
                 'statusCode': 404,
                 'headers': {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
                 },
                 'body': json.dumps({'error': f'File not found: {json_key}'})
             }
@@ -249,7 +251,8 @@ def handle_get_request(event, context):
             return {
                 'statusCode': 500,
                 'headers': {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
                 },
                 'body': json.dumps({'error': f'Failed to fetch recipes: {str(e)}'})
             }
@@ -259,7 +262,8 @@ def handle_get_request(event, context):
         return {
             'statusCode': 500,
             'headers': {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
             },
             'body': json.dumps({'error': f'Failed to fetch recipes: {str(e)}'})
         }
