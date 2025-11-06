@@ -106,13 +106,6 @@ export function useImageQueue(): ImageQueueHook {
     nextImageRef.current = nextImage;
   }, [nextImage]);
 
-  // Effect: Update recipe context when currentImage changes
-  useEffect(() => {
-    if (currentImage) {
-      updateCurrentRecipe(currentImage);
-    }
-  }, [currentImage, updateCurrentRecipe]);
-
   // Internal helper to update current recipe in context
   const updateCurrentRecipe = useCallback((image: ImageFile) => {
     if (!jsonData) return;
@@ -124,6 +117,13 @@ export function useImageQueue(): ImageQueueHook {
       setCurrentRecipe({ ...recipe, key: recipeKey });
     }
   }, [jsonData, setCurrentRecipe]);
+
+  // Effect: Update recipe context when currentImage changes
+  useEffect(() => {
+    if (currentImage) {
+      updateCurrentRecipe(currentImage);
+    }
+  }, [currentImage, updateCurrentRecipe]);
 
   // Reset pending recipe state
   const resetPendingRecipe = useCallback(() => {
