@@ -13,10 +13,11 @@
 #   - AWS CLI configured
 #
 # Usage:
-#   ./deploy-codebuild.sh [--create-stack]
+#   ./deploy-codebuild.sh [--create-stack] [--force]
 #
 # Options:
 #   --create-stack    Create stack for first time (will prompt for parameters)
+#   --force           Delete existing stack and recreate (use with --create-stack)
 ###############################################################################
 
 set -e
@@ -42,12 +43,17 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STACK_NAME="${STACK_NAME:-savorswipe-backend}"
 REGION="${AWS_REGION:-us-west-2}"
 CREATE_STACK=false
+FORCE=false
 
 # Parse arguments
 for arg in "$@"; do
     case $arg in
         --create-stack)
             CREATE_STACK=true
+            shift
+            ;;
+        --force)
+            FORCE=true
             shift
             ;;
     esac
@@ -67,6 +73,30 @@ if ! aws sts get-caller-identity &> /dev/null; then
 fi
 
 print_success "AWS CLI configured"
+
+# Force delete if requested
+if [ "$FORCE" = true ]; then
+    print_header "Force Deleting Existing Stack"
+
+    if aws cloudformation describe-stacks \
+        --stack-name "$STACK_NAME" \
+        --region "$REGION" &> /dev/null; then
+
+        print_warning "Deleting existing stack: ${STACK_NAME}"
+        aws cloudformation delete-stack \
+            --stack-name "$STACK_NAME" \
+            --region "$REGION"
+
+        print_info "Waiting for stack deletion..."
+        aws cloudformation wait stack-delete-complete \
+            --stack-name "$STACK_NAME" \
+            --region "$REGION"
+
+        print_success "Stack deleted"
+    else
+        print_info "No existing stack to delete"
+    fi
+fi
 
 # Create stack if needed
 if [ "$CREATE_STACK" = true ]; then
