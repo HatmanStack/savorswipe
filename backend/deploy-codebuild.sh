@@ -127,6 +127,20 @@ if [ "$CREATE_STACK" = true ]; then
     read -p "Recipe S3 Bucket (default: savorswipe-recipes): " RECIPE_BUCKET
     RECIPE_BUCKET="${RECIPE_BUCKET:-savorswipe-recipes}"
 
+    # Create a temporary dummy Lambda package for initial stack creation
+    print_info "Creating placeholder Lambda package..."
+    TEMP_DIR=$(mktemp -d)
+    cat > "$TEMP_DIR/lambda_function.py" << 'EOF'
+def lambda_handler(event, context):
+    return {
+        'statusCode': 503,
+        'body': 'Function is being deployed. Please try again in a few minutes.'
+    }
+EOF
+    cd "$TEMP_DIR"
+    zip -q lambda-function.zip lambda_function.py
+    DUMMY_ZIP="$TEMP_DIR/lambda-function.zip"
+
     print_info "Creating stack: ${STACK_NAME}"
     aws cloudformation create-stack \
         --stack-name "$STACK_NAME" \
@@ -139,12 +153,97 @@ if [ "$CREATE_STACK" = true ]; then
             ParameterKey=GoogleSearchKey,ParameterValue="$GOOGLE_SEARCH_KEY" \
             ParameterKey=RecipeBucketName,ParameterValue="$RECIPE_BUCKET"
 
+    # Upload dummy package immediately so Lambda creation succeeds
+    print_info "Waiting for S3 bucket to be created..."
+    sleep 10  # Give CloudFormation time to create the bucket
+
+    # Try to get bucket name and upload dummy package
+    for i in {1..30}; do
+        BUILD_BUCKET=$(aws cloudformation describe-stack-resources \
+            --stack-name "$STACK_NAME" \
+            --region "$REGION" \
+            --logical-resource-id BuildBucket \
+            --query 'StackResources[0].PhysicalResourceId' \
+            --output text 2>/dev/null || echo "")
+
+        if [ -n "$BUILD_BUCKET" ] && [ "$BUILD_BUCKET" != "None" ]; then
+            print_info "Uploading placeholder to s3://${BUILD_BUCKET}/lambda-function.zip"
+            aws s3 cp "$DUMMY_ZIP" "s3://${BUILD_BUCKET}/lambda-function.zip" --region "$REGION"
+            break
+        fi
+        sleep 2
+    done
+
+    rm -rf "$TEMP_DIR"
+
     print_info "Waiting for stack creation to complete..."
     aws cloudformation wait stack-create-complete \
         --stack-name "$STACK_NAME" \
         --region "$REGION"
 
     print_success "Stack created successfully"
+
+    # Get the Build Bucket name
+    BUILD_BUCKET=$(aws cloudformation describe-stacks \
+        --stack-name "$STACK_NAME" \
+        --region "$REGION" \
+        --query 'Stacks[0].Outputs[?OutputKey==`BuildBucket`].OutputValue' \
+        --output text)
+
+    # Upload initial source and trigger first build
+    print_header "Initial Build"
+    print_info "Uploading source code..."
+    cd "$SCRIPT_DIR"
+    zip -r9q /tmp/source.zip *.py requirements.txt buildspec.yml
+    aws s3 cp /tmp/source.zip "s3://${BUILD_BUCKET}/source.zip" --region "$REGION"
+    rm /tmp/source.zip
+    print_success "Source uploaded"
+
+    # Trigger CodeBuild to create initial lambda package
+    PROJECT_NAME=$(aws cloudformation describe-stacks \
+        --stack-name "$STACK_NAME" \
+        --region "$REGION" \
+        --query 'Stacks[0].Outputs[?OutputKey==`CodeBuildProject`].OutputValue' \
+        --output text)
+
+    print_info "Starting initial build..."
+    BUILD_ID=$(aws codebuild start-build \
+        --project-name "$PROJECT_NAME" \
+        --region "$REGION" \
+        --query 'build.id' \
+        --output text)
+
+    print_info "Waiting for build to complete..."
+    BUILD_STATUS=""
+    while [ "$BUILD_STATUS" != "SUCCEEDED" ] && [ "$BUILD_STATUS" != "FAILED" ]; do
+        sleep 10
+        BUILD_STATUS=$(aws codebuild batch-get-builds \
+            --ids "$BUILD_ID" \
+            --region "$REGION" \
+            --query 'builds[0].buildStatus' \
+            --output text)
+        echo -n "."
+    done
+    echo ""
+
+    if [ "$BUILD_STATUS" = "SUCCEEDED" ]; then
+        print_success "Initial build complete"
+
+        # Update Lambda with built code
+        aws lambda update-function-code \
+            --function-name savorswipe-recipe-add \
+            --s3-bucket "$BUILD_BUCKET" \
+            --s3-key lambda-function.zip \
+            --region "$REGION" > /dev/null
+
+        aws lambda wait function-updated \
+            --function-name savorswipe-recipe-add \
+            --region "$REGION"
+
+        print_success "Lambda function updated with built code"
+    else
+        print_error "Initial build failed"
+    fi
 fi
 
 # Check if stack exists
