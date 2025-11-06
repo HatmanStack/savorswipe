@@ -138,8 +138,12 @@ fi
 PYTHON_VERSION=$(python3 --version | cut -d' ' -f2)
 print_success "Python ${PYTHON_VERSION} is installed"
 
-# Check if pip is installed (try multiple methods)
-if command -v pip &> /dev/null; then
+# Check if we're in a uv-managed environment or standard venv
+if command -v uv &> /dev/null && [ -f "${SCRIPT_DIR}/uv.lock" ]; then
+    # uv is available and we have a uv.lock file - use uv pip
+    PIP_CMD="uv pip"
+    print_success "uv is installed (will use 'uv pip')"
+elif command -v pip &> /dev/null; then
     PIP_CMD="pip"
     print_success "pip is installed"
 elif command -v pip3 &> /dev/null; then
@@ -149,7 +153,9 @@ elif python3 -m pip --version &> /dev/null 2>&1; then
     PIP_CMD="python3 -m pip"
     print_success "pip (via python3 -m pip) is installed"
 else
-    print_error "pip is not installed. Please install it first."
+    print_error "Neither pip nor uv is available. Please install one of them."
+    print_info "For uv: curl -LsSf https://astral.sh/uv/install.sh | sh"
+    print_info "For pip: python3 -m ensurepip"
     exit 1
 fi
 
@@ -222,8 +228,18 @@ if [ "$SKIP_TESTS" = false ]; then
     else
         cd "$SCRIPT_DIR"
 
-        # Check if we're in a virtual environment
-        if [ -n "$VIRTUAL_ENV" ]; then
+        # Check if we're in a uv environment or standard virtual environment
+        if [[ "$PIP_CMD" == "uv pip" ]]; then
+            print_info "Running tests with uv..."
+
+            # Use uv run to execute pytest
+            if uv run pytest; then
+                print_success "All tests passed"
+            else
+                print_error "Tests failed"
+                exit 1
+            fi
+        elif [ -n "$VIRTUAL_ENV" ]; then
             print_info "Using active virtual environment: $VIRTUAL_ENV"
 
             # Run tests directly
