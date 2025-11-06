@@ -39,7 +39,7 @@ SKIP_TESTS=false
 DRY_RUN=false
 BUILD_LAYER=false
 FUNCTION_NAME="${LAMBDA_FUNCTION_NAME:-}"
-AWS_REGION="${AWS_REGION:-us-east-1}"
+AWS_REGION="${AWS_REGION:-}"  # Will prompt if empty
 AWS_PROFILE_ARG=""
 
 # Script directory
@@ -139,6 +139,12 @@ if ! aws sts get-caller-identity ${AWS_PROFILE_ARG} &> /dev/null; then
     exit 1
 fi
 print_success "AWS credentials are valid"
+
+# Prompt for region if not provided
+if [ -z "$AWS_REGION" ]; then
+    read -p "Enter AWS region (default: us-east-1): " INPUT_REGION
+    AWS_REGION="${INPUT_REGION:-us-east-1}"
+fi
 
 # Get function name if not provided
 if [ -z "$FUNCTION_NAME" ] && [ "$BUILD_LAYER" = false ]; then
