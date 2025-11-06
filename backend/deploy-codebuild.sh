@@ -76,8 +76,21 @@ print_success "AWS CLI configured"
 
 # Force delete if requested
 if [ "$FORCE" = true ]; then
-    print_header "Force Deleting Existing Stack"
+    print_header "Force Deleting Existing Resources"
 
+    # Delete Lambda function if it exists
+    if aws lambda get-function \
+        --function-name savorswipe-recipe-add \
+        --region "$REGION" &> /dev/null; then
+
+        print_warning "Deleting existing Lambda function: savorswipe-recipe-add"
+        aws lambda delete-function \
+            --function-name savorswipe-recipe-add \
+            --region "$REGION"
+        print_success "Lambda function deleted"
+    fi
+
+    # Delete CloudFormation stack if it exists
     if aws cloudformation describe-stacks \
         --stack-name "$STACK_NAME" \
         --region "$REGION" &> /dev/null; then
