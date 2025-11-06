@@ -198,7 +198,10 @@ if [ "$SKIP_TESTS" = false ]; then
     else
         cd "$SCRIPT_DIR"
 
-        # Run tests with uv (automatically manages dev dependencies)
+        # Sync dev dependencies and run tests with uv
+        print_info "Syncing dev dependencies..."
+        uv sync --dev --quiet 2>&1 | grep -v "Resolved" || true
+
         print_info "Running tests with uv..."
         if uv run pytest; then
             print_success "All tests passed"
