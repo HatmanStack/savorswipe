@@ -10,7 +10,7 @@
 # 4. Uploading to AWS Lambda
 #
 # Requirements:
-#   - Python 3.9+
+#   - Python 3.13+
 #   - AWS CLI
 #   - Configured AWS credentials
 #   - zip command
@@ -295,7 +295,7 @@ if command -v docker &> /dev/null; then
     docker run --rm \
         -v "$SCRIPT_DIR:/var/task" \
         -v "$PACKAGE_DIR:/var/output" \
-        public.ecr.aws/lambda/python:3.9 \
+        public.ecr.aws/lambda/python:3.13 \
         bash -c "pip install -r /var/task/requirements.txt -t /var/output --quiet --upgrade"
 
     print_success "Dependencies installed (Lambda-compatible)"
