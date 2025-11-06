@@ -76,7 +76,7 @@ Resources:
         Type: S3
         Location: !Ref BuildBucket
         Name: lambda-function.zip
-        Packaging: ZIP
+        Packaging: NONE
       Environment:
         Type: LINUX_CONTAINER
         ComputeType: BUILD_GENERAL1_SMALL
