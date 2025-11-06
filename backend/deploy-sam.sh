@@ -74,13 +74,33 @@ cd "$SCRIPT_DIR"
 
 # Build
 print_header "Building Lambda Function"
-print_info "SAM will automatically install dependencies in Lambda-compatible environment..."
+print_info "Building Lambda function and installing dependencies..."
 
-if sam build --use-container; then
-    print_success "Build completed successfully"
+# Check if we should use container (from samconfig or env var)
+USE_CONTAINER=${USE_CONTAINER:-false}
+if [ -f "samconfig.toml" ]; then
+    if grep -q "use_container = true" samconfig.toml 2>/dev/null; then
+        USE_CONTAINER=true
+    fi
+fi
+
+if [ "$USE_CONTAINER" = true ]; then
+    print_info "Using Docker container for Lambda-compatible build..."
+    if sam build --use-container; then
+        print_success "Build completed successfully"
+    else
+        print_error "Build failed"
+        exit 1
+    fi
 else
-    print_error "Build failed"
-    exit 1
+    print_warning "Building locally (not using Docker)"
+    print_info "If you encounter binary dependency issues (pydantic_core), set use_container=true in samconfig.toml"
+    if sam build; then
+        print_success "Build completed successfully"
+    else
+        print_error "Build failed"
+        exit 1
+    fi
 fi
 
 # Deploy

@@ -20,4 +20,7 @@ parameter_overrides = [
 ]
 
 [default.build.parameters]
-use_container = true
+# Set to true if you have Docker and want Lambda-compatible builds
+# Set to false to build locally (faster but may have compatibility issues)
+use_container = false
+
