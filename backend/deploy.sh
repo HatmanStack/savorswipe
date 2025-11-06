@@ -138,12 +138,20 @@ fi
 PYTHON_VERSION=$(python3 --version | cut -d' ' -f2)
 print_success "Python ${PYTHON_VERSION} is installed"
 
-# Check if pip is installed
-if ! python3 -m pip --version &> /dev/null; then
+# Check if pip is installed (try multiple methods)
+if command -v pip &> /dev/null; then
+    PIP_CMD="pip"
+    print_success "pip is installed"
+elif command -v pip3 &> /dev/null; then
+    PIP_CMD="pip3"
+    print_success "pip3 is installed"
+elif python3 -m pip --version &> /dev/null 2>&1; then
+    PIP_CMD="python3 -m pip"
+    print_success "pip (via python3 -m pip) is installed"
+else
     print_error "pip is not installed. Please install it first."
     exit 1
 fi
-print_success "pip is installed"
 
 # Check if zip is installed
 if ! command -v zip &> /dev/null; then
@@ -259,9 +267,9 @@ fi
 
 print_info "Installing dependencies from requirements.txt..."
 
-# Install dependencies using pip
+# Install dependencies using pip (use the detected pip command)
 cd "$SCRIPT_DIR"
-python3 -m pip install -r requirements.txt -t "$PACKAGE_DIR" --quiet --upgrade
+$PIP_CMD install -r requirements.txt -t "$PACKAGE_DIR" --quiet --upgrade
 
 print_success "Dependencies installed"
 
