@@ -6,7 +6,7 @@ phases:
       python: 3.9
     commands:
       - echo "Installing Lambda-compatible dependencies..."
-      - pip install -r requirements.txt -t build/ --platform manylinux2014_x86_64 --only-binary=:all:
+      - pip install -r requirements.txt -t build/ --platform manylinux2014_x86_64 --only-binary=':all:'
 
   build:
     commands:

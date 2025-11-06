@@ -90,10 +90,24 @@ if [ "$FORCE" = true ]; then
         print_success "Lambda function deleted"
     fi
 
-    # Delete CloudFormation stack if it exists
+    # Empty and delete BuildBucket if stack exists
     if aws cloudformation describe-stacks \
         --stack-name "$STACK_NAME" \
         --region "$REGION" &> /dev/null; then
+
+        # Get BuildBucket name before deleting stack
+        BUILD_BUCKET=$(aws cloudformation describe-stack-resources \
+            --stack-name "$STACK_NAME" \
+            --region "$REGION" \
+            --logical-resource-id BuildBucket \
+            --query 'StackResources[0].PhysicalResourceId' \
+            --output text 2>/dev/null || echo "")
+
+        if [ -n "$BUILD_BUCKET" ] && [ "$BUILD_BUCKET" != "None" ]; then
+            print_warning "Emptying S3 bucket: ${BUILD_BUCKET}"
+            aws s3 rm "s3://${BUILD_BUCKET}" --recursive --region "$REGION" 2>/dev/null || true
+            print_success "Bucket emptied"
+        fi
 
         print_warning "Deleting existing stack: ${STACK_NAME}"
         aws cloudformation delete-stack \
@@ -101,11 +115,30 @@ if [ "$FORCE" = true ]; then
             --region "$REGION"
 
         print_info "Waiting for stack deletion..."
-        aws cloudformation wait stack-delete-complete \
+        if ! aws cloudformation wait stack-delete-complete \
             --stack-name "$STACK_NAME" \
-            --region "$REGION"
+            --region "$REGION" 2>/dev/null; then
 
-        print_success "Stack deleted"
+            print_warning "Stack deletion encountered issues, checking status..."
+
+            # If deletion failed, try to manually clean up and delete again
+            if [ -n "$BUILD_BUCKET" ] && [ "$BUILD_BUCKET" != "None" ]; then
+                print_info "Attempting to delete bucket manually..."
+                aws s3 rb "s3://${BUILD_BUCKET}" --force --region "$REGION" 2>/dev/null || true
+            fi
+
+            # Force delete the stack
+            print_info "Retrying stack deletion..."
+            aws cloudformation delete-stack \
+                --stack-name "$STACK_NAME" \
+                --region "$REGION"
+
+            aws cloudformation wait stack-delete-complete \
+                --stack-name "$STACK_NAME" \
+                --region "$REGION" 2>/dev/null || true
+        fi
+
+        print_success "Stack cleanup complete"
     else
         print_info "No existing stack to delete"
     fi
