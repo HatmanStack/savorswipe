@@ -148,6 +148,7 @@ Resources:
           - GET
           - POST
           - DELETE
+          - OPTIONS
         AllowHeaders:
           - "*"
         MaxAge: 300
