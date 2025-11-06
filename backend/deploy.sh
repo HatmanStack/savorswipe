@@ -286,17 +286,35 @@ print_info "Installing dependencies from requirements.txt..."
 # Install dependencies using the appropriate method for uv or pip
 cd "$SCRIPT_DIR"
 
-if [[ "$PIP_CMD" == "uv pip" ]]; then
-    # uv pip install uses --target instead of -t, but it works differently
-    # Use --python to install to a specific location
-    print_info "Using uv to install dependencies..."
-    uv pip install -r requirements.txt --target "$PACKAGE_DIR" --quiet
+# Check if Docker is available for Lambda-compatible builds
+if command -v docker &> /dev/null; then
+    print_info "Using Docker to build Lambda-compatible dependencies..."
+
+    # Use AWS Lambda Python runtime image to install dependencies
+    # This ensures binary packages (like pydantic) are compiled for Lambda
+    docker run --rm \
+        -v "$SCRIPT_DIR:/var/task" \
+        -v "$PACKAGE_DIR:/var/output" \
+        public.ecr.aws/lambda/python:3.9 \
+        bash -c "pip install -r /var/task/requirements.txt -t /var/output --quiet --upgrade"
+
+    print_success "Dependencies installed (Lambda-compatible)"
 else
-    # Standard pip with -t flag
-    $PIP_CMD install -r requirements.txt -t "$PACKAGE_DIR" --quiet --upgrade
+    print_warning "Docker not found - installing locally (may not work for binary dependencies)"
+
+    if [[ "$PIP_CMD" == "uv pip" ]]; then
+        # uv pip install uses --target instead of -t
+        print_info "Using uv to install dependencies..."
+        uv pip install -r requirements.txt --target "$PACKAGE_DIR" --quiet
+    else
+        # Standard pip with -t flag
+        $PIP_CMD install -r requirements.txt -t "$PACKAGE_DIR" --quiet --upgrade
+    fi
+
+    print_warning "If deployment fails, install Docker for Lambda-compatible builds"
 fi
 
-print_success "Dependencies installed"
+print_success "Dependencies packaged"
 
 # Copy Python files
 print_info "Copying Lambda function files..."
