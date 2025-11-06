@@ -73,12 +73,6 @@ if [ "$CREATE_STACK" = true ]; then
     print_header "Creating CloudFormation Stack"
 
     # Prompt for parameters
-    read -p "GitHub Repository URL (default: https://github.com/HatmanStack/savorswipe.git): " GITHUB_REPO
-    GITHUB_REPO="${GITHUB_REPO:-https://github.com/HatmanStack/savorswipe.git}"
-
-    read -p "GitHub Branch (default: main): " GITHUB_BRANCH
-    GITHUB_BRANCH="${GITHUB_BRANCH:-main}"
-
     read -sp "OpenAI API Key: " OPENAI_KEY
     echo
 
@@ -97,8 +91,6 @@ if [ "$CREATE_STACK" = true ]; then
         --template-body "file://${SCRIPT_DIR}/codebuild-template.yaml" \
         --capabilities CAPABILITY_IAM \
         --parameters \
-            ParameterKey=GitHubRepo,ParameterValue="$GITHUB_REPO" \
-            ParameterKey=GitHubBranch,ParameterValue="$GITHUB_BRANCH" \
             ParameterKey=OpenAIApiKey,ParameterValue="$OPENAI_KEY" \
             ParameterKey=GoogleSearchId,ParameterValue="$GOOGLE_SEARCH_ID" \
             ParameterKey=GoogleSearchKey,ParameterValue="$GOOGLE_SEARCH_KEY" \
@@ -122,6 +114,35 @@ if ! aws cloudformation describe-stacks \
 fi
 
 print_success "Stack '${STACK_NAME}' exists"
+
+# Get Build Bucket from stack
+BUILD_BUCKET=$(aws cloudformation describe-stacks \
+    --stack-name "$STACK_NAME" \
+    --region "$REGION" \
+    --query 'Stacks[0].Outputs[?OutputKey==`BuildBucket`].OutputValue' \
+    --output text)
+
+if [ -z "$BUILD_BUCKET" ]; then
+    print_error "Could not find BuildBucket in stack outputs"
+    exit 1
+fi
+
+print_success "Build Bucket: ${BUILD_BUCKET}"
+
+# Package source code
+print_header "Packaging Source Code"
+print_info "Creating source package..."
+cd "$SCRIPT_DIR"
+zip -r9q /tmp/source.zip *.py requirements.txt buildspec.yml
+
+print_success "Source packaged"
+
+# Upload to S3
+print_info "Uploading source to S3..."
+aws s3 cp /tmp/source.zip "s3://${BUILD_BUCKET}/source.zip" --region "$REGION"
+rm /tmp/source.zip
+
+print_success "Source uploaded to s3://${BUILD_BUCKET}/source.zip"
 
 # Get CodeBuild project name from stack
 print_header "Triggering CodeBuild"
@@ -174,17 +195,11 @@ fi
 # Update Lambda function with new code
 print_header "Updating Lambda Function"
 
-ARTIFACT_BUCKET=$(aws cloudformation describe-stacks \
-    --stack-name "$STACK_NAME" \
-    --region "$REGION" \
-    --query 'Stacks[0].Outputs[?OutputKey==`ArtifactBucket`].OutputValue' \
-    --output text)
-
-print_info "Updating Lambda from s3://${ARTIFACT_BUCKET}/lambda-function.zip"
+print_info "Updating Lambda from s3://${BUILD_BUCKET}/lambda-function.zip"
 
 aws lambda update-function-code \
     --function-name savorswipe-recipe-add \
-    --s3-bucket "$ARTIFACT_BUCKET" \
+    --s3-bucket "$BUILD_BUCKET" \
     --s3-key lambda-function.zip \
     --region "$REGION" \
     --output json > /dev/null

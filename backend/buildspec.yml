@@ -5,8 +5,8 @@ phases:
     runtime-versions:
       python: 3.9
     commands:
-      - echo "Installing dependencies..."
-      - pip install -r requirements.txt -t build/
+      - echo "Installing Lambda-compatible dependencies..."
+      - pip install -r requirements.txt -t build/ --platform manylinux2014_x86_64 --only-binary=:all:
 
   build:
     commands:
@@ -14,10 +14,10 @@ phases:
       - cp *.py build/
       - echo "Creating deployment package..."
       - cd build
-      - zip -r ../lambda-function.zip .
+      - zip -r9 ../lambda-function.zip .
       - cd ..
+      - ls -lh lambda-function.zip
 
 artifacts:
   files:
     - lambda-function.zip
-  name: lambda-deployment-$(date +%Y%m%d-%H%M%S)

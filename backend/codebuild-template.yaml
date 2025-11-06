@@ -2,16 +2,6 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: SavorSwipe Lambda with CodeBuild deployment pipeline
 
 Parameters:
-  GitHubRepo:
-    Type: String
-    Description: GitHub repository URL (https://github.com/user/repo.git)
-    Default: https://github.com/HatmanStack/savorswipe.git
-
-  GitHubBranch:
-    Type: String
-    Description: Git branch to build from
-    Default: main
-
   OpenAIApiKey:
     Type: String
     Description: OpenAI API Key
@@ -33,11 +23,10 @@ Parameters:
     Default: savorswipe-recipes
 
 Resources:
-  # S3 Bucket for CodeBuild artifacts
-  ArtifactBucket:
+  # S3 Bucket for source code and build artifacts
+  BuildBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub '${AWS::StackName}-artifacts-${AWS::AccountId}'
       VersioningConfiguration:
         Status: Enabled
       LifecycleConfiguration:
@@ -69,12 +58,12 @@ Resources:
                   - s3:GetObject
                   - s3:PutObject
                 Resource:
-                  - !Sub '${ArtifactBucket.Arn}/*'
+                  - !Sub '${BuildBucket.Arn}/*'
               - Effect: Allow
                 Action:
                   - s3:ListBucket
                 Resource:
-                  - !GetAtt ArtifactBucket.Arn
+                  - !GetAtt BuildBucket.Arn
 
   # CodeBuild Project
   LambdaBuildProject:
@@ -85,7 +74,7 @@ Resources:
       ServiceRole: !GetAtt CodeBuildRole.Arn
       Artifacts:
         Type: S3
-        Location: !Ref ArtifactBucket
+        Location: !Ref BuildBucket
         Name: lambda-function.zip
         Packaging: ZIP
       Environment:
@@ -93,11 +82,8 @@ Resources:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/standard:5.0
       Source:
-        Type: GITHUB
-        Location: !Ref GitHubRepo
-        GitCloneDepth: 1
-        BuildSpec: backend/buildspec.yml
-      SourceVersion: !Sub 'refs/heads/${GitHubBranch}'
+        Type: S3
+        Location: !Sub '${BuildBucket}/source.zip'
       TimeoutInMinutes: 10
 
   # Lambda Execution Role
@@ -137,7 +123,7 @@ Resources:
       Handler: lambda_function.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Code:
-        S3Bucket: !Ref ArtifactBucket
+        S3Bucket: !Ref BuildBucket
         S3Key: lambda-function.zip
       Description: Multi-file recipe processing with OCR and image search
       MemorySize: 1024
@@ -162,7 +148,6 @@ Resources:
           - GET
           - POST
           - DELETE
-          - OPTIONS
         AllowHeaders:
           - "*"
         MaxAge: 300
@@ -181,9 +166,9 @@ Outputs:
     Description: CodeBuild Project Name
     Value: !Ref LambdaBuildProject
 
-  ArtifactBucket:
-    Description: S3 Bucket for build artifacts
-    Value: !Ref ArtifactBucket
+  BuildBucket:
+    Description: S3 Bucket for source code and build artifacts
+    Value: !Ref BuildBucket
 
   FunctionName:
     Description: Lambda Function Name
