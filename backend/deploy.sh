@@ -283,9 +283,18 @@ fi
 
 print_info "Installing dependencies from requirements.txt..."
 
-# Install dependencies using pip (use the detected pip command)
+# Install dependencies using the appropriate method for uv or pip
 cd "$SCRIPT_DIR"
-$PIP_CMD install -r requirements.txt -t "$PACKAGE_DIR" --quiet --upgrade
+
+if [[ "$PIP_CMD" == "uv pip" ]]; then
+    # uv pip install uses --target instead of -t, but it works differently
+    # Use --python to install to a specific location
+    print_info "Using uv to install dependencies..."
+    uv pip install -r requirements.txt --target "$PACKAGE_DIR" --quiet
+else
+    # Standard pip with -t flag
+    $PIP_CMD install -r requirements.txt -t "$PACKAGE_DIR" --quiet --upgrade
+fi
 
 print_success "Dependencies installed"
 
