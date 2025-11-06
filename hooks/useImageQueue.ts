@@ -106,6 +106,13 @@ export function useImageQueue(): ImageQueueHook {
     nextImageRef.current = nextImage;
   }, [nextImage]);
 
+  // Effect: Update recipe context when currentImage changes
+  useEffect(() => {
+    if (currentImage) {
+      updateCurrentRecipe(currentImage);
+    }
+  }, [currentImage, updateCurrentRecipe]);
+
   // Internal helper to update current recipe in context
   const updateCurrentRecipe = useCallback((image: ImageFile) => {
     if (!jsonData) return;
@@ -369,7 +376,6 @@ export function useImageQueue(): ImageQueueHook {
       // Set current and next images
       if (allImages[0]) {
         setCurrentImage(allImages[0]);
-        updateCurrentRecipe(allImages[0]);
       }
 
       if (allImages[1]) {
@@ -383,7 +389,7 @@ export function useImageQueue(): ImageQueueHook {
         setIsLoading(false);
       }
     }
-  }, [jsonData, mealTypeFilters, updateCurrentRecipe]);
+  }, [jsonData, mealTypeFilters]);
 
   // Refill queue in background
   const refillQueue = useCallback(async () => {
@@ -456,10 +462,6 @@ export function useImageQueue(): ImageQueueHook {
             if (newQueue.length > 1) {
               setNextImage(newQueue[1]);
             }
-            // Update recipe context
-            if (newQueue[0]) {
-              updateCurrentRecipe(newQueue[0]);
-            }
             setIsLoading(false);
           }
 
@@ -475,7 +477,7 @@ export function useImageQueue(): ImageQueueHook {
     } finally {
       isRefillingRef.current = false;
     }
-  }, [jsonData, mealTypeFilters, updateCurrentRecipe]);
+  }, [jsonData, mealTypeFilters]);
 
   // Advance to next image in queue
   const advanceQueue = useCallback(() => {
@@ -501,11 +503,8 @@ export function useImageQueue(): ImageQueueHook {
       setCurrentImage(newCurrent);
       setNextImage(newNext);
 
-      // Update recipe in context if new current image exists
+      // Mark recipe as seen if exists
       if (newCurrent) {
-        updateCurrentRecipe(newCurrent);
-
-        // Mark recipe as seen
         const recipeKey = ImageService.getRecipeKeyFromFileName(newCurrent.filename);
         seenRecipeKeysRef.current.add(recipeKey);
         console.log('[QUEUE] Marked recipe as seen:', recipeKey, '- Total seen:', seenRecipeKeysRef.current.size);
@@ -513,7 +512,7 @@ export function useImageQueue(): ImageQueueHook {
 
       return newQueue;
     });
-  }, [updateCurrentRecipe]);
+  }, []);
 
   // Reset queue (called on filter change)
   const resetQueue = useCallback(async () => {
