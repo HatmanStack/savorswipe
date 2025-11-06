@@ -4,15 +4,16 @@
 # Lambda Deployment Script for SavorSwipe Backend
 #
 # This script automates the deployment of the Lambda function by:
-# 1. Running tests with uv (optional)
-# 2. Installing production dependencies with uv from pyproject.toml
+# 1. Running tests (optional)
+# 2. Installing production dependencies from requirements.txt
 # 3. Creating a deployment package
 # 4. Uploading to AWS Lambda
 #
 # Requirements:
-#   - uv (fast Python package manager)
+#   - Python 3.9+
 #   - AWS CLI
 #   - Configured AWS credentials
+#   - zip command
 #
 # Usage:
 #   ./deploy.sh [OPTIONS]
@@ -129,14 +130,29 @@ done
 
 print_header "Pre-flight Checks"
 
-# Check if uv is installed
-if ! command -v uv &> /dev/null; then
-    print_error "uv is not installed. Please install it first."
-    print_info "Install with: curl -LsSf https://astral.sh/uv/install.sh | sh"
-    print_info "Or with pip: pip install uv"
+# Check if Python is installed
+if ! command -v python3 &> /dev/null; then
+    print_error "Python 3 is not installed. Please install it first."
     exit 1
 fi
-print_success "uv is installed"
+PYTHON_VERSION=$(python3 --version | cut -d' ' -f2)
+print_success "Python ${PYTHON_VERSION} is installed"
+
+# Check if pip is installed
+if ! python3 -m pip --version &> /dev/null; then
+    print_error "pip is not installed. Please install it first."
+    exit 1
+fi
+print_success "pip is installed"
+
+# Check if zip is installed
+if ! command -v zip &> /dev/null; then
+    print_error "zip command is not found. Please install it first."
+    print_info "On Debian/Ubuntu: sudo apt-get install zip"
+    print_info "On macOS: zip is pre-installed"
+    exit 1
+fi
+print_success "zip command is available"
 
 # Check if AWS CLI is installed
 if ! command -v aws &> /dev/null; then
@@ -198,16 +214,28 @@ if [ "$SKIP_TESTS" = false ]; then
     else
         cd "$SCRIPT_DIR"
 
-        # Sync dev dependencies and run tests with uv
-        print_info "Syncing dev dependencies..."
-        uv sync --dev --quiet 2>&1 | grep -v "Resolved" || true
+        # Check if we're in a virtual environment
+        if [ -n "$VIRTUAL_ENV" ]; then
+            print_info "Using active virtual environment: $VIRTUAL_ENV"
 
-        print_info "Running tests with uv..."
-        if uv run pytest; then
-            print_success "All tests passed"
+            # Run tests directly
+            if python3 -m pytest; then
+                print_success "All tests passed"
+            else
+                print_error "Tests failed"
+                exit 1
+            fi
         else
-            print_error "Tests failed"
-            exit 1
+            print_warning "No virtual environment active"
+            print_info "Recommended: Activate your venv and run tests manually"
+            print_info "  source .venv/bin/activate && pytest"
+
+            read -p "Continue without running tests? (y/N): " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                print_error "Deployment cancelled"
+                exit 1
+            fi
         fi
     fi
 else
@@ -229,19 +257,12 @@ if [ "$BUILD_LAYER" = true ]; then
     mkdir -p "$LAYER_DIR"
 fi
 
-print_info "Installing dependencies with uv..."
+print_info "Installing dependencies from requirements.txt..."
 
-# Use uv to install production dependencies only (no dev dependencies)
+# Install dependencies using pip
 cd "$SCRIPT_DIR"
-uv pip install --target "$PACKAGE_DIR" --no-cache . --no-dev 2>&1 | grep -v "Resolved" || true
+python3 -m pip install -r requirements.txt -t "$PACKAGE_DIR" --quiet --upgrade
 
-# If uv pip install with --no-dev fails (older uv versions), try alternative approach
-if [ $? -ne 0 ]; then
-    print_warning "Trying alternative installation method..."
-    uv pip install --target "$PACKAGE_DIR" --no-cache -r requirements.txt 2>&1 | grep -v "Resolved" || true
-fi
-
-cd "$SCRIPT_DIR"
 print_success "Dependencies installed"
 
 # Copy Python files
