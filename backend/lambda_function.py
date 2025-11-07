@@ -385,8 +385,10 @@ def _validate_image_url_for_api(image_url: str) -> Tuple[bool, Optional[str]]:
 
     Checks:
     1. URL uses HTTPS scheme
-    2. Hostname is in whitelist (Google domains or CloudFront)
-    3. Hostname resolves to public IP (not private/reserved)
+    2. Hostname resolves to public IP (not private/reserved)
+
+    NOTE: No domain whitelist - SSRF protection is provided by public IP validation.
+    This allows Google Image Search results from any public website.
 
     Args:
         image_url: URL to validate
@@ -394,18 +396,6 @@ def _validate_image_url_for_api(image_url: str) -> Tuple[bool, Optional[str]]:
     Returns:
         Tuple of (is_valid, error_message) where error_message is None if valid
     """
-    # Whitelist of allowed domains for image sources
-    # Restricted to Google image CDN subdomains from Google Search results
-    # CloudFront or other CDN domains should be added explicitly when configured
-    ALLOWED_DOMAINS = {
-        'lh3.googleusercontent.com',
-        'lh4.googleusercontent.com',
-        'lh5.googleusercontent.com',
-        'lh6.googleusercontent.com',
-        'lh7.googleusercontent.com',
-        'images.google.com'
-    }
-
     try:
         parsed = urllib.parse.urlparse(image_url)
 
@@ -416,10 +406,6 @@ def _validate_image_url_for_api(image_url: str) -> Tuple[bool, Optional[str]]:
         hostname = parsed.hostname
         if not hostname:
             return False, "URL has no hostname"
-
-        # Check hostname is in whitelist
-        if hostname not in ALLOWED_DOMAINS:
-            return False, f"Hostname not whitelisted: {hostname}"
 
         # Resolve hostname to IP and check it's not private/reserved
         try:
