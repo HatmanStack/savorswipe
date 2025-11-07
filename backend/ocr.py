@@ -472,23 +472,33 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
 
   """
     json_string = json.dumps(recipes)
-    response = client.chat.completions.create(
-        model="gpt-4o",
-        response_format={ "type": "json_object" },
 
-        messages=[
-            {
-                "role": "system",
-                "content": parse_prompt
-            },
-            {
-                "role": "user",
-                "content": json_string
-            }
-        ],
-        temperature=0.0,
-        max_tokens=32768,  # Next highest tier - handles large batches of recipes
-    )
+    try:
+        print("[PARSEJSON] Calling OpenAI API...")
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            response_format={ "type": "json_object" },
+
+            messages=[
+                {
+                    "role": "system",
+                    "content": parse_prompt
+                },
+                {
+                    "role": "user",
+                    "content": json_string
+                }
+            ],
+            temperature=0.0,
+            max_tokens=32768,  # Next highest tier - handles large batches of recipes
+            timeout=30.0  # Add 30 second timeout
+        )
+        print("[PARSEJSON] OpenAI API call completed")
+    except Exception as e:
+        print(f"[PARSEJSON ERROR] OpenAI API call failed: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise
 
     # Parse the LLM response and normalize the recipe
     recipe_json = response.choices[0].message.content
