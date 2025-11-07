@@ -293,10 +293,11 @@ if command -v docker &> /dev/null; then
     # Use AWS Lambda Python runtime image to install dependencies
     # This ensures binary packages (like pydantic) are compiled for Lambda
     docker run --rm \
+        --entrypoint bash \
         -v "$SCRIPT_DIR:/var/task" \
         -v "$PACKAGE_DIR:/var/output" \
         public.ecr.aws/lambda/python:3.13 \
-        bash -c "pip install -r /var/task/requirements.txt -t /var/output --quiet --upgrade"
+        -c "pip install -r /var/task/requirements.txt -t /var/output --quiet --upgrade"
 
     print_success "Dependencies installed (Lambda-compatible)"
 else
