@@ -8,33 +8,55 @@ echo "SavorSwipe Lambda Deployment"
 echo "==================================="
 echo ""
 
-# Get region
-read -p "AWS Region (e.g., us-west-2): " AWS_REGION
+# Load from .env.deploy if it exists
+if [ -f ".env.deploy" ]; then
+    echo "Loading configuration from .env.deploy..."
+    export $(grep -v '^#' .env.deploy | xargs)
+fi
+
+# Get region (from env or prompt)
+if [ -z "$AWS_REGION" ]; then
+    read -p "AWS Region (e.g., us-west-2): " AWS_REGION
+fi
 if [ -z "$AWS_REGION" ]; then
     echo "Error: Region is required"
     exit 1
 fi
 
-# Get API keys
-read -sp "OpenAI API Key: " OPENAI_KEY
-echo ""
+# Get API keys (from env or prompt)
+if [ -z "$OPENAI_KEY" ]; then
+    read -sp "OpenAI API Key: " OPENAI_KEY
+    echo ""
+fi
 if [ -z "$OPENAI_KEY" ]; then
     echo "Error: OpenAI API Key is required"
     exit 1
 fi
 
-read -p "Google Search Engine ID: " GOOGLE_SEARCH_ID
+if [ -z "$GOOGLE_SEARCH_ID" ]; then
+    read -p "Google Search Engine ID: " GOOGLE_SEARCH_ID
+fi
 if [ -z "$GOOGLE_SEARCH_ID" ]; then
     echo "Error: Google Search ID is required"
     exit 1
 fi
 
-read -sp "Google Search API Key: " GOOGLE_SEARCH_KEY
-echo ""
+if [ -z "$GOOGLE_SEARCH_KEY" ]; then
+    read -sp "Google Search API Key: " GOOGLE_SEARCH_KEY
+    echo ""
+fi
 if [ -z "$GOOGLE_SEARCH_KEY" ]; then
     echo "Error: Google Search Key is required"
     exit 1
 fi
+
+echo ""
+echo "Using configuration:"
+echo "  Region: $AWS_REGION"
+echo "  OpenAI Key: ${OPENAI_KEY:0:8}..."
+echo "  Google Search ID: ${GOOGLE_SEARCH_ID:0:8}..."
+echo "  Google Search Key: ${GOOGLE_SEARCH_KEY:0:8}..."
+echo ""
 
 echo ""
 echo "Building Lambda function with Docker..."
