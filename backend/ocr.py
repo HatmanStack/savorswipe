@@ -490,7 +490,7 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
                 }
             ],
             temperature=0.0,
-            max_tokens=32768,  # Next highest tier - handles large batches of recipes
+            max_tokens=16384,  # GPT-4o maximum for completion tokens
             timeout=30.0  # Add 30 second timeout
         )
         print("[PARSEJSON] OpenAI API call completed")
