@@ -261,25 +261,34 @@ sam build --template template.yaml --use-container
 # Deploy with SAM
 print_info "Deploying to AWS..."
 
-# Build S3 bucket argument
-if [ -n "$S3_DEPLOY_BUCKET" ]; then
-    print_info "Using S3 deployment bucket: $S3_DEPLOY_BUCKET"
-    S3_ARG="--s3-bucket $S3_DEPLOY_BUCKET"
-else
-    print_info "Using SAM managed S3 bucket (auto-create)"
-    S3_ARG="--resolve-s3"
+# Check if deployment bucket is specified
+if [ -z "$S3_DEPLOY_BUCKET" ]; then
+    # Auto-generate bucket name based on stack and region
+    S3_DEPLOY_BUCKET="sam-deploy-${STACK_NAME}-${AWS_REGION}"
+    print_info "No deployment bucket specified, using: $S3_DEPLOY_BUCKET"
+
+    # Create bucket if it doesn't exist
+    if ! aws s3 ls "s3://${S3_DEPLOY_BUCKET}" --region "$AWS_REGION" 2>/dev/null; then
+        print_info "Creating S3 deployment bucket..."
+        aws s3 mb "s3://${S3_DEPLOY_BUCKET}" --region "$AWS_REGION"
+        print_success "Deployment bucket created: $S3_DEPLOY_BUCKET"
+    else
+        print_success "Deployment bucket exists: $S3_DEPLOY_BUCKET"
+    fi
 fi
+
+print_info "Using S3 deployment bucket: $S3_DEPLOY_BUCKET"
 
 sam deploy \
     --stack-name "$STACK_NAME" \
     --region "$AWS_REGION" \
+    --s3-bucket "$S3_DEPLOY_BUCKET" \
     --capabilities CAPABILITY_IAM \
     --parameter-overrides \
         OpenAIApiKey="$OPENAI_KEY" \
         GoogleSearchId="$GOOGLE_SEARCH_ID" \
         GoogleSearchKey="$GOOGLE_SEARCH_KEY" \
         S3BucketName="$S3_BUCKET" \
-    $S3_ARG \
     --no-confirm-changeset \
     --no-fail-on-empty-changeset
 
