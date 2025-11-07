@@ -852,11 +852,17 @@ def handle_post_request(event, context):
             'body': json.dumps({'returnMessage': 'No files provided in request'})
         }
 
+    print(f"[DEBUG] Body parsed successfully, contains {len(body.get('files', []))} files")
+
     files = body['files']
     job_id = body.get('jobId', str(uuid.uuid4()))
 
+    print(f"[DEBUG] Job ID: {job_id}, Files count: {len(files)}")
+
     # Initialize services
+    print("[DEBUG] Getting S3_BUCKET environment variable...")
     bucket_name = os.getenv('S3_BUCKET')
+    print(f"[DEBUG] S3_BUCKET = '{bucket_name}'")
     if not bucket_name:
         return {
             'statusCode': 500,
@@ -868,16 +874,26 @@ def handle_post_request(event, context):
 
     try:
         # Initialize embedding store and load existing embeddings
+        print("[DEBUG] Initializing EmbeddingStore...")
         embedding_store = EmbeddingStore(bucket_name)
+        print("[DEBUG] Loading existing embeddings...")
         existing_embeddings, _ = embedding_store.load_embeddings()
+        print(f"[DEBUG] Loaded {len(existing_embeddings)} existing embeddings")
 
         # Initialize embedding generator
+        print("[DEBUG] Initializing EmbeddingGenerator...")
         embedding_generator = EmbeddingGenerator()
+        print("[DEBUG] EmbeddingGenerator initialized")
 
         # Initialize duplicate detector
+        print("[DEBUG] Initializing DuplicateDetector...")
         duplicate_detector = DuplicateDetector(existing_embeddings)
+        print("[DEBUG] All services initialized successfully")
 
     except Exception as e:
+        print(f"[ERROR] Service initialization failed: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return {
             'statusCode': 500,
             'headers': {
@@ -891,11 +907,15 @@ def handle_post_request(event, context):
     all_recipes = []
     file_errors = []
 
+    print(f"[DEBUG] Starting file processing for {len(files)} files...")
+
     for file_idx, file_data in enumerate(files):
         try:
+            print(f"[DEBUG] Processing file {file_idx + 1}/{len(files)}...")
             # Get file data and type from frontend payload
             file_content = file_data.get('data', '')
             file_type = file_data.get('type', '').lower()
+            print(f"[DEBUG] File {file_idx}: type={file_type}, data_length={len(file_content)}")
 
             # Strip data URI prefix if present (e.g., "data:image/jpeg;base64,...")
             if file_content.startswith('data:'):
@@ -936,8 +956,11 @@ def handle_post_request(event, context):
                 base64_images = [file_content]
 
             # Extract recipes from images
-            for base64_image in base64_images:
+            print(f"[DEBUG] Extracting recipes from {len(base64_images)} image(s)...")
+            for img_idx, base64_image in enumerate(base64_images):
+                print(f"[DEBUG] Calling OCR for image {img_idx + 1}/{len(base64_images)}...")
                 recipe_json = ocr.extract_recipe_data(base64_image)
+                print(f"[DEBUG] OCR completed for image {img_idx + 1}, result: {len(str(recipe_json)) if recipe_json else 0} chars")
                 upload.upload_user_data('user_images_json', 'application/json', 'json', recipe_json, app_time)
 
                 if recipe_json is None:
@@ -960,6 +983,9 @@ def handle_post_request(event, context):
                     pass
 
         except Exception as e:
+            print(f"[ERROR] File {file_idx} extraction failed: {str(e)}")
+            import traceback
+            traceback.print_exc()
             file_errors.append({
                 'file': file_idx,
                 'title': 'unknown',
