@@ -232,6 +232,7 @@ sam deploy \
         GoogleSearchId="$GOOGLE_SEARCH_ID" \
         GoogleSearchKey="$GOOGLE_SEARCH_KEY" \
         S3BucketName="$S3_BUCKET" \
+    --resolve-s3 \
     --no-confirm-changeset \
     --no-fail-on-empty-changeset
 
