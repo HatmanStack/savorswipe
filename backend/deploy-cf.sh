@@ -63,8 +63,8 @@ if [ -z "$GOOGLE_SEARCH_KEY" ]; then
 fi
 
 if [ -z "$RECIPE_BUCKET" ]; then
-    read -p "Recipe S3 Bucket (default: savorswipe-recipes): " RECIPE_BUCKET
-    RECIPE_BUCKET="${RECIPE_BUCKET:-savorswipe-recipes}"
+    read -p "Recipe S3 Bucket (default: savorswipe-recipe): " RECIPE_BUCKET
+    RECIPE_BUCKET="${RECIPE_BUCKET:-savorswipe-recipe}"
 fi
 
 # Check prerequisites

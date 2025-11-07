@@ -20,7 +20,7 @@ Parameters:
   RecipeBucketName:
     Type: String
     Description: S3 Bucket name for recipe storage
-    Default: savorswipe-recipes
+    Default: savorswipe-recipe
 
 Resources:
   # S3 Bucket for source code and build artifacts

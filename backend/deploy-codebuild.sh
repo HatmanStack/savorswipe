@@ -157,8 +157,8 @@ if [ "$CREATE_STACK" = true ]; then
     read -sp "Google Search Key: " GOOGLE_SEARCH_KEY
     echo
 
-    read -p "Recipe S3 Bucket (default: savorswipe-recipes): " RECIPE_BUCKET
-    RECIPE_BUCKET="${RECIPE_BUCKET:-savorswipe-recipes}"
+    read -p "Recipe S3 Bucket (default: savorswipe-recipe): " RECIPE_BUCKET
+    RECIPE_BUCKET="${RECIPE_BUCKET:-savorswipe-recipe}"
 
     # Create a temporary dummy Lambda package for initial stack creation
     print_info "Creating placeholder Lambda package..."

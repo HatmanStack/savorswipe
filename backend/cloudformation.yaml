@@ -30,7 +30,7 @@ Parameters:
   RecipeBucketName:
     Type: String
     Description: S3 Bucket name for recipe storage
-    Default: savorswipe-recipes
+    Default: savorswipe-recipe
 
 Resources:
   # Lambda Execution Role
