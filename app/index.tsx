@@ -8,7 +8,7 @@ import { useImageQueue } from '@/hooks/useImageQueue';
 import { useResponsiveLayout } from '@/hooks';
 import { isNewRecipe } from '@/services/RecipeService';
 import NewRecipeBanner from '@/components/NewRecipeBanner';
-import ImagePickerModal from '@/components/ImagePickerModal';
+import { ImagePickerModal } from '@/components/ImagePickerModal';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const holderImg = require('@/assets/images/skillet.png');
 

@@ -149,19 +149,6 @@ def lambda_handler(event, context):
 
     print(f"[DEBUG] lambda_handler: Detected HTTP method: {http_method}, path: {request_path}")
 
-    # Handle CORS preflight OPTIONS request
-    if http_method == 'OPTIONS':
-        return {
-            'statusCode': 200,
-            'headers': {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type',
-                'Access-Control-Max-Age': '86400'
-            },
-            'body': ''
-        }
-
     if http_method == 'GET':
         return handle_get_request(event, context)
     elif http_method == 'DELETE':
@@ -226,10 +213,7 @@ def handle_get_request(event, context):
                 'Content-Type': 'application/json',
                 'Cache-Control': 'no-cache, no-store, must-revalidate',
                 'Pragma': 'no-cache',
-                'Expires': '0',
-                'Access-Control-Allow-Origin': '*',  # CORS support
-                'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type'
+                'Expires': '0'
             },
             'body': json_data
         }
@@ -241,7 +225,7 @@ def handle_get_request(event, context):
                 'statusCode': 404,
                 'headers': {
                     'Content-Type': 'application/json'
-                },
+            },
                 'body': json.dumps({'error': f'File not found: {json_key}'})
             }
         else:
@@ -250,7 +234,7 @@ def handle_get_request(event, context):
                 'statusCode': 500,
                 'headers': {
                     'Content-Type': 'application/json'
-                },
+            },
                 'body': json.dumps({'error': f'Failed to fetch recipes: {str(e)}'})
             }
 
@@ -305,8 +289,7 @@ def handle_delete_request(event, context):
         return {
             'statusCode': 400,
             'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Content-Type': 'application/json'
             },
             'body': json.dumps({
                 'success': False,
@@ -322,8 +305,7 @@ def handle_delete_request(event, context):
         return {
             'statusCode': 400,
             'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Content-Type': 'application/json'
             },
             'body': json.dumps({
                 'success': False,
@@ -348,9 +330,8 @@ def handle_delete_request(event, context):
             return {
                 'statusCode': 200,
                 'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
+                    'Content-Type': 'application/json'
+            },
                 'body': json.dumps({
                     'success': True,
                     'message': f'Recipe {recipe_key} deleted successfully'
@@ -364,9 +345,8 @@ def handle_delete_request(event, context):
                 return {
                     'statusCode': 200,
                     'headers': {
-                        'Content-Type': 'application/json',
-                        'Access-Control-Allow-Origin': '*'
-                    },
+                        'Content-Type': 'application/json'
+            },
                     'body': json.dumps({
                         'success': True,
                         'message': f'Recipe {recipe_key} was already deleted or not found'
@@ -377,9 +357,8 @@ def handle_delete_request(event, context):
                 return {
                     'statusCode': 500,
                     'headers': {
-                        'Content-Type': 'application/json',
-                        'Access-Control-Allow-Origin': '*'
-                    },
+                        'Content-Type': 'application/json'
+            },
                     'body': json.dumps({
                         'success': False,
                         'error': f'Failed to delete recipe: {error_message or "Unknown error"}'
@@ -391,8 +370,7 @@ def handle_delete_request(event, context):
         return {
             'statusCode': 500,
             'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Content-Type': 'application/json'
             },
             'body': json.dumps({
                 'success': False,
@@ -425,7 +403,7 @@ def _validate_image_url_for_api(image_url: str) -> Tuple[bool, Optional[str]]:
         'lh5.googleusercontent.com',
         'lh6.googleusercontent.com',
         'lh7.googleusercontent.com',
-        'images.google.com',
+        'images.google.com'
     }
 
     try:
@@ -509,8 +487,7 @@ def handle_post_image_request(event, context):
         return {
             'statusCode': 400,
             'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Content-Type': 'application/json'
             },
             'body': json.dumps({
                 'success': False,
@@ -535,8 +512,7 @@ def handle_post_image_request(event, context):
         return {
             'statusCode': 400,
             'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Content-Type': 'application/json'
             },
             'body': json.dumps({
                 'success': False,
@@ -550,8 +526,7 @@ def handle_post_image_request(event, context):
         return {
             'statusCode': 400,
             'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Content-Type': 'application/json'
             },
             'body': json.dumps({
                 'success': False,
@@ -566,8 +541,7 @@ def handle_post_image_request(event, context):
         return {
             'statusCode': 400,
             'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Content-Type': 'application/json'
             },
             'body': json.dumps({
                 'success': False,
@@ -588,9 +562,8 @@ def handle_post_image_request(event, context):
             return {
                 'statusCode': 404,
                 'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
+                    'Content-Type': 'application/json'
+            },
                 'body': json.dumps({
                     'success': False,
                     'error': 'Recipe not found'
@@ -603,9 +576,8 @@ def handle_post_image_request(event, context):
             return {
                 'statusCode': 400,
                 'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
+                    'Content-Type': 'application/json'
+            },
                 'body': json.dumps({
                     'success': False,
                     'error': 'Image URL is not from this recipe\'s search results'
@@ -616,8 +588,7 @@ def handle_post_image_request(event, context):
         return {
             'statusCode': 500,
             'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Content-Type': 'application/json'
             },
             'body': json.dumps({
                 'success': False,
@@ -638,9 +609,8 @@ def handle_post_image_request(event, context):
             return {
                 'statusCode': 500,
                 'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
+                    'Content-Type': 'application/json'
+            },
                 'body': json.dumps({
                     'success': False,
                     'error': 'Failed to fetch image from the provided URL'
@@ -657,9 +627,8 @@ def handle_post_image_request(event, context):
             return {
                 'statusCode': 500,
                 'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
+                    'Content-Type': 'application/json'
+            },
                 'body': json.dumps({
                     'success': False,
                     'error': f'Failed to upload image to S3: {error_msg}'
@@ -692,9 +661,8 @@ def handle_post_image_request(event, context):
                         return {
                             'statusCode': 404,
                             'headers': {
-                                'Content-Type': 'application/json',
-                                'Access-Control-Allow-Origin': '*'
-                            },
+                                'Content-Type': 'application/json'
+            },
                             'body': json.dumps({
                                 'success': False,
                                 'error': 'Recipe data not found'
@@ -704,9 +672,8 @@ def handle_post_image_request(event, context):
                         return {
                             'statusCode': 500,
                             'headers': {
-                                'Content-Type': 'application/json',
-                                'Access-Control-Allow-Origin': '*'
-                            },
+                                'Content-Type': 'application/json'
+            },
                             'body': json.dumps({
                                 'success': False,
                                 'error': f'Failed to load recipe data: {str(e)}'
@@ -719,9 +686,8 @@ def handle_post_image_request(event, context):
                     return {
                         'statusCode': 404,
                         'headers': {
-                            'Content-Type': 'application/json',
-                            'Access-Control-Allow-Origin': '*'
-                        },
+                            'Content-Type': 'application/json'
+            },
                         'body': json.dumps({
                             'success': False,
                             'error': f'Recipe {recipe_key} not found'
@@ -754,9 +720,8 @@ def handle_post_image_request(event, context):
                     return {
                         'statusCode': 200,
                         'headers': {
-                            'Content-Type': 'application/json',
-                            'Access-Control-Allow-Origin': '*'
-                        },
+                            'Content-Type': 'application/json'
+            },
                         'body': json.dumps({
                             'success': True,
                             'message': 'Image saved and recipe updated',
@@ -777,9 +742,8 @@ def handle_post_image_request(event, context):
                             return {
                                 'statusCode': 500,
                                 'headers': {
-                                    'Content-Type': 'application/json',
-                                    'Access-Control-Allow-Origin': '*'
-                                },
+                                    'Content-Type': 'application/json'
+            },
                                 'body': json.dumps({
                                     'success': False,
                                     'error': 'Failed to update recipe after multiple retries'
@@ -790,9 +754,8 @@ def handle_post_image_request(event, context):
                         return {
                             'statusCode': 500,
                             'headers': {
-                                'Content-Type': 'application/json',
-                                'Access-Control-Allow-Origin': '*'
-                            },
+                                'Content-Type': 'application/json'
+            },
                             'body': json.dumps({
                                 'success': False,
                                 'error': f'Failed to update recipe: {str(e)}'
@@ -804,9 +767,8 @@ def handle_post_image_request(event, context):
                 return {
                     'statusCode': 500,
                     'headers': {
-                        'Content-Type': 'application/json',
-                        'Access-Control-Allow-Origin': '*'
-                    },
+                        'Content-Type': 'application/json'
+            },
                     'body': json.dumps({
                         'success': False,
                         'error': f'Unexpected error: {str(e)}'
@@ -817,8 +779,7 @@ def handle_post_image_request(event, context):
         return {
             'statusCode': 500,
             'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Content-Type': 'application/json'
             },
             'body': json.dumps({
                 'success': False,
@@ -831,8 +792,7 @@ def handle_post_image_request(event, context):
         return {
             'statusCode': 500,
             'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Content-Type': 'application/json'
             },
             'body': json.dumps({
                 'success': False,
@@ -876,8 +836,7 @@ def handle_post_request(event, context):
         return {
             'statusCode': 400,
             'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Content-Type': 'application/json'
             },
             'body': json.dumps({'returnMessage': f'Invalid JSON in request body: {str(e)}'})
         }
@@ -888,44 +847,57 @@ def handle_post_request(event, context):
         return {
             'statusCode': 400,
             'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Content-Type': 'application/json'
             },
             'body': json.dumps({'returnMessage': 'No files provided in request'})
         }
 
+    print(f"[DEBUG] Body parsed successfully, contains {len(body.get('files', []))} files")
+
     files = body['files']
     job_id = body.get('jobId', str(uuid.uuid4()))
 
+    print(f"[DEBUG] Job ID: {job_id}, Files count: {len(files)}")
+
     # Initialize services
+    print("[DEBUG] Getting S3_BUCKET environment variable...")
     bucket_name = os.getenv('S3_BUCKET')
+    print(f"[DEBUG] S3_BUCKET = '{bucket_name}'")
     if not bucket_name:
         return {
             'statusCode': 500,
             'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Content-Type': 'application/json'
             },
             'body': json.dumps({'returnMessage': 'S3_BUCKET environment variable not set'})
         }
 
     try:
         # Initialize embedding store and load existing embeddings
+        print("[DEBUG] Initializing EmbeddingStore...")
         embedding_store = EmbeddingStore(bucket_name)
+        print("[DEBUG] Loading existing embeddings...")
         existing_embeddings, _ = embedding_store.load_embeddings()
+        print(f"[DEBUG] Loaded {len(existing_embeddings)} existing embeddings")
 
         # Initialize embedding generator
+        print("[DEBUG] Initializing EmbeddingGenerator...")
         embedding_generator = EmbeddingGenerator()
+        print("[DEBUG] EmbeddingGenerator initialized")
 
         # Initialize duplicate detector
+        print("[DEBUG] Initializing DuplicateDetector...")
         duplicate_detector = DuplicateDetector(existing_embeddings)
+        print("[DEBUG] All services initialized successfully")
 
     except Exception as e:
+        print(f"[ERROR] Service initialization failed: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return {
             'statusCode': 500,
             'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Content-Type': 'application/json'
             },
             'body': json.dumps({'returnMessage': f'Service initialization failed: {str(e)}'})
         }
@@ -935,11 +907,15 @@ def handle_post_request(event, context):
     all_recipes = []
     file_errors = []
 
+    print(f"[DEBUG] Starting file processing for {len(files)} files...")
+
     for file_idx, file_data in enumerate(files):
         try:
+            print(f"[DEBUG] Processing file {file_idx + 1}/{len(files)}...")
             # Get file data and type from frontend payload
             file_content = file_data.get('data', '')
             file_type = file_data.get('type', '').lower()
+            print(f"[DEBUG] File {file_idx}: type={file_type}, data_length={len(file_content)}")
 
             # Strip data URI prefix if present (e.g., "data:image/jpeg;base64,...")
             if file_content.startswith('data:'):
@@ -980,8 +956,11 @@ def handle_post_request(event, context):
                 base64_images = [file_content]
 
             # Extract recipes from images
-            for base64_image in base64_images:
+            print(f"[DEBUG] Extracting recipes from {len(base64_images)} image(s)...")
+            for img_idx, base64_image in enumerate(base64_images):
+                print(f"[DEBUG] Calling OCR for image {img_idx + 1}/{len(base64_images)}...")
                 recipe_json = ocr.extract_recipe_data(base64_image)
+                print(f"[DEBUG] OCR completed for image {img_idx + 1}, result: {len(str(recipe_json)) if recipe_json else 0} chars")
                 upload.upload_user_data('user_images_json', 'application/json', 'json', recipe_json, app_time)
 
                 if recipe_json is None:
@@ -1004,6 +983,9 @@ def handle_post_request(event, context):
                     pass
 
         except Exception as e:
+            print(f"[ERROR] File {file_idx} extraction failed: {str(e)}")
+            import traceback
+            traceback.print_exc()
             file_errors.append({
                 'file': file_idx,
                 'title': 'unknown',
@@ -1086,8 +1068,7 @@ def handle_post_request(event, context):
         return {
             'statusCode': 500,
             'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Content-Type': 'application/json'
             },
             'body': json.dumps({'returnMessage': f'Parallel processing failed: {str(e)}'})
         }
@@ -1153,8 +1134,7 @@ def handle_post_request(event, context):
         return {
             'statusCode': 500,
             'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Content-Type': 'application/json'
             },
             'body': json.dumps({'returnMessage': f'Batch upload failed: {str(e)}'})
         }
@@ -1232,11 +1212,8 @@ def handle_post_request(event, context):
     return {
         'statusCode': 200,
         'headers': {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type'
-        },
+            'Content-Type': 'application/json'
+            },
         'body': json.dumps({
             'returnMessage': message,
             'successCount': success_count,
