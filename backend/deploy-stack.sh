@@ -212,6 +212,37 @@ cp *.py "$BUILD_DIR/"
 print_success "Build complete"
 
 ###############################################################################
+# Check and Clean Existing Stack
+###############################################################################
+
+print_header "Checking for Existing Stack"
+
+# Check if stack exists and its status
+STACK_STATUS=$(aws cloudformation describe-stacks \
+    --stack-name "$STACK_NAME" \
+    --region "$AWS_REGION" \
+    --query 'Stacks[0].StackStatus' \
+    --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+
+if [ "$STACK_STATUS" = "ROLLBACK_COMPLETE" ]; then
+    print_warning "Stack is in ROLLBACK_COMPLETE state from previous failed deployment"
+    print_info "Deleting old stack..."
+
+    aws cloudformation delete-stack \
+        --stack-name "$STACK_NAME" \
+        --region "$AWS_REGION"
+
+    print_info "Waiting for stack deletion to complete..."
+    aws cloudformation wait stack-delete-complete \
+        --stack-name "$STACK_NAME" \
+        --region "$AWS_REGION"
+
+    print_success "Old stack deleted successfully"
+elif [ "$STACK_STATUS" != "DOES_NOT_EXIST" ]; then
+    print_info "Existing stack found with status: $STACK_STATUS"
+fi
+
+###############################################################################
 # Deploy Stack
 ###############################################################################
 
