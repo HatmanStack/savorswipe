@@ -1,0 +1,23 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.13
+    commands:
+      - echo "Installing Lambda-compatible dependencies..."
+      - pip install -r requirements.txt -t build/ --platform manylinux2014_x86_64 --only-binary=':all:'
+
+  build:
+    commands:
+      - echo "Copying source files..."
+      - cp *.py build/
+      - echo "Creating deployment package..."
+      - cd build
+      - zip -r9 ../lambda-function.zip .
+      - cd ..
+      - ls -lh lambda-function.zip
+
+artifacts:
+  files:
+    - lambda-function.zip
