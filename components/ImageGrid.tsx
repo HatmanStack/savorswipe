@@ -19,7 +19,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Alert,
+  Modal,
 } from 'react-native'
 
 export interface ImageGridProps {
@@ -69,30 +69,29 @@ const ImageGridComponent: React.FC<ImageGridProps> = ({
     return initial
   })
 
+  // Track delete confirmation modal
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
   // Handle thumbnail selection
   const handleThumbnailPress = useCallback((imageUrl: string) => {
     onSelectImage(imageUrl)
   }, [onSelectImage])
 
-  // Handle delete with confirmation
-  const handleDelete = useCallback(() => {
-    Alert.alert(
-      'Delete Recipe',
-      'Are you sure you want to permanently delete this recipe?',
-      [
-        {
-          text: 'Cancel',
-          onPress: () => {},
-          style: 'cancel',
-        },
-        {
-          text: 'Delete',
-          onPress: onDelete,
-          style: 'destructive',
-        },
-      ]
-    )
+  // Handle delete button press - show confirmation
+  const handleDeletePress = useCallback(() => {
+    setShowDeleteConfirm(true)
+  }, [])
+
+  // Handle confirmed deletion
+  const handleDeleteConfirm = useCallback(() => {
+    setShowDeleteConfirm(false)
+    onDelete()
   }, [onDelete])
+
+  // Handle cancel deletion
+  const handleDeleteCancel = useCallback(() => {
+    setShowDeleteConfirm(false)
+  }, [])
 
   // Handle image load start
   const handleImageLoadStart = useCallback((imageUrl: string) => {
@@ -181,7 +180,7 @@ const ImageGridComponent: React.FC<ImageGridProps> = ({
           <Text style={styles.recipeTitle}>{recipeTitle}</Text>
           <TouchableOpacity
             style={styles.deleteButton}
-            onPress={handleDelete}
+            onPress={handleDeletePress}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             accessibilityLabel="Delete recipe"
             accessibilityRole="button"
@@ -203,6 +202,37 @@ const ImageGridComponent: React.FC<ImageGridProps> = ({
           scrollIndicatorInsets={{ right: 1 }}
         />
       </TouchableOpacity>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        visible={showDeleteConfirm}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleDeleteCancel}
+      >
+        <View style={styles.confirmOverlay}>
+          <View style={styles.confirmCard}>
+            <Text style={styles.confirmTitle}>Delete Recipe</Text>
+            <Text style={styles.confirmMessage}>
+              Are you sure you want to permanently delete this recipe?
+            </Text>
+            <View style={styles.confirmButtons}>
+              <TouchableOpacity
+                style={[styles.confirmButton, styles.cancelButton]}
+                onPress={handleDeleteCancel}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.confirmButton, styles.deleteButtonConfirm]}
+                onPress={handleDeleteConfirm}
+              >
+                <Text style={styles.deleteButtonText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </TouchableOpacity>
   )
 }
@@ -330,5 +360,67 @@ const styles = StyleSheet.create({
     color: '#999',
     textAlign: 'center',
     fontWeight: '500',
+  },
+  confirmOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  confirmCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  confirmTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#11181C',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  confirmMessage: {
+    fontSize: 16,
+    color: '#687076',
+    marginBottom: 24,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  confirmButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  confirmButton: {
+    flex: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 48,
+  },
+  cancelButton: {
+    backgroundColor: '#f5f5f5',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#11181C',
+  },
+  deleteButtonConfirm: {
+    backgroundColor: '#dc2626',
+  },
+  deleteButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
   },
 })
