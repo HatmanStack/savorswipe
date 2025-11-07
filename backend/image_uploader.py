@@ -22,17 +22,10 @@ import requests
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Allowed domains for image fetching (whitelist to prevent SSRF)
-# Restricted to Google image CDN subdomains from Google Search results
-# CloudFront or other CDN domains should be added explicitly when configured
-ALLOWED_DOMAINS = {
-    'lh3.googleusercontent.com',  # Google image results
-    'lh4.googleusercontent.com',
-    'lh5.googleusercontent.com',
-    'lh6.googleusercontent.com',
-    'lh7.googleusercontent.com',
-    'images.google.com',
-}
+# NOTE: No domain whitelist needed - SSRF protection is provided by:
+# 1. HTTPS-only URLs
+# 2. Public IP validation (rejects private/reserved IPs)
+# This allows Google Image Search results from any public website
 
 
 def _validate_image_url(image_url: str) -> bool:
@@ -41,8 +34,7 @@ def _validate_image_url(image_url: str) -> bool:
 
     Checks:
     1. URL uses HTTPS scheme
-    2. Hostname is in the whitelist
-    3. Hostname resolves to public IP (not private/reserved)
+    2. Hostname resolves to public IP (not private/reserved)
 
     Args:
         image_url: URL to validate
@@ -61,11 +53,6 @@ def _validate_image_url(image_url: str) -> bool:
         hostname = parsed.hostname
         if not hostname:
             logger.warning(f"[IMAGE] URL has no hostname: {image_url}")
-            return False
-
-        # Check hostname is in whitelist
-        if hostname not in ALLOWED_DOMAINS:
-            logger.warning(f"[IMAGE] Disallowed hostname (not whitelisted): {hostname}")
             return False
 
         # Resolve hostname to IP and check it's not private/reserved
