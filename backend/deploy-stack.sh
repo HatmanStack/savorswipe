@@ -14,13 +14,14 @@
 #   ./deploy-stack.sh [OPTIONS]
 #
 # Options:
-#   --stack-name NAME       CloudFormation stack name (default: savorswipe-lambda)
-#   --region REGION         AWS region (default: prompt)
-#   --openai-key KEY        OpenAI API Key (or will prompt)
-#   --google-search-id ID   Google Search Engine ID (or will prompt)
-#   --google-search-key KEY Google Search API Key (or will prompt)
-#   --s3-bucket NAME        S3 bucket name (default: savorswipe-recipe)
-#   --help                  Show this help message
+#   --stack-name NAME         CloudFormation stack name (default: savorswipe-lambda)
+#   --region REGION           AWS region (default: prompt)
+#   --openai-key KEY          OpenAI API Key (or will prompt)
+#   --google-search-id ID     Google Search Engine ID (or will prompt)
+#   --google-search-key KEY   Google Search API Key (or will prompt)
+#   --s3-bucket NAME          S3 bucket name for recipe storage (default: savorswipe-recipe)
+#   --s3-deploy-bucket NAME   S3 bucket for SAM deployment artifacts (default: auto-create)
+#   --help                    Show this help message
 ###############################################################################
 
 set -e  # Exit on error
@@ -39,6 +40,7 @@ OPENAI_KEY=""
 GOOGLE_SEARCH_ID=""
 GOOGLE_SEARCH_KEY=""
 S3_BUCKET="savorswipe-recipe"
+S3_DEPLOY_BUCKET=""
 
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -102,6 +104,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --s3-bucket)
             S3_BUCKET="$2"
+            shift 2
+            ;;
+        --s3-deploy-bucket)
+            S3_DEPLOY_BUCKET="$2"
             shift 2
             ;;
         --help)
@@ -254,6 +260,16 @@ sam build --template template.yaml --use-container
 
 # Deploy with SAM
 print_info "Deploying to AWS..."
+
+# Build S3 bucket argument
+if [ -n "$S3_DEPLOY_BUCKET" ]; then
+    print_info "Using S3 deployment bucket: $S3_DEPLOY_BUCKET"
+    S3_ARG="--s3-bucket $S3_DEPLOY_BUCKET"
+else
+    print_info "Using SAM managed S3 bucket (auto-create)"
+    S3_ARG="--resolve-s3"
+fi
+
 sam deploy \
     --stack-name "$STACK_NAME" \
     --region "$AWS_REGION" \
@@ -263,7 +279,7 @@ sam deploy \
         GoogleSearchId="$GOOGLE_SEARCH_ID" \
         GoogleSearchKey="$GOOGLE_SEARCH_KEY" \
         S3BucketName="$S3_BUCKET" \
-    --resolve-s3 \
+    $S3_ARG \
     --no-confirm-changeset \
     --no-fail-on-empty-changeset
 
