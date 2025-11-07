@@ -225,7 +225,7 @@ def handle_get_request(event, context):
                 'statusCode': 404,
                 'headers': {
                     'Content-Type': 'application/json'
-            },
+                },
                 'body': json.dumps({'error': f'File not found: {json_key}'})
             }
         else:
@@ -234,7 +234,7 @@ def handle_get_request(event, context):
                 'statusCode': 500,
                 'headers': {
                     'Content-Type': 'application/json'
-            },
+                },
                 'body': json.dumps({'error': f'Failed to fetch recipes: {str(e)}'})
             }
 
@@ -331,7 +331,7 @@ def handle_delete_request(event, context):
                 'statusCode': 200,
                 'headers': {
                     'Content-Type': 'application/json'
-            },
+                },
                 'body': json.dumps({
                     'success': True,
                     'message': f'Recipe {recipe_key} deleted successfully'
@@ -346,7 +346,7 @@ def handle_delete_request(event, context):
                     'statusCode': 200,
                     'headers': {
                         'Content-Type': 'application/json'
-            },
+                    },
                     'body': json.dumps({
                         'success': True,
                         'message': f'Recipe {recipe_key} was already deleted or not found'
@@ -358,7 +358,7 @@ def handle_delete_request(event, context):
                     'statusCode': 500,
                     'headers': {
                         'Content-Type': 'application/json'
-            },
+                    },
                     'body': json.dumps({
                         'success': False,
                         'error': f'Failed to delete recipe: {error_message or "Unknown error"}'
@@ -563,7 +563,7 @@ def handle_post_image_request(event, context):
                 'statusCode': 404,
                 'headers': {
                     'Content-Type': 'application/json'
-            },
+                },
                 'body': json.dumps({
                     'success': False,
                     'error': 'Recipe not found'
@@ -577,7 +577,7 @@ def handle_post_image_request(event, context):
                 'statusCode': 400,
                 'headers': {
                     'Content-Type': 'application/json'
-            },
+                },
                 'body': json.dumps({
                     'success': False,
                     'error': 'Image URL is not from this recipe\'s search results'
@@ -610,7 +610,7 @@ def handle_post_image_request(event, context):
                 'statusCode': 500,
                 'headers': {
                     'Content-Type': 'application/json'
-            },
+                },
                 'body': json.dumps({
                     'success': False,
                     'error': 'Failed to fetch image from the provided URL'
@@ -628,7 +628,7 @@ def handle_post_image_request(event, context):
                 'statusCode': 500,
                 'headers': {
                     'Content-Type': 'application/json'
-            },
+                },
                 'body': json.dumps({
                     'success': False,
                     'error': f'Failed to upload image to S3: {error_msg}'
@@ -662,7 +662,7 @@ def handle_post_image_request(event, context):
                             'statusCode': 404,
                             'headers': {
                                 'Content-Type': 'application/json'
-            },
+                            },
                             'body': json.dumps({
                                 'success': False,
                                 'error': 'Recipe data not found'
@@ -673,7 +673,7 @@ def handle_post_image_request(event, context):
                             'statusCode': 500,
                             'headers': {
                                 'Content-Type': 'application/json'
-            },
+                            },
                             'body': json.dumps({
                                 'success': False,
                                 'error': f'Failed to load recipe data: {str(e)}'
@@ -687,7 +687,7 @@ def handle_post_image_request(event, context):
                         'statusCode': 404,
                         'headers': {
                             'Content-Type': 'application/json'
-            },
+                        },
                         'body': json.dumps({
                             'success': False,
                             'error': f'Recipe {recipe_key} not found'
@@ -721,7 +721,7 @@ def handle_post_image_request(event, context):
                         'statusCode': 200,
                         'headers': {
                             'Content-Type': 'application/json'
-            },
+                        },
                         'body': json.dumps({
                             'success': True,
                             'message': 'Image saved and recipe updated',
@@ -743,7 +743,7 @@ def handle_post_image_request(event, context):
                                 'statusCode': 500,
                                 'headers': {
                                     'Content-Type': 'application/json'
-            },
+                                },
                                 'body': json.dumps({
                                     'success': False,
                                     'error': 'Failed to update recipe after multiple retries'
@@ -755,7 +755,7 @@ def handle_post_image_request(event, context):
                             'statusCode': 500,
                             'headers': {
                                 'Content-Type': 'application/json'
-            },
+                            },
                             'body': json.dumps({
                                 'success': False,
                                 'error': f'Failed to update recipe: {str(e)}'
@@ -768,7 +768,7 @@ def handle_post_image_request(event, context):
                     'statusCode': 500,
                     'headers': {
                         'Content-Type': 'application/json'
-            },
+                    },
                     'body': json.dumps({
                         'success': False,
                         'error': f'Unexpected error: {str(e)}'
@@ -1213,7 +1213,7 @@ def handle_post_request(event, context):
         'statusCode': 200,
         'headers': {
             'Content-Type': 'application/json'
-            },
+        },
         'body': json.dumps({
             'returnMessage': message,
             'successCount': success_count,
