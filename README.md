@@ -22,6 +22,7 @@ Upload a picture of your own directions, ingredients or recipe to join it to the
 - **Recipe Search**: Find recipes by title or ingredients with real-time filtering and recent search history.
 - **Recipe Details**: View detailed information about each recipe, including ingredients and cooking instructions.
 - **Multi-File Upload**: Upload multiple recipe images or PDF cookbooks at once with background processing, duplicate detection, and automatic image search.
+- **Image Picker**: Select the best image to represent your uploaded recipes from a 3x3 grid of Google search results.
 - **Meal Type Filters**: Filter recipes by category (main dish, dessert, appetizer, etc.).
 
 ## Technologies Used
@@ -90,6 +91,17 @@ To get started with the SavorSwipe, follow these steps:
 - Partial matches work: "choc" finds "chocolate"
 - Case-insensitive searches
 - Clear recent searches using the "Clear All" button
+
+### Selecting Recipe Images
+
+After uploading a recipe, a modal appears with 9 Google image search results:
+
+1. **Browse Images**: View a 3x3 grid of recipe photos found by Google.
+2. **Preview**: Tap any thumbnail to see a full-size preview.
+3. **Select**: Confirm your choice to save the image to your recipe.
+4. **Delete**: Use the ✕ button to delete unwanted recipes (with confirmation).
+
+The selected image will represent your recipe in the swipe interface.
 
 ## Architecture
 
