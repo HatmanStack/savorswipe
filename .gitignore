@@ -25,6 +25,7 @@ docs/
 coverage/
 .worktrees/
 lambda-deploy/
+backend/.env.deploy
 
 # Python
 __pycache__/
