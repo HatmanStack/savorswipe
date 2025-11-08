@@ -592,8 +592,14 @@ export function useImageQueue(): ImageQueueHook {
       const recipe = jsonData[key];
       if (isPendingImageSelection(recipe)) {
         console.log('[QUEUE] Pending recipe detected:', key);
-        setPendingRecipe({ ...recipe, key });
-        setShowImagePickerModal(true);
+
+        // Only set pending recipe if not already set to this recipe
+        // This prevents infinite loops from creating new object references
+        if (!pendingRecipe || pendingRecipe.key !== key) {
+          setPendingRecipe({ ...recipe, key });
+          setShowImagePickerModal(true);
+        }
+
         // Don't inject pending recipe into queue yet - pause until selection is complete
         prevJsonDataKeysRef.current = currentKeys;
         return;
@@ -607,7 +613,7 @@ export function useImageQueue(): ImageQueueHook {
 
     // Update previous keys ref
     prevJsonDataKeysRef.current = currentKeys;
-  }, [jsonData, injectRecipes]);
+  }, [jsonData, injectRecipes, pendingRecipe]);
 
   // Effect: Check if queue needs refilling
   useEffect(() => {
