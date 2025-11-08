@@ -225,7 +225,7 @@ def handle_get_request(event, context):
                 'statusCode': 404,
                 'headers': {
                     'Content-Type': 'application/json'
-            },
+                },
                 'body': json.dumps({'error': f'File not found: {json_key}'})
             }
         else:
@@ -234,7 +234,7 @@ def handle_get_request(event, context):
                 'statusCode': 500,
                 'headers': {
                     'Content-Type': 'application/json'
-            },
+                },
                 'body': json.dumps({'error': f'Failed to fetch recipes: {str(e)}'})
             }
 
@@ -331,7 +331,7 @@ def handle_delete_request(event, context):
                 'statusCode': 200,
                 'headers': {
                     'Content-Type': 'application/json'
-            },
+                },
                 'body': json.dumps({
                     'success': True,
                     'message': f'Recipe {recipe_key} deleted successfully'
@@ -346,7 +346,7 @@ def handle_delete_request(event, context):
                     'statusCode': 200,
                     'headers': {
                         'Content-Type': 'application/json'
-            },
+                    },
                     'body': json.dumps({
                         'success': True,
                         'message': f'Recipe {recipe_key} was already deleted or not found'
@@ -358,7 +358,7 @@ def handle_delete_request(event, context):
                     'statusCode': 500,
                     'headers': {
                         'Content-Type': 'application/json'
-            },
+                    },
                     'body': json.dumps({
                         'success': False,
                         'error': f'Failed to delete recipe: {error_message or "Unknown error"}'
@@ -385,8 +385,10 @@ def _validate_image_url_for_api(image_url: str) -> Tuple[bool, Optional[str]]:
 
     Checks:
     1. URL uses HTTPS scheme
-    2. Hostname is in whitelist (Google domains or CloudFront)
-    3. Hostname resolves to public IP (not private/reserved)
+    2. Hostname resolves to public IP (not private/reserved)
+
+    NOTE: No domain whitelist - SSRF protection is provided by public IP validation.
+    This allows Google Image Search results from any public website.
 
     Args:
         image_url: URL to validate
@@ -394,18 +396,6 @@ def _validate_image_url_for_api(image_url: str) -> Tuple[bool, Optional[str]]:
     Returns:
         Tuple of (is_valid, error_message) where error_message is None if valid
     """
-    # Whitelist of allowed domains for image sources
-    # Restricted to Google image CDN subdomains from Google Search results
-    # CloudFront or other CDN domains should be added explicitly when configured
-    ALLOWED_DOMAINS = {
-        'lh3.googleusercontent.com',
-        'lh4.googleusercontent.com',
-        'lh5.googleusercontent.com',
-        'lh6.googleusercontent.com',
-        'lh7.googleusercontent.com',
-        'images.google.com'
-    }
-
     try:
         parsed = urllib.parse.urlparse(image_url)
 
@@ -416,10 +406,6 @@ def _validate_image_url_for_api(image_url: str) -> Tuple[bool, Optional[str]]:
         hostname = parsed.hostname
         if not hostname:
             return False, "URL has no hostname"
-
-        # Check hostname is in whitelist
-        if hostname not in ALLOWED_DOMAINS:
-            return False, f"Hostname not whitelisted: {hostname}"
 
         # Resolve hostname to IP and check it's not private/reserved
         try:
@@ -563,7 +549,7 @@ def handle_post_image_request(event, context):
                 'statusCode': 404,
                 'headers': {
                     'Content-Type': 'application/json'
-            },
+                },
                 'body': json.dumps({
                     'success': False,
                     'error': 'Recipe not found'
@@ -577,7 +563,7 @@ def handle_post_image_request(event, context):
                 'statusCode': 400,
                 'headers': {
                     'Content-Type': 'application/json'
-            },
+                },
                 'body': json.dumps({
                     'success': False,
                     'error': 'Image URL is not from this recipe\'s search results'
@@ -610,7 +596,7 @@ def handle_post_image_request(event, context):
                 'statusCode': 500,
                 'headers': {
                     'Content-Type': 'application/json'
-            },
+                },
                 'body': json.dumps({
                     'success': False,
                     'error': 'Failed to fetch image from the provided URL'
@@ -628,7 +614,7 @@ def handle_post_image_request(event, context):
                 'statusCode': 500,
                 'headers': {
                     'Content-Type': 'application/json'
-            },
+                },
                 'body': json.dumps({
                     'success': False,
                     'error': f'Failed to upload image to S3: {error_msg}'
@@ -662,7 +648,7 @@ def handle_post_image_request(event, context):
                             'statusCode': 404,
                             'headers': {
                                 'Content-Type': 'application/json'
-            },
+                            },
                             'body': json.dumps({
                                 'success': False,
                                 'error': 'Recipe data not found'
@@ -673,7 +659,7 @@ def handle_post_image_request(event, context):
                             'statusCode': 500,
                             'headers': {
                                 'Content-Type': 'application/json'
-            },
+                            },
                             'body': json.dumps({
                                 'success': False,
                                 'error': f'Failed to load recipe data: {str(e)}'
@@ -687,7 +673,7 @@ def handle_post_image_request(event, context):
                         'statusCode': 404,
                         'headers': {
                             'Content-Type': 'application/json'
-            },
+                        },
                         'body': json.dumps({
                             'success': False,
                             'error': f'Recipe {recipe_key} not found'
@@ -721,7 +707,7 @@ def handle_post_image_request(event, context):
                         'statusCode': 200,
                         'headers': {
                             'Content-Type': 'application/json'
-            },
+                        },
                         'body': json.dumps({
                             'success': True,
                             'message': 'Image saved and recipe updated',
@@ -743,7 +729,7 @@ def handle_post_image_request(event, context):
                                 'statusCode': 500,
                                 'headers': {
                                     'Content-Type': 'application/json'
-            },
+                                },
                                 'body': json.dumps({
                                     'success': False,
                                     'error': 'Failed to update recipe after multiple retries'
@@ -755,7 +741,7 @@ def handle_post_image_request(event, context):
                             'statusCode': 500,
                             'headers': {
                                 'Content-Type': 'application/json'
-            },
+                            },
                             'body': json.dumps({
                                 'success': False,
                                 'error': f'Failed to update recipe: {str(e)}'
@@ -768,7 +754,7 @@ def handle_post_image_request(event, context):
                     'statusCode': 500,
                     'headers': {
                         'Content-Type': 'application/json'
-            },
+                    },
                     'body': json.dumps({
                         'success': False,
                         'error': f'Unexpected error: {str(e)}'
@@ -1031,11 +1017,14 @@ def handle_post_request(event, context):
     new_embeddings = {}
     position_to_file_idx = {}
 
+    print(f"[LAMBDA] Starting parallel processing of {len(all_recipes)} recipe(s)...")
+
     try:
         with ThreadPoolExecutor(max_workers=3) as executor:
             # Submit all recipes for processing
             future_to_idx = {}
             for recipe, file_idx in all_recipes:
+                print(f"[LAMBDA] Submitting recipe '{recipe.get('Title', 'unknown')}' for processing...")
                 future = executor.submit(
                     process_single_recipe,
                     recipe,
@@ -1044,13 +1033,17 @@ def handle_post_request(event, context):
                 )
                 future_to_idx[future] = (recipe, file_idx)
 
+            print(f"[LAMBDA] Submitted {len(future_to_idx)} recipe(s) for processing, waiting for results...")
+
             # Collect results as they complete
-            for future in as_completed(future_to_idx):
+            for idx, future in enumerate(as_completed(future_to_idx)):
                 recipe, file_idx = future_to_idx[future]
+                print(f"[LAMBDA] Processing result {idx+1}/{len(future_to_idx)} for '{recipe.get('Title', 'unknown')}'...")
                 result_recipe, embedding, search_results, error_reason = future.result()
 
                 if error_reason:
                     # Processing failed
+                    print(f"[LAMBDA] Recipe '{recipe.get('Title', 'unknown')}' failed: {error_reason}")
                     file_errors.append({
                         'file': file_idx,
                         'title': recipe.get('Title', 'unknown'),
@@ -1058,13 +1051,19 @@ def handle_post_request(event, context):
                     })
                 else:
                     # Success - add to batch
+                    print(f"[LAMBDA] Recipe '{recipe.get('Title', 'unknown')}' processed successfully")
                     position = len(unique_recipes)
                     unique_recipes.append(result_recipe)
                     search_results_list.append(search_results)
                     new_embeddings[position] = embedding
                     position_to_file_idx[position] = file_idx
 
+        print(f"[LAMBDA] Parallel processing complete: {len(unique_recipes)} successful, {len(file_errors)} failed")
+
     except Exception as e:
+        print(f"[LAMBDA ERROR] Parallel processing failed: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return {
             'statusCode': 500,
             'headers': {
@@ -1077,22 +1076,30 @@ def handle_post_request(event, context):
     success_keys = []
     json_data = {}
 
+    print(f"[LAMBDA] Starting S3 upload for {len(unique_recipes)} unique recipe(s)...")
+
     try:
         if unique_recipes:
             # Get existing recipe data for URL deduplication
+            print("[LAMBDA] Loading existing recipe data from S3...")
             s3_client = boto3.client('s3')
             try:
                 response = s3_client.get_object(Bucket=bucket_name, Key='jsondata/combined_data.json')
                 json_data = json.loads(response['Body'].read())
+                print(f"[LAMBDA] Loaded {len(json_data)} existing recipes from S3")
             except s3_client.exceptions.NoSuchKey:
                 # File doesn't exist yet - first upload
+                print("[LAMBDA] No existing recipe data found (first upload)")
                 json_data = {}
             except Exception as e:
                 # Other errors should be logged/raised
+                print(f"[LAMBDA] Error loading existing data: {str(e)}")
                 json_data = {}
 
             # Extract used URLs
+            print("[LAMBDA] Extracting used image URLs...")
             used_urls = si.extract_used_image_urls(json_data)
+            print(f"[LAMBDA] Found {len(used_urls)} used image URLs")
 
             # Filter URLs for each recipe (preserve all unused URLs as fallbacks)
             unique_search_results = []
@@ -1110,10 +1117,12 @@ def handle_post_request(event, context):
                     unique_search_results.append(search_results[:5])
 
             # Batch upload
+            print(f"[LAMBDA] Starting batch upload to S3...")
             json_data, success_keys, position_to_key, upload_errors = batch_to_s3_atomic(
                 unique_recipes,
                 unique_search_results
             )
+            print(f"[LAMBDA] Batch upload complete: {len(success_keys)} successful")
 
             # Merge upload errors into file_errors
             file_errors.extend(upload_errors)
@@ -1128,9 +1137,16 @@ def handle_post_request(event, context):
 
             # Save embeddings atomically
             if keyed_embeddings:
+                print(f"[LAMBDA] Saving {len(keyed_embeddings)} embeddings...")
                 embedding_store.add_embeddings(keyed_embeddings)
+                print("[LAMBDA] Embeddings saved successfully")
+        else:
+            print("[LAMBDA] No unique recipes to upload")
 
     except Exception as e:
+        print(f"[LAMBDA ERROR] Batch upload failed: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return {
             'statusCode': 500,
             'headers': {
@@ -1209,11 +1225,13 @@ def handle_post_request(event, context):
         pass
 
     # Return response with CORS headers
+    print(f"[LAMBDA] Request complete: {success_count} successful, {fail_count} failed")
+    print(f"[LAMBDA] Returning response with status 200")
     return {
         'statusCode': 200,
         'headers': {
             'Content-Type': 'application/json'
-            },
+        },
         'body': json.dumps({
             'returnMessage': message,
             'successCount': success_count,

@@ -12,6 +12,7 @@ npm-debug.*
 web-build/
 .venv/
 .env
+.env.deploy
 # macOS
 .DS_Store
 yarn.lock
@@ -24,6 +25,7 @@ docs/
 coverage/
 .worktrees/
 lambda-deploy/
+backend/.env.deploy
 
 # Python
 __pycache__/

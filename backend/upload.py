@@ -296,7 +296,6 @@ def batch_to_s3_atomic(
         position_to_key = {}  # Map position in recipes list to recipe key
         errors = []
         next_key = highest_key + 1
-        images_to_upload = []
         print(f"[UPLOAD] Processing {len(recipes)} recipes starting from key {next_key}")
 
         for file_idx, recipe in enumerate(recipes):
@@ -322,29 +321,30 @@ def batch_to_s3_atomic(
                 })
                 continue
 
-            # Upload image for this recipe
-            search_results = search_results_list[file_idx] if file_idx < len(search_results_list) else {'items': []}
-            print(f"[UPLOAD] Uploading image for recipe {file_idx} (key {next_key})...")
+            # Store image search results for user selection (picture picker feature)
+            search_results = search_results_list[file_idx] if file_idx < len(search_results_list) else []
+            print(f"[UPLOAD] Storing {len(search_results)} image URLs for recipe {file_idx} (key {next_key})...")
 
-            image_url = upload_image(search_results, bucket_name, next_key)
-            if image_url:
-                print(f"[UPLOAD] Image uploaded successfully for key {next_key}")
-                # Add recipe to data
+            # PICTURE_PICKER: Store URLs in image_search_results, don't upload yet
+            # User will select preferred image via ImagePickerModal in frontend
+            if isinstance(search_results, list) and len(search_results) > 0:
+                print(f"[UPLOAD] Image URLs stored successfully for key {next_key}")
+                # Add recipe to data with search results but NO image_url
                 recipe['key'] = next_key
-                recipe['image_url'] = image_url  # Save the source image URL
+                recipe['image_search_results'] = search_results  # Store all URLs for user selection
+                # Do NOT set image_url - this signals frontend to show ImagePickerModal
                 # NEW_RECIPE_FEATURE: Add uploadedAt timestamp for frontend "new" indicator
                 recipe['uploadedAt'] = datetime.now(timezone.utc).isoformat()
                 existing_data[str(next_key)] = recipe
                 success_keys.append(str(next_key))
                 position_to_key[file_idx] = str(next_key)  # Track position mapping
-                images_to_upload.append(str(next_key))
                 next_key += 1
             else:
-                print(f"[UPLOAD ERROR] Image upload failed for recipe {file_idx}")
+                print(f"[UPLOAD ERROR] No image URLs available for recipe {file_idx}")
                 errors.append({
                     'file': file_idx,
                     'title': title,
-                    'reason': 'Image upload failed'
+                    'reason': 'No image search results available'
                 })
 
         print(f"[UPLOAD] Batch processing complete: {len(success_keys)} success, {len(errors)} errors")
@@ -374,18 +374,9 @@ def batch_to_s3_atomic(
 
             except ClientError as e:
                 if e.response['Error']['Code'] == 'PreconditionFailed':
-                    # Race condition detected - rollback uploaded images
-                    print(f"[UPLOAD WARNING] Race condition detected on attempt {attempt + 1}, rolling back...")
+                    # Race condition detected - retry with exponential backoff
+                    print(f"[UPLOAD WARNING] Race condition detected on attempt {attempt + 1}, retrying...")
 
-                    for key in images_to_upload:
-                        try:
-                            image_key = f'images/{key}.jpg'
-                            print(f"[UPLOAD] Rolling back image {image_key}")
-                            s3_client.delete_object(Bucket=bucket_name, Key=image_key)
-                        except Exception as rollback_error:
-                            print(f"[UPLOAD ERROR] Error rolling back image {key}: {rollback_error}")
-
-                    # Retry with exponential backoff
                     if attempt < MAX_RETRIES - 1:
                         delay = random.uniform(0.1, 0.5) * (2 ** attempt)
                         print(f"[UPLOAD] Retrying after {delay:.2f}s delay...")
