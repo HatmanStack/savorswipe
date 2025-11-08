@@ -11,7 +11,7 @@ phases:
   build:
     commands:
       - echo "Copying source files..."
-      - cp *.py build/
+      - cp lambda_function.py ocr.py upload.py image_uploader.py fix_ingredients.py embedding_generator.py embeddings.py duplicate_detector.py recipe_deletion.py search_image.py handlepdf.py build/
       - echo "Creating deployment package..."
       - cd build
       - zip -r9 ../lambda-function.zip .

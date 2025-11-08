@@ -42,8 +42,12 @@ Resources:
           SEARCH_KEY: !Ref GoogleSearchKey
           S3_BUCKET: !Ref S3BucketName
       Policies:
-        - S3FullAccessPolicy:
-            BucketName: !Ref S3BucketName
+        - Statement:
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:PutObject
+              Resource: !Sub 'arn:aws:s3:::${S3BucketName}/*'
       Events:
         ApiEvent:
           Type: HttpApi

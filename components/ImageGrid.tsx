@@ -220,12 +220,16 @@ const ImageGridComponent: React.FC<ImageGridProps> = ({
               <TouchableOpacity
                 style={[styles.confirmButton, styles.cancelButton]}
                 onPress={handleDeleteCancel}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel deletion"
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.confirmButton, styles.deleteButtonConfirm]}
                 onPress={handleDeleteConfirm}
+                accessibilityRole="button"
+                accessibilityLabel="Confirm deletion"
               >
                 <Text style={styles.deleteButtonText}>Delete</Text>
               </TouchableOpacity>
