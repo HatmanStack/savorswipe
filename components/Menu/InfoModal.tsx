@@ -1,11 +1,12 @@
 import React from 'react';
-import { Modal, View, Pressable, StyleProp, ViewStyle } from 'react-native';
+import { Modal, View, Pressable } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
 interface InfoModalProps {
   visible: boolean;
   onClose: () => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   styles: Record<string, any>;
 }
 

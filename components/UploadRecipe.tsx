@@ -35,6 +35,7 @@ export const splitPDFIntoChunks = async (
 
   // Read PDF file as base64
   const base64 = await FileSystem.readAsStringAsync(pdfUri, {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     encoding: 'base64' as any,
   })
 
@@ -218,6 +219,7 @@ export const selectAndUploadImage = async (
 }
 
 type UploadFilesProps = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setUploadMessage: any
   setUploadVisible: (visible: boolean) => void
 }

@@ -29,7 +29,6 @@ export default function Menu() {
   const [mealTypeExpanded, setMealTypeExpanded] = useState(false);
   const [uploadText, setUploadText] = useState<string | null>(null);
   const {
-    jsonData,
     setJsonData,
     mealTypeFilters,
     setMealTypeFilters,
@@ -78,8 +77,6 @@ export default function Menu() {
       if (uploadMessage.returnMessage.includes("success")) {
         // Type guard: ensure uploadMessage.jsonData is a valid S3JsonData object
         if (isS3JsonData(uploadMessage.jsonData)) {
-          const existingKeys = new Set(Object.keys(jsonData || {}));
-          const newKeys = new Set(Object.keys(uploadMessage.jsonData));
           // Update jsonData with new recipes (image queue handles display)
           setJsonData(uploadMessage.jsonData);
         } else {

@@ -9,6 +9,7 @@ interface MainMenuModalProps {
   onClose: () => void;
   onInfoPress: () => void;
   onUploadPress: () => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   styles: Record<string, any>;
 }
 

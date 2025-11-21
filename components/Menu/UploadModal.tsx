@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { StyleProp, ViewStyle } from 'react-native';
 import { useRecipe } from '@/context/RecipeContext';
 import UploadImage from '@/components/UploadRecipe';
 import { ThemedText } from '@/components/ThemedText';
-import { ImageService } from '@/services';
 import { Recipe } from '@/types';
 import { UploadService } from '@/services/UploadService';
 import { UploadJob, UploadError } from '@/types/upload';
@@ -14,6 +12,7 @@ interface UploadModalProps {
   visible: boolean;
   onClose: () => void;
   uploadCount: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   styles: Record<string, any>;
 }
 
@@ -65,8 +64,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       setUploadText(uploadMessage.returnMessage);
 
       if (uploadMessage.returnMessage.includes('success')) {
-        // Handle successful upload
-        const existingKeys = new Set(Object.keys(jsonData || {}));
         // Update jsonData with new recipes (image queue handles display)
         setJsonData(uploadMessage.jsonData);
       }
