@@ -241,10 +241,10 @@ class TestUploadImageToS3:
 
         # Verify both images exist
         result1 = s3_client.get_object(Bucket="test-bucket", Key="images/recipe_1.jpg")
-        assert result1['Body'].read()) > 0 and len(result1['Body'].read()) > 0  # Image converted to JPEG
+        assert len(result1['Body'].read()) > 0  # Image converted to JPEG
 
         result2 = s3_client.get_object(Bucket="test-bucket", Key="images/recipe_2.jpg")
-        assert result2['Body'].read()) > 0 and len(result1['Body'].read()) > 0  # Image converted to JPEG
+        assert len(result2['Body'].read()) > 0  # Image converted to JPEG
 
     def test_upload_content_type(self, s3_client, env_vars):
         """Test that upload uses correct content-type."""

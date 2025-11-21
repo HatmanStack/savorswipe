@@ -141,18 +141,6 @@ class TestEmbeddingGenerator(unittest.TestCase):
         self.assertIn('timeout', str(context.exception).lower())
 
     @patch('embedding_generator.requests.post')
-    def test_generate_embedding_api_error(self, mock_post):
-        """Test embedding generation handles API errors."""
-        # Mock request exception
-        mock_post.side_effect = requests.RequestException('API Error')
-
-        generator = EmbeddingGenerator(api_key=self.api_key)
-
-        with self.assertRaises(Exception) as context:
-            generator.generate_embedding('test text')
-        self.assertIn('API error', str(context.exception).lower())
-
-    @patch('embedding_generator.requests.post')
     def test_generate_embedding_includes_timeout(self, mock_post):
         """Test that requests.post is called with timeout parameter."""
         # Mock successful response

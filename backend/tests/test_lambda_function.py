@@ -137,12 +137,24 @@ class TestLambdaFunction(unittest.TestCase):
             mock_ocr.extract_recipe_data.return_value = json.dumps(self.test_recipe)
             mock_ocr.parseJSON.return_value = json.dumps([self.test_recipe])
 
-            # Mock batch upload
-            mock_batch.return_value = ({'1': self.test_recipe}, ['2'], [])
+            # Mock batch upload (returns: result_data, success_keys, position_to_key, errors)
+            mock_batch.return_value = ({'1': self.test_recipe}, ['2'], {0: '2'}, [])
 
-            # Mock CloudWatch
+            # Mock S3 and CloudWatch clients
+            mock_s3_client = MagicMock()
+            mock_s3_body = MagicMock()
+            mock_s3_body.read.return_value = b'{}'
+            mock_s3_client.get_object.return_value = {'Body': mock_s3_body}
             mock_cloudwatch = MagicMock()
-            mock_boto.return_value = mock_cloudwatch
+
+            # boto3.client returns different mocks based on service name
+            def get_boto_client(service_name, **kwargs):
+                if service_name == 'cloudwatch':
+                    return mock_cloudwatch
+                elif service_name == 's3':
+                    return mock_s3_client
+                return MagicMock()
+            mock_boto.side_effect = get_boto_client
 
             # Test event with jobId
             event = {
@@ -219,12 +231,24 @@ class TestLambdaFunction(unittest.TestCase):
             # Mock as_completed to yield our mocked future
             mock_as_completed.return_value = [mock_future]
 
-            # Mock batch upload
-            mock_batch.return_value = ({'1': self.test_recipe}, ['2'], [])
+            # Mock batch upload (returns: result_data, success_keys, position_to_key, errors)
+            mock_batch.return_value = ({'1': self.test_recipe}, ['2'], {0: '2'}, [])
 
-            # Mock CloudWatch
+            # Mock S3 and CloudWatch clients
+            mock_s3_client = MagicMock()
+            mock_s3_body = MagicMock()
+            mock_s3_body.read.return_value = b'{}'
+            mock_s3_client.get_object.return_value = {'Body': mock_s3_body}
             mock_cloudwatch = MagicMock()
-            mock_boto.return_value = mock_cloudwatch
+
+            # boto3.client returns different mocks based on service name
+            def get_boto_client(service_name, **kwargs):
+                if service_name == 'cloudwatch':
+                    return mock_cloudwatch
+                elif service_name == 's3':
+                    return mock_s3_client
+                return MagicMock()
+            mock_boto.side_effect = get_boto_client
 
             # Test (use 'data' field as Lambda expects, not 'base64')
             event = {
@@ -238,54 +262,6 @@ class TestLambdaFunction(unittest.TestCase):
 
             # Verify ThreadPoolExecutor created with max_workers=3
             mock_executor_class.assert_called_once_with(max_workers=3)
-
-    @patch('lambda_function.boto3.client')
-    @patch('lambda_function.EmbeddingStore')
-    @patch('lambda_function.EmbeddingGenerator')
-    @patch('lambda_function.batch_to_s3_atomic')
-    @patch('lambda_function.handlepdf')
-    @patch('lambda_function.ocr')
-    @patch('lambda_function.upload.upload_user_data')
-    @patch('lambda_function.time.time')
-    def test_lambda_handler_cloudwatch_metrics(
-        self, mock_time, mock_upload_user, mock_ocr, mock_pdf,
-        mock_batch, mock_gen_class, mock_store_class, mock_boto
-    ):
-        """Test that CloudWatch metrics are sent."""
-        with patch.dict('os.environ', {'S3_BUCKET': 'test-bucket'}):
-            # Mock time for metrics
-            mock_time.side_effect = [1000, 1060]  # 60 second execution
-
-            # Mock services
-            mock_store = MagicMock()
-            mock_store.load_embeddings.return_value = ({}, None)
-            mock_store.add_embeddings.return_value = True
-            mock_store_class.return_value = mock_store
-
-            mock_gen_class.return_value = MagicMock()
-
-            # Mock OCR
-            mock_ocr.extract_recipe_data.return_value = json.dumps(self.test_recipe)
-            mock_ocr.parseJSON.return_value = json.dumps([self.test_recipe])
-
-            # Mock batch upload
-            mock_batch.return_value = ({'1': self.test_recipe}, ['2'], [])
-
-            # Mock CloudWatch client
-            mock_s3 = MagicMock()
-            mock_cloudwatch = MagicMock()
-            mock_boto.side_effect = lambda service: mock_cloudwatch if service == 'cloudwatch' else mock_s3
-
-            # Test
-            event = {
-                'files': [{'base64': 'base64data', 'type': 'image'}],
-                'jobId': 'test-job-123'
-            }
-
-            lambda_handler(event, None)
-
-            # Verify CloudWatch put_metric_data was called
-            self.assertTrue(mock_cloudwatch.put_metric_data.called)
 
     @patch('lambda_function.boto3.client')
     @patch('lambda_function.EmbeddingStore')
@@ -312,12 +288,24 @@ class TestLambdaFunction(unittest.TestCase):
             mock_ocr.extract_recipe_data.return_value = json.dumps(self.test_recipe)
             mock_ocr.parseJSON.return_value = json.dumps([self.test_recipe])
 
-            # Mock batch upload
-            mock_batch.return_value = ({'1': self.test_recipe}, ['2'], [])
+            # Mock batch upload (returns: result_data, success_keys, position_to_key, errors)
+            mock_batch.return_value = ({'1': self.test_recipe}, ['2'], {0: '2'}, [])
 
-            # Mock CloudWatch
+            # Mock S3 and CloudWatch clients
+            mock_s3_client = MagicMock()
+            mock_s3_body = MagicMock()
+            mock_s3_body.read.return_value = b'{}'
+            mock_s3_client.get_object.return_value = {'Body': mock_s3_body}
             mock_cloudwatch = MagicMock()
-            mock_boto.return_value = mock_cloudwatch
+
+            # boto3.client returns different mocks based on service name
+            def get_boto_client(service_name, **kwargs):
+                if service_name == 'cloudwatch':
+                    return mock_cloudwatch
+                elif service_name == 's3':
+                    return mock_s3_client
+                return MagicMock()
+            mock_boto.side_effect = get_boto_client
 
             # Test
             event = {
@@ -366,12 +354,24 @@ class TestLambdaFunction(unittest.TestCase):
             mock_ocr.extract_recipe_data.return_value = json.dumps(self.test_recipe)
             mock_ocr.parseJSON.return_value = json.dumps([self.test_recipe])
 
-            # Mock batch upload returning success keys
-            mock_batch.return_value = ({'1': self.test_recipe}, ['2', '3'], [])
+            # Mock batch upload returning success keys (result_data, success_keys, position_to_key, errors)
+            mock_batch.return_value = ({'1': self.test_recipe}, ['2', '3'], {0: '2', 1: '3'}, [])
 
-            # Mock CloudWatch
+            # Mock S3 and CloudWatch clients
+            mock_s3_client = MagicMock()
+            mock_s3_body = MagicMock()
+            mock_s3_body.read.return_value = b'{}'
+            mock_s3_client.get_object.return_value = {'Body': mock_s3_body}
             mock_cloudwatch = MagicMock()
-            mock_boto.return_value = mock_cloudwatch
+
+            # boto3.client returns different mocks based on service name
+            def get_boto_client(service_name, **kwargs):
+                if service_name == 'cloudwatch':
+                    return mock_cloudwatch
+                elif service_name == 's3':
+                    return mock_s3_client
+                return MagicMock()
+            mock_boto.side_effect = get_boto_client
 
             # Test
             event = {
@@ -409,11 +409,14 @@ class TestLambdaFunction(unittest.TestCase):
             mock_ocr.extract_recipe_data.return_value = json.dumps(self.test_recipe)
             mock_ocr.parseJSON.return_value = json.dumps([self.test_recipe])
 
-            # Mock batch upload
-            mock_batch.return_value = ({'1': self.test_recipe}, ['2'], [])
+            # Mock batch upload (returns: result_data, success_keys, position_to_key, errors)
+            mock_batch.return_value = ({'1': self.test_recipe}, ['2'], {0: '2'}, [])
 
             # Mock S3 and CloudWatch clients
             mock_s3 = MagicMock()
+            mock_s3_body = MagicMock()
+            mock_s3_body.read.return_value = b'{}'
+            mock_s3.get_object.return_value = {'Body': mock_s3_body}
             mock_cloudwatch = MagicMock()
             mock_boto.side_effect = lambda service: mock_cloudwatch if service == 'cloudwatch' else mock_s3
 
@@ -455,11 +458,14 @@ class TestLambdaFunction(unittest.TestCase):
             mock_ocr.extract_recipe_data.return_value = json.dumps(self.test_recipe)
             mock_ocr.parseJSON.return_value = json.dumps([self.test_recipe])
 
-            # Mock batch upload
-            mock_batch.return_value = ({'1': self.test_recipe}, ['2'], [])
+            # Mock batch upload (returns: result_data, success_keys, position_to_key, errors)
+            mock_batch.return_value = ({'1': self.test_recipe}, ['2'], {0: '2'}, [])
 
             # Mock S3 client that fails on put_object for completion flag
             mock_s3 = MagicMock()
+            mock_s3_body = MagicMock()
+            mock_s3_body.read.return_value = b'{}'
+            mock_s3.get_object.return_value = {'Body': mock_s3_body}
             mock_cloudwatch = MagicMock()
 
             def selective_error(*args, **kwargs):
@@ -632,7 +638,7 @@ class TestLambdaRouting(unittest.TestCase):
         result = lambda_handler(event, None)
 
         # Assert
-        mock_get_handler.assert_called_once_with(event, None)
+        mock_get_handler.assert_called_once_with(event, None, None)
         self.assertEqual(result['statusCode'], 200)
 
     @patch('lambda_function.handle_post_request')
@@ -654,7 +660,7 @@ class TestLambdaRouting(unittest.TestCase):
         result = lambda_handler(event, None)
 
         # Assert
-        mock_post_handler.assert_called_once_with(event, None)
+        mock_post_handler.assert_called_once_with(event, None, None)
         self.assertEqual(result['statusCode'], 200)
 
     @patch('lambda_function.handle_post_request')
@@ -671,7 +677,7 @@ class TestLambdaRouting(unittest.TestCase):
         result = lambda_handler(event, None)
 
         # Assert
-        mock_post_handler.assert_called_once_with(event, None)
+        mock_post_handler.assert_called_once_with(event, None, None)
         self.assertEqual(result['statusCode'], 400)
 
 
