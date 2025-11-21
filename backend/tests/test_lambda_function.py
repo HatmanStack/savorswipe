@@ -515,7 +515,7 @@ class TestLambdaGetRequest(unittest.TestCase):
             }
 
             # Act
-            result = handle_get_request(event, None, origin=None)
+            result = handle_get_request(event, None, origin='https://savorswipe.hatstack.fun')
 
             # Assert
             self.assertEqual(result['statusCode'], 200)

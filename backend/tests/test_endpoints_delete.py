@@ -276,7 +276,7 @@ class TestDeleteEndpoint:
             }
         }
 
-        response = handle_delete_request(event, None, origin=None)
+        response = handle_delete_request(event, None, origin='https://savorswipe.hatstack.fun')
 
         assert 'Access-Control-Allow-Origin' in response['headers']
         assert response['headers']['Access-Control-Allow-Origin'] == 'https://savorswipe.hatstack.fun'

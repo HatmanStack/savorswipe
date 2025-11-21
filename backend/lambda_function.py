@@ -36,12 +36,12 @@ from upload import batch_to_s3_atomic
 from recipe_deletion import delete_recipe_atomic
 from image_uploader import fetch_image_from_url, upload_image_to_s3
 
-# CORS configuration - Production only
 ALLOWED_ORIGIN = 'https://savorswipe.hatstack.fun'
+
 
 def add_cors_headers(headers: dict, origin: str = None) -> dict:
     """
-    Add CORS headers to response. Only allows production origin.
+    Add CORS headers to response. Only allows requests from production origin.
 
     Args:
         headers: Existing response headers
@@ -52,16 +52,12 @@ def add_cors_headers(headers: dict, origin: str = None) -> dict:
     """
     cors_headers = headers.copy()
 
-    # Strict origin check - only allow production
+    # Only set CORS header for allowed origin
     if origin == ALLOWED_ORIGIN:
-        cors_headers['Access-Control-Allow-Origin'] = ALLOWED_ORIGIN
-    else:
-        # Reject requests from unauthorized origins
         cors_headers['Access-Control-Allow-Origin'] = ALLOWED_ORIGIN
 
     cors_headers['Access-Control-Allow-Methods'] = 'GET, POST, DELETE, OPTIONS'
     cors_headers['Access-Control-Allow-Headers'] = 'Content-Type'
-
     return cors_headers
 
 
