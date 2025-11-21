@@ -8,6 +8,7 @@ import { EncodingType } from 'expo-file-system'
 import { PDFDocument } from 'pdf-lib'
 import { UploadService } from '@/services/UploadService'
 import { UploadFile } from '@/types/upload'
+import { ToastQueue } from '@/components/Toast'
 
 /**
  * Resize image to max dimensions and return base64
@@ -211,6 +212,9 @@ export const selectAndUploadImage = async (
 
   // Start upload in background (non-blocking)
   UploadService.queueUpload(files)
+
+  // Show processing toast
+  ToastQueue.show('Processing...')
 
   // Close modal immediately
   setUploadVisible(false)

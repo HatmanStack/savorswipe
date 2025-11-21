@@ -46,20 +46,6 @@ export function UploadListener() {
           }
         }
       }
-
-      // Show toast notification
-      const { completed, failed } = job.progress;
-      let message: string;
-
-      if (failed === 0) {
-        message = `All ${completed} recipes added successfully!`;
-      } else if (completed > 0) {
-        message = `${completed} of ${completed + failed} recipes added. ${failed} failed.`;
-      } else {
-        message = `All ${failed} recipes failed.`;
-      }
-
-      ToastQueue.show(message);
     });
 
     return () => {
