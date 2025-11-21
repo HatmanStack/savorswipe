@@ -14,7 +14,7 @@ import { UploadJob } from '@/types/upload';
 import { ToastQueue } from '@/components/Toast';
 
 export function UploadListener() {
-  const { setJsonData } = useRecipe();
+  const { setJsonData, setPendingRecipeForPicker } = useRecipe();
 
   useEffect(() => {
     const unsubscribe = UploadService.subscribe((job: UploadJob) => {
@@ -23,9 +23,28 @@ export function UploadListener() {
         return;
       }
 
-      // Update RecipeContext with new data
+      // Update RecipeContext with new data (merge, don't replace)
       if (job.result?.jsonData) {
-        setJsonData(job.result.jsonData);
+        setJsonData((prevData) => ({
+          ...prevData,
+          ...job.result.jsonData
+        }));
+
+        // Check if any new recipes need image selection
+        const newRecipes = Object.entries(job.result.jsonData);
+        for (const [key, recipe] of newRecipes) {
+          const needsImageSelection =
+            Array.isArray(recipe.image_search_results) &&
+            recipe.image_search_results.length > 0 &&
+            !recipe.image_url;
+
+          if (needsImageSelection) {
+            // Trigger modal immediately for first pending recipe
+            console.log('[UPLOAD] New recipe needs image selection:', key);
+            setPendingRecipeForPicker({ ...recipe, key });
+            break; // Only show modal for first pending recipe
+          }
+        }
       }
 
       // Show toast notification
@@ -46,7 +65,7 @@ export function UploadListener() {
     return () => {
       unsubscribe();
     };
-  }, [setJsonData]); // Removed jsonData from deps - only need setJsonData
+  }, [setJsonData, setPendingRecipeForPicker]);
 
   // This component doesn't render anything
   return null;

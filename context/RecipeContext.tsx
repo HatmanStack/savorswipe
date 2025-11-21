@@ -10,6 +10,8 @@ interface RecipeContextType {
   setJsonData: (data: S3JsonData | null) => void;
   mealTypeFilters: MealType[];
   setMealTypeFilters: (filters: MealType[]) => void;
+  pendingRecipeForPicker: Recipe | null;
+  setPendingRecipeForPicker: (recipe: Recipe | null) => void;
 }
 
 // Create the context
@@ -30,6 +32,7 @@ export const RecipeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     'side dish',
     'beverage'
   ]);
+  const [pendingRecipeForPicker, setPendingRecipeForPicker] = useState<Recipe | null>(null);
 
   // Load recipe JSON data with stale-while-revalidate pattern
   useEffect(() => {
@@ -80,8 +83,10 @@ export const RecipeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     jsonData,
     setJsonData,
     mealTypeFilters,
-    setMealTypeFilters
-  }), [currentRecipe, jsonData, mealTypeFilters]);
+    setMealTypeFilters,
+    pendingRecipeForPicker,
+    setPendingRecipeForPicker
+  }), [currentRecipe, jsonData, mealTypeFilters, pendingRecipeForPicker]);
 
   return (
     <RecipeContext.Provider value={value}>

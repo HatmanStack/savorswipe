@@ -79,10 +79,6 @@ export function useImageQueue(): ImageQueueHook {
   const [nextImage, setNextImage] = useState<ImageFile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Image picker modal state
-  const [pendingRecipe, setPendingRecipe] = useState<Recipe | null>(null);
-  const [showImagePickerModal, setShowImagePickerModal] = useState(false);
-
   // Recipe key pool (mutable ref, doesn't trigger re-renders)
   const recipeKeyPoolRef = useRef<string[]>([]);
   const isRefillingRef = useRef(false);
@@ -95,7 +91,18 @@ export function useImageQueue(): ImageQueueHook {
   const seenRecipeKeysRef = useRef<Set<string>>(new Set()); // Track seen recipes to avoid duplicates
 
   // Context - extract all needed values at top level (React Hook Rules)
-  const { jsonData, setCurrentRecipe, setJsonData, mealTypeFilters } = useRecipe();
+  const {
+    jsonData,
+    setCurrentRecipe,
+    setJsonData,
+    mealTypeFilters,
+    pendingRecipeForPicker,
+    setPendingRecipeForPicker
+  } = useRecipe();
+
+  // Derive modal visibility from context state
+  const showImagePickerModal = pendingRecipeForPicker !== null;
+  const pendingRecipe = pendingRecipeForPicker;
 
   // Keep queueRef and nextImageRef in sync with state
   useEffect(() => {
@@ -127,9 +134,8 @@ export function useImageQueue(): ImageQueueHook {
 
   // Reset pending recipe state
   const resetPendingRecipe = useCallback(() => {
-    setPendingRecipe(null);
-    setShowImagePickerModal(false);
-  }, []);
+    setPendingRecipeForPicker(null);
+  }, [setPendingRecipeForPicker]);
 
   // Inject new recipes into queue with retry logic
   const injectRecipes = useCallback(async (recipeKeys: string[]): Promise<void> => {
@@ -596,8 +602,7 @@ export function useImageQueue(): ImageQueueHook {
         // Only set pending recipe if not already set to this recipe
         // This prevents infinite loops from creating new object references
         if (!pendingRecipe || pendingRecipe.key !== key) {
-          setPendingRecipe({ ...recipe, key });
-          setShowImagePickerModal(true);
+          setPendingRecipeForPicker({ ...recipe, key });
         }
 
         // Don't inject pending recipe into queue yet - pause until selection is complete
@@ -613,7 +618,7 @@ export function useImageQueue(): ImageQueueHook {
 
     // Update previous keys ref
     prevJsonDataKeysRef.current = currentKeys;
-  }, [jsonData, injectRecipes, pendingRecipe]);
+  }, [jsonData, injectRecipes, pendingRecipe, setPendingRecipeForPicker]);
 
   // Effect: Check if queue needs refilling
   useEffect(() => {
