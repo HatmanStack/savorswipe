@@ -10,7 +10,7 @@
  * - Loading and error states for thumbnails
  */
 
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback } from 'react'
 import {
   View,
   Text,
@@ -18,7 +18,6 @@ import {
   Image,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   Modal,
 } from 'react-native'
 

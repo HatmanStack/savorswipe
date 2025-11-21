@@ -11,7 +11,6 @@ import { useEffect } from 'react';
 import { useRecipe } from '@/context/RecipeContext';
 import { UploadService } from '@/services/UploadService';
 import { UploadJob } from '@/types/upload';
-import { ToastQueue } from '@/components/Toast';
 
 export function UploadListener() {
   const { setJsonData, setPendingRecipeForPicker } = useRecipe();

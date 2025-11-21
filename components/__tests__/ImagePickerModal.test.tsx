@@ -4,7 +4,7 @@
  */
 
 import React from 'react'
-import { render, fireEvent, waitFor } from '@testing-library/react-native'
+import { render, fireEvent } from '@testing-library/react-native'
 import { ImagePickerModal } from '../ImagePickerModal'
 import { ImageGrid } from '../ImageGrid'
 import { ImagePreview } from '../ImagePreview'
@@ -146,7 +146,7 @@ describe('ImagePickerModal', () => {
 
     // Test 6: Grid renders exactly 9 thumbnails
     it('test_grid_renders_9_thumbnails: should render exactly 9 thumbnail items', () => {
-      const { getAllByLabelText } = render(
+      render(
         <ImageGrid
           recipeTitle={mockRecipe.Title}
           imageUrls={mockRecipe.image_search_results || []}
@@ -214,7 +214,7 @@ describe('ImagePickerModal', () => {
 
     // Test 9: Delete button is only visible in grid view, not in preview
     it('test_delete_button_grid_only: should show delete button in grid view', () => {
-      const { getByLabelText, queryByLabelText } = render(
+      const { getByLabelText } = render(
         <ImageGrid
           recipeTitle={mockRecipe.Title}
           imageUrls={mockRecipe.image_search_results || []}
@@ -259,7 +259,7 @@ describe('ImagePickerModal', () => {
 
     // Test 9: Preview shows loading spinner initially
     it('test_preview_loading_state: should show loading spinner initially', () => {
-      const { getByTestId } = render(
+      render(
         <ImagePreview
           imageUrl={testImageUrl}
           onConfirm={mockPreviewOnConfirm}

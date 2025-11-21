@@ -20,7 +20,7 @@ export function SearchResultItem({ recipe, onPress }: SearchResultItemProps) {
   // Construct image URL with validation
   let imageUrl = '';
   if (!CLOUDFRONT_BASE_URL) {
-
+    // No CloudFront URL configured - imageUrl remains empty, will use fallback
   } else {
     imageUrl = `${CLOUDFRONT_BASE_URL}/${ImageService.getImageFileName(recipe.key)}`;
   }

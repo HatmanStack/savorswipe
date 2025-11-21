@@ -105,11 +105,11 @@ export default function RecipeDetail() {
               filename: recipeFilePath,
               file: fileURL
             });
-          } catch (error) {
-
+          } catch {
+            // Image blob creation error - non-critical
           }
-        } catch (error) {
-
+        } catch {
+          // File read error - non-critical
         }
       };
 

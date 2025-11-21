@@ -28,9 +28,8 @@ export default function SearchScreen() {
   useEffect(() => {
     SearchStorageService.getRecentSearches()
       .then(setRecentSearches)
-      .catch(err => {
-
-        // Still set empty array so UI doesn't break
+      .catch(() => {
+        // Storage error - still set empty array so UI doesn't break
         setRecentSearches([]);
       });
   }, []);
@@ -59,9 +58,8 @@ export default function SearchScreen() {
           return SearchStorageService.getRecentSearches();
         })
         .then(setRecentSearches)
-        .catch(err => {
-
-          // UI continues to work, recent searches just won't update
+        .catch(() => {
+          // Storage error - UI continues to work, recent searches just won't update
         });
     }
   }, [query, jsonData]);
@@ -79,9 +77,8 @@ export default function SearchScreen() {
       .then(() => {
         setRecentSearches([]);
       })
-      .catch(err => {
-
-        // Optionally show a user-facing error message
+      .catch(() => {
+        // Storage error - non-critical
       });
   };
 

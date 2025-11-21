@@ -95,7 +95,7 @@ export default function Menu() {
         } else {
           // Handle invalid jsonData
           if (__DEV__) {
-
+            // Development error logging removed for production
           }
         }
       }
