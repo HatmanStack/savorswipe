@@ -97,13 +97,14 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   const buildCompletionMessage = (job: UploadJob): string => {
     const { completed, failed } = job.progress;
     const total = job.progress.total;
+    const newRecipeCount = job.result?.newRecipeKeys?.length || 0;
 
     if (failed === 0) {
-      return `All ${completed} recipes added successfully!`;
+      return `${completed} recipe${completed !== 1 ? 's' : ''} processed! ${newRecipeCount} new recipe${newRecipeCount !== 1 ? 's' : ''} ready to swipe.`;
     } else if (completed > 0) {
-      return `${completed} of ${total} added. Tap to view ${failed} errors.`;
+      return `${completed}/${total} succeeded, ${failed} failed. Tap to view errors.`;
     } else {
-      return `All ${failed} recipes failed. Tap for details.`;
+      return `Upload failed: ${failed}/${total} errors. Tap for details.`;
     }
   };
 

@@ -7,6 +7,7 @@ Provides functions to:
 - Upload images to S3 with retry logic
 """
 
+import io
 import ipaddress
 import logging
 import os
@@ -16,6 +17,7 @@ import time
 import urllib.parse
 from typing import Optional, Tuple
 from botocore.exceptions import ClientError
+from PIL import Image
 import requests
 
 # Configure logging
@@ -156,38 +158,41 @@ def upload_image_to_s3(
 ) -> Tuple[Optional[str], Optional[str]]:
     """
     Upload image bytes to S3 with retry logic for race conditions.
+    Always converts images to JPEG format before uploading.
 
     Args:
-        recipe_key: Recipe key for S3 path (images/{recipe_key}.ext)
-        image_bytes: Image bytes to upload
+        recipe_key: Recipe key for S3 path (images/{recipe_key}.jpg)
+        image_bytes: Image bytes to upload (any format)
         s3_client: Boto3 S3 client
         bucket: S3 bucket name
         max_retries: Maximum retry attempts (default: 3)
-        content_type: MIME type of the image (default: 'image/jpeg')
+        content_type: MIME type of the source image (default: 'image/jpeg')
 
     Returns:
         Tuple of (s3_path, error_message)
-        - On success: (s3_path, None) where s3_path = "images/{recipe_key}.ext"
+        - On success: (s3_path, None) where s3_path = "images/{recipe_key}.jpg"
         - On failure: (None, error_message)
     """
-    # Determine file extension based on content-type
-    extension_map = {
-        'image/jpeg': 'jpg',
-        'image/jpg': 'jpg',
-        'image/png': 'png',
-        'image/webp': 'webp',
-        'image/gif': 'gif',
-    }
-
-    # Extract extension from content-type or default to jpg
-    extension = extension_map.get(content_type.lower(), 'jpg')
-    s3_key = f"images/{recipe_key}.{extension}"
-
     if not image_bytes:
-        logger.error(f"[IMAGE] No image bytes provided for {s3_key}")
+        logger.error(f"[IMAGE] No image bytes provided")
         return None, "No image bytes provided"
 
-    logger.info(f"[IMAGE] Uploading image to S3: {bucket}/{s3_key} ({len(image_bytes)} bytes, content-type: {content_type})")
+    # Always save as .jpg
+    s3_key = f"images/{recipe_key}.jpg"
+
+    # Convert any image format to JPEG
+    try:
+        logger.info(f"[IMAGE] Converting image to JPEG (source type: {content_type})...")
+        image = Image.open(io.BytesIO(image_bytes))
+        jpeg_image_io = io.BytesIO()
+        image.convert('RGB').save(jpeg_image_io, format='JPEG', quality=85)
+        jpeg_bytes = jpeg_image_io.getvalue()
+        logger.info(f"[IMAGE] Image converted to JPEG, size: {len(jpeg_bytes)} bytes")
+    except Exception as e:
+        logger.error(f"[IMAGE] Failed to convert image to JPEG: {str(e)}")
+        return None, f"Image conversion failed: {str(e)}"
+
+    logger.info(f"[IMAGE] Uploading image to S3: {bucket}/{s3_key} ({len(jpeg_bytes)} bytes)")
 
     for attempt in range(max_retries):
         try:
@@ -196,8 +201,8 @@ def upload_image_to_s3(
             s3_client.put_object(
                 Bucket=bucket,
                 Key=s3_key,
-                Body=image_bytes,
-                ContentType=content_type
+                Body=jpeg_bytes,
+                ContentType='image/jpeg'
             )
 
             logger.info(f"[IMAGE] Successfully uploaded {s3_key}")
