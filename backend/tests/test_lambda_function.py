@@ -509,7 +509,7 @@ class TestLambdaGetRequest(unittest.TestCase):
             }
 
             # Act
-            result = handle_get_request(event, None)
+            result = handle_get_request(event, None, origin=None)
 
             # Assert
             self.assertEqual(result['statusCode'], 200)
@@ -553,7 +553,7 @@ class TestLambdaGetRequest(unittest.TestCase):
             }
 
             # Act
-            result = handle_get_request(event, None)
+            result = handle_get_request(event, None, origin=None)
 
             # Assert
             self.assertEqual(result['statusCode'], 404)
@@ -581,7 +581,7 @@ class TestLambdaGetRequest(unittest.TestCase):
             }
 
             # Act
-            result = handle_get_request(event, None)
+            result = handle_get_request(event, None, origin=None)
 
             # Assert
             self.assertEqual(result['statusCode'], 500)
@@ -603,7 +603,7 @@ class TestLambdaGetRequest(unittest.TestCase):
             }
 
             # Act
-            result = handle_get_request(event, None)
+            result = handle_get_request(event, None, origin=None)
 
             # Assert
             self.assertEqual(result['statusCode'], 500)

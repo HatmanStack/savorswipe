@@ -50,7 +50,7 @@ class TestPostImageEndpoint:
             with patch('lambda_function.upload_image_to_s3') as mock_upload:
                 mock_fetch.return_value = (b'image data', 'image/jpeg')
                 mock_upload.return_value = ("images/1.jpg", None)
-                response = handle_post_image_request(event, None)
+                response = handle_post_image_request(event, None, origin=None)
 
         assert response['statusCode'] == 200
         body = json.loads(response['body'])
@@ -87,7 +87,7 @@ class TestPostImageEndpoint:
 
         with patch('lambda_function.fetch_image_from_url') as mock_fetch:
             mock_fetch.return_value = (None, None)
-            response = handle_post_image_request(event, None)
+            response = handle_post_image_request(event, None, origin=None)
 
         assert response['statusCode'] == 500
         body = json.loads(response['body'])
@@ -122,7 +122,7 @@ class TestPostImageEndpoint:
             with patch('lambda_function.upload_image_to_s3') as mock_upload:
                 mock_fetch.return_value = (b'image data', 'image/jpeg')
                 mock_upload.return_value = ("images/999.jpg", None)
-                response = handle_post_image_request(event, None)
+                response = handle_post_image_request(event, None, origin=None)
 
         assert response['statusCode'] == 404
         body = json.loads(response['body'])
@@ -143,7 +143,7 @@ class TestPostImageEndpoint:
             })
         }
 
-        response = handle_post_image_request(event, None)
+        response = handle_post_image_request(event, None, origin=None)
 
         assert response['statusCode'] == 400
         body = json.loads(response['body'])
@@ -170,7 +170,7 @@ class TestPostImageEndpoint:
             "body": json.dumps({})
         }
 
-        response = handle_post_image_request(event, None)
+        response = handle_post_image_request(event, None, origin=None)
 
         assert response['statusCode'] == 400
         body = json.loads(response['body'])
@@ -199,7 +199,7 @@ class TestPostImageEndpoint:
             })
         }
 
-        response = handle_post_image_request(event, None)
+        response = handle_post_image_request(event, None, origin=None)
 
         assert response['statusCode'] == 400
         body = json.loads(response['body'])
@@ -225,7 +225,7 @@ class TestPostImageEndpoint:
             "body": "invalid json {{"
         }
 
-        response = handle_post_image_request(event, None)
+        response = handle_post_image_request(event, None, origin=None)
 
         assert response['statusCode'] == 400
         body = json.loads(response['body'])
@@ -258,10 +258,10 @@ class TestPostImageEndpoint:
             with patch('lambda_function.upload_image_to_s3') as mock_upload:
                 mock_fetch.return_value = (b'image data', 'image/jpeg')
                 mock_upload.return_value = ("images/1.jpg", None)
-                response = handle_post_image_request(event, None)
+                response = handle_post_image_request(event, None, origin=None)
 
         assert 'Access-Control-Allow-Origin' in response['headers']
-        assert response['headers']['Access-Control-Allow-Origin'] == '*'
+        assert response['headers']['Access-Control-Allow-Origin'] == 'https://savorswipe.hatstack.fun'
 
     def test_missing_s3_bucket_env_var(self):
         """Test that missing S3_BUCKET env var returns 500."""
@@ -278,7 +278,7 @@ class TestPostImageEndpoint:
         }
 
         with patch.dict('os.environ', {}, clear=True):
-            response = handle_post_image_request(event, None)
+            response = handle_post_image_request(event, None, origin=None)
 
         assert response['statusCode'] == 500
         body = json.loads(response['body'])
@@ -374,7 +374,7 @@ class TestPostImageEndpoint:
             with patch('lambda_function.upload_image_to_s3') as mock_upload:
                 mock_fetch.return_value = (b'image data', 'image/jpeg')
                 mock_upload.return_value = ("images/1.jpg", None)
-                response = handle_post_image_request(event, None)
+                response = handle_post_image_request(event, None, origin=None)
 
         assert response['statusCode'] == 200
         body = json.loads(response['body'])
@@ -412,7 +412,7 @@ class TestPostImageEndpoint:
             with patch('lambda_function.upload_image_to_s3') as mock_upload:
                 mock_fetch.return_value = (b'image data', 'image/jpeg')
                 mock_upload.return_value = ("images/1.jpg", None)
-                response = handle_post_image_request(event, None)
+                response = handle_post_image_request(event, None, origin=None)
 
         assert response['statusCode'] == 200
         body = json.loads(response['body'])
@@ -446,6 +446,6 @@ class TestPostImageEndpoint:
             with patch('lambda_function.upload_image_to_s3') as mock_upload:
                 mock_fetch.return_value = (b'image data', 'image/jpeg')
                 mock_upload.return_value = ("images/1.jpg", None)
-                response = handle_post_image_request(event, None)
+                response = handle_post_image_request(event, None, origin=None)
 
         assert response['headers']['Content-Type'] == 'application/json'

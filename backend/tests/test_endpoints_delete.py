@@ -49,7 +49,7 @@ class TestDeleteEndpoint:
         }
 
         # Act
-        response = handle_delete_request(event, None)
+        response = handle_delete_request(event, None, origin=None)
 
         # Assert
         assert response['statusCode'] == 200
@@ -93,7 +93,7 @@ class TestDeleteEndpoint:
         }
 
         # Act
-        response = handle_delete_request(event, None)
+        response = handle_delete_request(event, None, origin=None)
 
         # Assert: Should return 200 (idempotent)
         assert response['statusCode'] == 200
@@ -111,7 +111,7 @@ class TestDeleteEndpoint:
             }
         }
 
-        response = handle_delete_request(event, None)
+        response = handle_delete_request(event, None, origin=None)
 
         assert response['statusCode'] == 400
         body = json.loads(response['body'])
@@ -129,7 +129,7 @@ class TestDeleteEndpoint:
             }
         }
 
-        response = handle_delete_request(event, None)
+        response = handle_delete_request(event, None, origin=None)
 
         assert response['statusCode'] == 400
         body = json.loads(response['body'])
@@ -162,7 +162,7 @@ class TestDeleteEndpoint:
             }
         }
 
-        response = handle_delete_request(event, None)
+        response = handle_delete_request(event, None, origin=None)
 
         assert response['statusCode'] == 200
         body = json.loads(response['body'])
@@ -193,7 +193,7 @@ class TestDeleteEndpoint:
             }
         }
 
-        response = handle_delete_request(event, None)
+        response = handle_delete_request(event, None, origin=None)
 
         assert response['statusCode'] == 200
         body = json.loads(response['body'])
@@ -218,7 +218,7 @@ class TestDeleteEndpoint:
             }
         }
 
-        response = handle_delete_request(event, None)
+        response = handle_delete_request(event, None, origin=None)
 
         # Should still succeed
         assert response['statusCode'] == 200
@@ -244,7 +244,7 @@ class TestDeleteEndpoint:
             }
         }
 
-        response = handle_delete_request(event, None)
+        response = handle_delete_request(event, None, origin=None)
 
         # Should still succeed
         assert response['statusCode'] == 200
@@ -276,10 +276,10 @@ class TestDeleteEndpoint:
             }
         }
 
-        response = handle_delete_request(event, None)
+        response = handle_delete_request(event, None, origin=None)
 
         assert 'Access-Control-Allow-Origin' in response['headers']
-        assert response['headers']['Access-Control-Allow-Origin'] == '*'
+        assert response['headers']['Access-Control-Allow-Origin'] == 'https://savorswipe.hatstack.fun'
 
     def test_delete_missing_s3_bucket_env_var(self):
         """Test that missing S3_BUCKET env var returns 500."""
@@ -294,7 +294,7 @@ class TestDeleteEndpoint:
 
         # Unset S3_BUCKET
         with patch.dict('os.environ', {}, clear=True):
-            response = handle_delete_request(event, None)
+            response = handle_delete_request(event, None, origin=None)
 
         assert response['statusCode'] == 500
         body = json.loads(response['body'])
@@ -370,7 +370,7 @@ class TestDeleteEndpoint:
             }
         }
 
-        response = handle_delete_request(event, None)
+        response = handle_delete_request(event, None, origin=None)
 
         assert response['statusCode'] == 400
         body = json.loads(response['body'])
@@ -387,7 +387,7 @@ class TestDeleteEndpoint:
             }
         }
 
-        response = handle_delete_request(event, None)
+        response = handle_delete_request(event, None, origin=None)
 
         assert response['statusCode'] == 400
         body = json.loads(response['body'])
@@ -418,6 +418,6 @@ class TestDeleteEndpoint:
             }
         }
 
-        response = handle_delete_request(event, None)
+        response = handle_delete_request(event, None, origin=None)
 
         assert response['headers']['Content-Type'] == 'application/json'
