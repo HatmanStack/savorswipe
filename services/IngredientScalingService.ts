@@ -299,7 +299,7 @@ export class IngredientScalingService {
 
     // Object format
     if (typeof ingredients === 'object') {
-      const scaled: Record<string, unknown> = {};
+      const scaled: Record<string, any> = {};
 
       for (const [key, value] of Object.entries(ingredients)) {
         // Check if value is a nested object (sectioned ingredients)

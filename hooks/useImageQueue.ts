@@ -205,15 +205,14 @@ export function useImageQueue(): ImageQueueHook {
 
       // Clean up duplicate blob URLs after a delay
       if (duplicatesToCleanup.length > 0) {
-        setTimeout(() => {');
+        setTimeout(() => {
           ImageQueueService.cleanupImages(duplicatesToCleanup);
         }, 300);
       }
 
       if (uniqueNewImages.length === 0) {
-
         return prev;
-      }');
+      }
 
       // Calculate insert position (min of 2 or queue length)
       const insertPosition = Math.min(2, prev.length);
@@ -426,7 +425,7 @@ export function useImageQueue(): ImageQueueHook {
       const seenKeys = allKeys.filter(key => seenRecipeKeysRef.current.has(key));
 
       // Put unseen recipes first, then seen recipes at the end
-      recipeKeyPoolRef.current = [...unseenKeys, ...seenKeys];.length);.length - allKeys.length);
+      recipeKeyPoolRef.current = [...unseenKeys, ...seenKeys];
 
     }
 

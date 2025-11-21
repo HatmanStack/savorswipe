@@ -6,7 +6,7 @@ import { ThemedView } from '@/components/ThemedView';
 interface InfoModalProps {
   visible: boolean;
   onClose: () => void;
-  styles: Record<string, StyleProp<ViewStyle>>;
+  styles: Record<string, any>;
 }
 
 export const InfoModal: React.FC<InfoModalProps> = ({ visible, onClose, styles }) => {

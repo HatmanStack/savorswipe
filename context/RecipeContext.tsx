@@ -7,7 +7,7 @@ interface RecipeContextType {
   currentRecipe: Recipe | null;
   setCurrentRecipe: (recipe: Recipe | null) => void;
   jsonData: S3JsonData | null;
-  setJsonData: (data: S3JsonData | null) => void;
+  setJsonData: React.Dispatch<React.SetStateAction<S3JsonData | null>>;
   mealTypeFilters: MealType[];
   setMealTypeFilters: (filters: MealType[]) => void;
   pendingRecipeForPicker: Recipe | null;
@@ -67,8 +67,6 @@ export const RecipeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         });
       } catch (error) {
         // Silent fallback: continue using local cached data
-        if (__DEV__) {:', error);
-        }
       }
     };
 

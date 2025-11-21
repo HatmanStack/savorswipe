@@ -14,7 +14,7 @@ interface UploadModalProps {
   visible: boolean;
   onClose: () => void;
   uploadCount: number;
-  styles: Record<string, StyleProp<ViewStyle>>;
+  styles: Record<string, any>;
 }
 
 interface UploadMessageType {
@@ -36,7 +36,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   const [errorDetails, setErrorDetails] = useState<UploadError[]>([]);
   const [errorModalVisible, setErrorModalVisible] = useState(false);
 
-  const { setFirstFile, setAllFiles, jsonData, setJsonData } = useRecipe();
+  const { jsonData, setJsonData } = useRecipe();
 
   // Subscribe to UploadService status updates
   useEffect(() => {
@@ -67,21 +67,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       if (uploadMessage.returnMessage.includes('success')) {
         // Handle successful upload
         const existingKeys = new Set(Object.keys(jsonData || {}));
-        const newKeys = new Set(Object.keys(uploadMessage.jsonData || {}));
-        const difference = [...newKeys].filter((key) => !existingKeys.has(key));
-        const sortedDifference = difference.sort((a, b) => Number(b) - Number(a));
-
-        // New recipes uploaded
-
-        setAllFiles(sortedDifference);
+        // Update jsonData with new recipes (image queue handles display)
         setJsonData(uploadMessage.jsonData);
-
-        if (sortedDifference.length > 0) {
-          setFirstFile({
-            filename: ImageService.getImageFileName(sortedDifference[0]),
-            file: `data:image/jpeg;base64,${uploadMessage.encodedImages}`,
-          });
-        }
       }
 
       // Clear message after 2 seconds
@@ -91,7 +78,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
       return () => clearTimeout(timer);
     }
-  }, [uploadMessage, jsonData, setAllFiles, setJsonData, setFirstFile]);
+  }, [uploadMessage, jsonData, setJsonData]);
 
   // Helper function to build completion message
   const buildCompletionMessage = (job: UploadJob): string => {

@@ -26,11 +26,11 @@ export function UploadListener() {
       if (job.result?.jsonData) {
         setJsonData((prevData) => ({
           ...prevData,
-          ...job.result.jsonData
+          ...job.result!.jsonData
         }));
 
         // Check if any new recipes need image selection
-        const newRecipes = Object.entries(job.result.jsonData);
+        const newRecipes = Object.entries(job.result!.jsonData);
         for (const [key, recipe] of newRecipes) {
           const needsImageSelection =
             Array.isArray(recipe.image_search_results) &&
