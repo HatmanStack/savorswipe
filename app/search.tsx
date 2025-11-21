@@ -29,7 +29,7 @@ export default function SearchScreen() {
     SearchStorageService.getRecentSearches()
       .then(setRecentSearches)
       .catch(err => {
-        console.error('Failed to load recent searches:', err);
+
         // Still set empty array so UI doesn't break
         setRecentSearches([]);
       });
@@ -60,7 +60,7 @@ export default function SearchScreen() {
         })
         .then(setRecentSearches)
         .catch(err => {
-          console.error('Failed to update recent searches:', err);
+
           // UI continues to work, recent searches just won't update
         });
     }
@@ -80,7 +80,7 @@ export default function SearchScreen() {
         setRecentSearches([]);
       })
       .catch(err => {
-        console.error('Failed to clear recent searches:', err);
+
         // Optionally show a user-facing error message
       });
   };

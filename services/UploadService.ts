@@ -68,9 +68,7 @@ export class UploadService {
 
     // Start processing if not already running (don't await)
     if (!this.isProcessing) {
-      this.processQueue().catch((error) => {
-        console.error('Error in processQueue:', error)
-      })
+      this.processQueue().catch((error) => {})
     }
 
     return jobId
@@ -285,16 +283,12 @@ export class UploadService {
     this.subscribers.forEach((callback) => {
       try {
         callback(jobCopy)
-      } catch (error) {
-        console.error('Error in subscriber callback:', error)
-      }
+      } catch (error) {}
     })
 
     // Persist queue state to AsyncStorage
     UploadPersistence.saveQueue(this.jobQueue).catch(error => {
-      if (__DEV__) {
-        console.error('Failed to persist upload queue:', error)
-      }
+      if (__DEV__) {}
     })
   }
 

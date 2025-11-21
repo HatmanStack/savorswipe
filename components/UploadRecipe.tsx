@@ -156,9 +156,7 @@ export const selectAndUploadImage = async (
           })
         }
       }
-    } catch (error) {
-      console.error(`Error processing file ${asset.name}:`, error)
-      Alert.alert('Error', `Failed to process file '${asset.name}'. Skipping.`)
+    } catch (error) {Alert.alert('Error', `Failed to process file '${asset.name}'. Skipping.`)
       skippedFiles++
     }
   }

@@ -20,7 +20,7 @@ export function SearchResultItem({ recipe, onPress }: SearchResultItemProps) {
   // Construct image URL with validation
   let imageUrl = '';
   if (!CLOUDFRONT_BASE_URL) {
-    console.error('SearchResultItem: EXPO_PUBLIC_CLOUDFRONT_BASE_URL is not defined for recipe', recipe.key);
+
   } else {
     imageUrl = `${CLOUDFRONT_BASE_URL}/${ImageService.getImageFileName(recipe.key)}`;
   }

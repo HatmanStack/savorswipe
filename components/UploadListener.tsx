@@ -40,7 +40,7 @@ export function UploadListener() {
 
           if (needsImageSelection) {
             // Trigger modal immediately for first pending recipe
-            console.log('[UPLOAD] New recipe needs image selection:', key);
+
             setPendingRecipeForPicker({ ...recipe, key });
             break; // Only show modal for first pending recipe
           }

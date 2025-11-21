@@ -106,10 +106,10 @@ export default function RecipeDetail() {
               file: fileURL
             });
           } catch (error) {
-            console.error(`Failed to load image for recipe ${recipeId}:`, error);
+
           }
         } catch (error) {
-          console.error(`Failed to load recipe data for recipe ${recipeId}:`, error);
+
         }
       };
 

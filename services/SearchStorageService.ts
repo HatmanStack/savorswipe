@@ -36,7 +36,7 @@ export class SearchStorageService {
       // Sort by timestamp descending (most recent first)
       return validSearches.sort((a, b) => b.timestamp - a.timestamp);
     } catch (error) {
-      console.error('Error loading recent searches:', error);
+
       return [];
     }
   }
@@ -79,7 +79,7 @@ export class SearchStorageService {
         JSON.stringify(limitedSearches)
       );
     } catch (error) {
-      console.error('Error saving recent search:', error);
+
     }
   }
 
@@ -90,7 +90,7 @@ export class SearchStorageService {
     try {
       await AsyncStorage.removeItem(RECENT_SEARCHES_KEY);
     } catch (error) {
-      console.error('Error clearing recent searches:', error);
+
     }
   }
 }

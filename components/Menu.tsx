@@ -95,7 +95,7 @@ export default function Menu() {
         } else {
           // Handle invalid jsonData
           if (__DEV__) {
-            console.error('Invalid jsonData in upload response:', uploadMessage.jsonData);
+
           }
         }
       }

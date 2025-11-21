@@ -67,8 +67,7 @@ export const RecipeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         });
       } catch (error) {
         // Silent fallback: continue using local cached data
-        if (__DEV__) {
-          console.error('Failed to fetch fresh recipe data (using cached):', error);
+        if (__DEV__) {:', error);
         }
       }
     };
