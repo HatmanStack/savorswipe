@@ -25,6 +25,8 @@ describe('Integration: Edge Cases & Data Integrity', () => {
       setJsonData: mockSetJsonData,
       setCurrentRecipe: mockSetCurrentRecipe,
       mealTypeFilters: ['main dish', 'dessert'],
+      pendingRecipeForPicker: null,
+      setPendingRecipeForPicker: jest.fn(),
     });
 
     // Setup ImageQueueService mocks
@@ -54,6 +56,8 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         setJsonData: mockSetJsonData,
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
+        pendingRecipeForPicker: null,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       const { result, rerender } = renderHook(() => useImageQueue());
@@ -70,6 +74,8 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         setJsonData: mockSetJsonData2,
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
+        pendingRecipeForPicker: null,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       rerender();
@@ -98,6 +104,8 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         setJsonData: mockSetJsonData,
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
+        pendingRecipeForPicker: null,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
@@ -125,6 +133,8 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         setJsonData: mockSetJsonData2,
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
+        pendingRecipeForPicker: pendingRecipe,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       rerender();
@@ -153,6 +163,8 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         setJsonData: mockSetJsonData,
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
+        pendingRecipeForPicker: null,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
@@ -179,6 +191,8 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         setJsonData: mockSetJsonData2,
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
+        pendingRecipeForPicker: pendingRecipe,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       rerender();
@@ -206,6 +220,8 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         setJsonData: mockSetJsonData,
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
+        pendingRecipeForPicker: null,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
@@ -226,6 +242,8 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         setJsonData: mockSetJsonData2,
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
+        pendingRecipeForPicker: pendingRecipe,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       rerender();
@@ -260,6 +278,8 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         setJsonData: mockSetJsonDataLocal,
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
+        pendingRecipeForPicker: pendingRecipe,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
@@ -307,6 +327,8 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         setJsonData: mockSetJsonData,
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
+        pendingRecipeForPicker: null,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
@@ -332,6 +354,8 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         setJsonData: (data: S3JsonData) => { mockData = data; },
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
+        pendingRecipeForPicker: pendingRecipe,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       rerender();
@@ -381,6 +405,8 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         setJsonData: (data: S3JsonData) => { mockData = data; },
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
+        pendingRecipeForPicker: null,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
