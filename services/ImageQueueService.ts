@@ -56,7 +56,7 @@ export class ImageQueueService {
       } else {
         // Track which key failed
         failedKeys.push(keysToFetch[index]);
-          console.error(`Failed to fetch image for recipe ${keysToFetch[index]}:`, result.reason);
+
       }
     });
 

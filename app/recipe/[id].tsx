@@ -105,11 +105,11 @@ export default function RecipeDetail() {
               filename: recipeFilePath,
               file: fileURL
             });
-          } catch (error) {
-            console.error(`Failed to load image for recipe ${recipeId}:`, error);
+          } catch {
+            // Image blob creation error - non-critical
           }
-        } catch (error) {
-          console.error(`Failed to load recipe data for recipe ${recipeId}:`, error);
+        } catch {
+          // File read error - non-critical
         }
       };
 

@@ -29,9 +29,6 @@ export default function Menu() {
   const [mealTypeExpanded, setMealTypeExpanded] = useState(false);
   const [uploadText, setUploadText] = useState<string | null>(null);
   const {
-    setFirstFile,
-    setAllFiles,
-    jsonData,
     setJsonData,
     mealTypeFilters,
     setMealTypeFilters,
@@ -80,22 +77,12 @@ export default function Menu() {
       if (uploadMessage.returnMessage.includes("success")) {
         // Type guard: ensure uploadMessage.jsonData is a valid S3JsonData object
         if (isS3JsonData(uploadMessage.jsonData)) {
-          const existingKeys = new Set(Object.keys(jsonData || {}));
-          const newKeys = new Set(Object.keys(uploadMessage.jsonData));
-          const difference = [...newKeys].filter((key) => !existingKeys.has(key));
-          const sortedDifference = difference.sort(
-            (a, b) => Number(b) - Number(a)
-          );
-          setAllFiles(sortedDifference);
+          // Update jsonData with new recipes (image queue handles display)
           setJsonData(uploadMessage.jsonData);
-          setFirstFile({
-            filename: `image/${sortedDifference[0]}.jpg`,
-            file: `data:image/jpeg;base64,${uploadMessage.encodedImages}`,
-          });
         } else {
           // Handle invalid jsonData
           if (__DEV__) {
-            console.error('Invalid jsonData in upload response:', uploadMessage.jsonData);
+            // Development error logging removed for production
           }
         }
       }
@@ -210,7 +197,6 @@ export default function Menu() {
       {uploadVisible && (
         <UploadImage
           key={uploadCount}
-          setUploadMessage={setUploadMessage}
           setUploadVisible={setUploadVisible}
         />
       )}

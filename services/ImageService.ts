@@ -14,9 +14,9 @@ export class ImageService {
       const response = await fetch(url);
 
       if (!response.ok) {
-        console.error(`HTTP error ${response.status} while fetching file: ${response.statusText}`);
+
         const errorText = await response.text();
-        console.error('Error details:', errorText);
+
         throw new Error(`Failed to fetch file from CloudFront. Status: ${response.status}`);
       }
 
@@ -31,7 +31,7 @@ export class ImageService {
       // This is a fallback that may need platform-specific implementation
       return '';
     } catch (error) {
-      console.error('Error fetching file from CloudFront:', error);
+
       throw error;
     }
   }
@@ -63,7 +63,7 @@ export class ImageService {
           file: imageUrl,
         };
       } catch (error) {
-        console.error(`Error preloading image for recipe ${key}:`, error);
+
         return null;
       }
     });

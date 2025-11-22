@@ -40,16 +40,12 @@ function transformErrorMessage(rawError: string): string {
     return 'Taking longer than expected. Please check your internet and try again.';
   }
 
-  if (errorLower.includes('network') || errorLower.includes('failed')) {
-    return 'Unable to connect. Please check your internet connection.';
-  }
-
-  // Recipe not found
+  // Recipe not found - check before generic 404
   if (errorLower.includes('recipe not found') || errorLower.includes('404')) {
     return 'Recipe not found. It may have been deleted.';
   }
 
-  // Invalid image URL
+  // Invalid image URL - check before generic 400
   if (
     errorLower.includes('invalid image url') ||
     errorLower.includes('invalid url') ||
@@ -58,14 +54,19 @@ function transformErrorMessage(rawError: string): string {
     return "Image couldn't be loaded. Please select another image.";
   }
 
-  // Server errors
+  // Server errors - check before generic "failed"
   if (errorLower.includes('500') || errorLower.includes('server error')) {
     return 'Server error. Please try again later.';
   }
 
-  // Google image fetch failures
+  // Google image fetch failures - check before generic "failed"
   if (errorLower.includes('fetch image from google')) {
     return "Image couldn't be loaded from source. Please select another image.";
+  }
+
+  // Generic network/failed errors - check last to avoid misclassification
+  if (errorLower.includes('network') || errorLower.includes('failed')) {
+    return 'Unable to connect. Please check your internet connection.';
   }
 
   // Fallback for unknown errors
@@ -79,10 +80,6 @@ export function useImageQueue(): ImageQueueHook {
   const [nextImage, setNextImage] = useState<ImageFile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Image picker modal state
-  const [pendingRecipe, setPendingRecipe] = useState<Recipe | null>(null);
-  const [showImagePickerModal, setShowImagePickerModal] = useState(false);
-
   // Recipe key pool (mutable ref, doesn't trigger re-renders)
   const recipeKeyPoolRef = useRef<string[]>([]);
   const isRefillingRef = useRef(false);
@@ -95,7 +92,18 @@ export function useImageQueue(): ImageQueueHook {
   const seenRecipeKeysRef = useRef<Set<string>>(new Set()); // Track seen recipes to avoid duplicates
 
   // Context - extract all needed values at top level (React Hook Rules)
-  const { jsonData, setCurrentRecipe, setJsonData, mealTypeFilters } = useRecipe();
+  const {
+    jsonData,
+    setCurrentRecipe,
+    setJsonData,
+    mealTypeFilters,
+    pendingRecipeForPicker,
+    setPendingRecipeForPicker
+  } = useRecipe();
+
+  // Derive modal visibility from context state
+  const showImagePickerModal = pendingRecipeForPicker !== null;
+  const pendingRecipe = pendingRecipeForPicker;
 
   // Keep queueRef and nextImageRef in sync with state
   useEffect(() => {
@@ -127,9 +135,8 @@ export function useImageQueue(): ImageQueueHook {
 
   // Reset pending recipe state
   const resetPendingRecipe = useCallback(() => {
-    setPendingRecipe(null);
-    setShowImagePickerModal(false);
-  }, []);
+    setPendingRecipeForPicker(null);
+  }, [setPendingRecipeForPicker]);
 
   // Inject new recipes into queue with retry logic
   const injectRecipes = useCallback(async (recipeKeys: string[]): Promise<void> => {
@@ -163,8 +170,7 @@ export function useImageQueue(): ImageQueueHook {
         // Last retry: use what we got
         fetchedImages = result.images;
         break;
-      } catch (error) {
-          console.error('Error fetching images for injection:', error);
+      } catch {
         attemptCount++;
 
         if (attemptCount >= INJECT_RETRY_MAX) {
@@ -175,7 +181,7 @@ export function useImageQueue(): ImageQueueHook {
 
     // No images fetched
     if (fetchedImages.length === 0) {
-      console.log('[QUEUE] No images fetched for injection after retries');
+
       return;
     }
 
@@ -191,7 +197,7 @@ export function useImageQueue(): ImageQueueHook {
       const uniqueNewImages = fetchedImages.filter(img => {
         const key = ImageService.getRecipeKeyFromFileName(img.filename);
         if (existingKeys.has(key)) {
-          console.log('[QUEUE] Recipe', key, 'already in queue - skipping duplicate injection');
+
           duplicatesToCleanup.push(img);
           return false;
         }
@@ -201,17 +207,13 @@ export function useImageQueue(): ImageQueueHook {
       // Clean up duplicate blob URLs after a delay
       if (duplicatesToCleanup.length > 0) {
         setTimeout(() => {
-          console.log('[QUEUE] Cleaning up', duplicatesToCleanup.length, 'duplicate blob URLs (delayed)');
           ImageQueueService.cleanupImages(duplicatesToCleanup);
         }, 300);
       }
 
       if (uniqueNewImages.length === 0) {
-        console.log('[QUEUE] No new unique recipes to inject after deduplication');
         return prev;
       }
-
-      console.log('[QUEUE] Injecting', uniqueNewImages.length, 'unique recipes (filtered', duplicatesToCleanup.length, 'duplicates)');
 
       // Calculate insert position (min of 2 or queue length)
       const insertPosition = Math.min(2, prev.length);
@@ -245,52 +247,53 @@ export function useImageQueue(): ImageQueueHook {
 
     // Set timestamp to block refill for 2 seconds
     lastInjectionTimeRef.current = Date.now();
-    console.log('[QUEUE] Injection complete - refill blocked for 2 seconds');
-    console.log('Successfully injected', fetchedImages.length, 'recipes into queue');
+
 
   }, []); // Empty deps - all state reads use refs or functional updates
 
   // Handle image selection confirmation
   const onConfirmImage = useCallback(
     async (imageUrl: string) => {
-      if (!pendingRecipe || !jsonData || !setJsonData) {
-        console.warn('[QUEUE] No pending recipe to confirm');
+      if (!pendingRecipe || !jsonData) {
+
         return;
       }
+
+      // Capture recipe key before clearing state
+      const recipeKey = pendingRecipe.key;
 
       ToastQueue.show('Saving image selection...');
 
       try {
-        console.log('[QUEUE] Confirming image selection for:', pendingRecipe.key);
 
         // Call backend to select image
         const updatedRecipe = await RecipeService.selectRecipeImage(
-          pendingRecipe.key,
+          recipeKey,
           imageUrl
         );
 
         // Update local jsonData with the returned recipe
         const updatedJsonData = {
           ...jsonData,
-          [pendingRecipe.key]: updatedRecipe,
+          [recipeKey]: updatedRecipe,
         };
         setJsonData(updatedJsonData);
 
         // Inject recipe into queue
-        await injectRecipes([pendingRecipe.key]);
+        await injectRecipes([recipeKey]);
 
-        // Clear pending state
+        // Hide modal only after successful completion
         resetPendingRecipe();
 
         ToastQueue.show('Image saved');
-        console.log('[QUEUE] Image selection confirmed for:', pendingRecipe.key);
+
       } catch (error) {
         const rawError =
           error instanceof Error ? error.message : 'Unknown error occurred';
         const userFriendlyError = transformErrorMessage(rawError);
-        console.error('[QUEUE] Image selection failed:', error);
+
         ToastQueue.show(`Failed to save image: ${userFriendlyError}`);
-        // Keep modal visible for retry
+        // Keep modal open on failure so user can retry
       }
     },
     [pendingRecipe, jsonData, setJsonData, injectRecipes, resetPendingRecipe]
@@ -298,36 +301,38 @@ export function useImageQueue(): ImageQueueHook {
 
   // Handle recipe deletion
   const onDeleteRecipe = useCallback(async () => {
-    if (!pendingRecipe || !jsonData || !setJsonData) {
-      console.warn('[QUEUE] No pending recipe to delete');
+    if (!pendingRecipe || !jsonData) {
+
       return;
     }
+
+    // Capture recipe key before clearing state
+    const recipeKey = pendingRecipe.key;
 
     ToastQueue.show('Deleting recipe...');
 
     try {
-      console.log('[QUEUE] Deleting recipe:', pendingRecipe.key);
 
       // Call backend to delete recipe
-      await RecipeService.deleteRecipe(pendingRecipe.key);
+      await RecipeService.deleteRecipe(recipeKey);
 
       // Remove recipe from local jsonData
       const updatedJsonData = { ...jsonData };
-      delete updatedJsonData[pendingRecipe.key];
+      delete updatedJsonData[recipeKey];
       setJsonData(updatedJsonData);
 
-      // Clear pending state
+      // Hide modal only after successful completion
       resetPendingRecipe();
 
       ToastQueue.show('Recipe deleted');
-      console.log('[QUEUE] Recipe deleted:', pendingRecipe.key);
+
     } catch (error) {
       const rawError =
         error instanceof Error ? error.message : 'Unknown error occurred';
       const userFriendlyError = transformErrorMessage(rawError);
-      console.error('[QUEUE] Recipe deletion failed:', error);
+
       ToastQueue.show(`Failed to delete recipe: ${userFriendlyError}`);
-      // Keep modal visible for retry
+      // Keep modal open on failure so user can retry
     }
   }, [pendingRecipe, jsonData, setJsonData, resetPendingRecipe]);
 
@@ -381,8 +386,8 @@ export function useImageQueue(): ImageQueueHook {
       if (allImages[1]) {
         setNextImage(allImages[1]);
       }
-    } catch (error) {
-        console.error('Error initializing image queue:', error);
+    } catch {
+      // Initialization error - already handled by finally block
     } finally {
       isInitializingRef.current = false;
       if (isMountedRef.current) {
@@ -403,18 +408,17 @@ export function useImageQueue(): ImageQueueHook {
     const timeSinceInjection = Date.now() - lastInjectionTimeRef.current;
     const isQueueEmpty = queueRef.current.length === 0;
     if (timeSinceInjection < 2000 && !isQueueEmpty) {
-      console.log('[QUEUE] Skipping refill - injection happened', timeSinceInjection, 'ms ago');
+
       return;
     }
 
     if (isQueueEmpty) {
-      console.log('[QUEUE] Emergency refill - queue is completely empty');
+
     }
 
     // If pool is empty, reshuffle to create a new pool
     if (recipeKeyPoolRef.current.length === 0 && jsonData) {
-      console.log('[QUEUE] Recipe pool exhausted, reshuffling with seen recipes at end...');
-      console.log('[QUEUE] Seen recipes this session:', seenRecipeKeysRef.current.size);
+
 
       // Create new shuffled pool
       const allKeys = ImageQueueService.createRecipeKeyPool(jsonData, mealTypeFilters);
@@ -426,10 +430,6 @@ export function useImageQueue(): ImageQueueHook {
       // Put unseen recipes first, then seen recipes at the end
       recipeKeyPoolRef.current = [...unseenKeys, ...seenKeys];
 
-      console.log('[QUEUE] Total recipes in jsonData:', Object.keys(jsonData).length);
-      console.log('[QUEUE] Recipes matching filters:', allKeys.length);
-      console.log('[QUEUE] Missing recipes:', Object.keys(jsonData).length - allKeys.length);
-      console.log('[QUEUE] Reshuffled pool:', unseenKeys.length, 'unseen,', seenKeys.length, 'seen');
     }
 
     // If still no keys available (no recipes match filters), return
@@ -457,7 +457,7 @@ export function useImageQueue(): ImageQueueHook {
 
           // If queue was empty, initialize currentImage and nextImage
           if (wasEmpty && newQueue.length > 0) {
-            console.log('[QUEUE] Queue was empty, initializing currentImage and nextImage');
+
             setCurrentImage(newQueue[0]);
             if (newQueue.length > 1) {
               setNextImage(newQueue[1]);
@@ -472,8 +472,8 @@ export function useImageQueue(): ImageQueueHook {
       // Remove fetched keys from pool
       const fetchedCount = result.images.length + result.failedKeys.length;
       recipeKeyPoolRef.current = recipeKeyPoolRef.current.slice(fetchedCount);
-    } catch (error) {
-        console.error('Error refilling queue:', error);
+    } catch {
+      // Refill error - handled by finally block
     } finally {
       isRefillingRef.current = false;
     }
@@ -507,7 +507,7 @@ export function useImageQueue(): ImageQueueHook {
       if (newCurrent) {
         const recipeKey = ImageService.getRecipeKeyFromFileName(newCurrent.filename);
         seenRecipeKeysRef.current.add(recipeKey);
-        console.log('[QUEUE] Marked recipe as seen:', recipeKey, '- Total seen:', seenRecipeKeysRef.current.size);
+
       }
 
       return newQueue;
@@ -521,7 +521,6 @@ export function useImageQueue(): ImageQueueHook {
 
     // Clear seen recipes tracker (new filter context)
     seenRecipeKeysRef.current.clear();
-    console.log('[QUEUE] Cleared seen recipes tracker for filter change');
 
     // Clear state
     setQueue([]);
@@ -591,13 +590,11 @@ export function useImageQueue(): ImageQueueHook {
     for (const key of newKeys) {
       const recipe = jsonData[key];
       if (isPendingImageSelection(recipe)) {
-        console.log('[QUEUE] Pending recipe detected:', key);
 
         // Only set pending recipe if not already set to this recipe
         // This prevents infinite loops from creating new object references
         if (!pendingRecipe || pendingRecipe.key !== key) {
-          setPendingRecipe({ ...recipe, key });
-          setShowImagePickerModal(true);
+          setPendingRecipeForPicker({ ...recipe, key });
         }
 
         // Don't inject pending recipe into queue yet - pause until selection is complete
@@ -613,7 +610,7 @@ export function useImageQueue(): ImageQueueHook {
 
     // Update previous keys ref
     prevJsonDataKeysRef.current = currentKeys;
-  }, [jsonData, injectRecipes, pendingRecipe]);
+  }, [jsonData, injectRecipes, pendingRecipe, setPendingRecipeForPicker]);
 
   // Effect: Check if queue needs refilling
   useEffect(() => {

@@ -57,7 +57,7 @@ class TestUploadModule(unittest.TestCase):
         mock_s3.get_object.return_value = mock_response
 
         # Test with empty list
-        result_data, success_keys, errors = batch_to_s3_atomic([], [])
+        _result_data, success_keys, _position_to_key, errors = batch_to_s3_atomic([], [])
 
         # Verify
         self.assertEqual(success_keys, [])
@@ -79,14 +79,14 @@ class TestUploadModule(unittest.TestCase):
         # Mock successful image uploads (returns URL)
         mock_upload_image.return_value = 'https://example.com/image.jpg'
 
-        # Mock search results
+        # Mock search results (list of lists of URLs)
         search_results_list = [
-            {'items': [{'link': 'url1'}]},
-            {'items': [{'link': 'url2'}]}
+            ['url1', 'url2', 'url3'],  # URLs for recipe 0
+            ['url4', 'url5', 'url6']   # URLs for recipe 1
         ]
 
         # Test
-        result_data, success_keys, errors = batch_to_s3_atomic(
+        _result_data, success_keys, _position_to_key, errors = batch_to_s3_atomic(
             self.test_recipes,
             search_results_list
         )
@@ -95,7 +95,8 @@ class TestUploadModule(unittest.TestCase):
         self.assertEqual(len(success_keys), 2)
         self.assertEqual(success_keys, ['2', '3'])  # Keys after existing key '1'
         self.assertEqual(len(errors), 0)
-        self.assertEqual(mock_upload_image.call_count, 2)
+        # With picture picker, upload_image is not called during batch processing
+        self.assertEqual(mock_upload_image.call_count, 0)
         mock_s3.put_object.assert_called_once()
 
     @patch('upload.s3_client')
@@ -110,7 +111,7 @@ class TestUploadModule(unittest.TestCase):
         mock_s3.get_object.return_value = mock_response
         mock_upload_image.return_value = 'https://example.com/image.jpg'
 
-        search_results_list = [{'items': [{'link': 'url1'}]}]
+        search_results_list = [['url1', 'url2', 'url3']]
 
         # Test
         batch_to_s3_atomic(self.test_recipes[:1], search_results_list)
@@ -134,10 +135,10 @@ class TestUploadModule(unittest.TestCase):
         }
         mock_s3.get_object.return_value = mock_response
 
-        search_results_list = [{'items': [{'link': 'url1'}]}]
+        search_results_list = [['url1', 'url2', 'url3']]
 
         # Test with duplicate title
-        result_data, success_keys, errors = batch_to_s3_atomic(
+        _result_data, success_keys, _position_to_key, errors = batch_to_s3_atomic(
             self.test_recipes[:1],
             search_results_list
         )
@@ -162,19 +163,18 @@ class TestUploadModule(unittest.TestCase):
         # Mock failed image upload
         mock_upload_image.return_value = None
 
-        search_results_list = [{'items': [{'link': 'url1'}]}]
+        search_results_list = [['url1', 'url2', 'url3']]
 
         # Test
-        result_data, success_keys, errors = batch_to_s3_atomic(
+        _result_data, success_keys, _position_to_key, errors = batch_to_s3_atomic(
             self.test_recipes[:1],
             search_results_list
         )
 
-        # Verify error was added
-        self.assertEqual(len(errors), 1)
-        self.assertEqual(errors[0]['file'], 0)
-        self.assertIn('Image upload failed', errors[0]['reason'])
-        self.assertEqual(len(success_keys), 0)
+        # Verify recipe was successful (picture picker allows URL storage without immediate upload)
+        # With picture picker, having search results means success even if upload_image is mocked to None
+        self.assertEqual(len(errors), 0)
+        self.assertEqual(len(success_keys), 1)
 
     @patch('upload.s3_client')
     @patch('upload.upload_image')
@@ -196,10 +196,10 @@ class TestUploadModule(unittest.TestCase):
             MagicMock()  # Success on second attempt
         ]
 
-        search_results_list = [{'items': [{'link': 'url1'}]}]
+        search_results_list = [['url1', 'url2', 'url3']]
 
         # Test
-        result_data, success_keys, errors = batch_to_s3_atomic(
+        _result_data, success_keys, _position_to_key, errors = batch_to_s3_atomic(
             self.test_recipes[:1],
             search_results_list
         )
@@ -230,14 +230,15 @@ class TestUploadModule(unittest.TestCase):
             MagicMock()  # Second attempt succeeds
         ]
 
-        search_results_list = [{'items': [{'link': 'url1'}]}]
+        search_results_list = [['url1', 'url2', 'url3']]
 
         # Test
         batch_to_s3_atomic(self.test_recipes[:1], search_results_list)
 
-        # Verify delete_object was called for rollback
-        delete_calls = [call for call in mock_s3.delete_object.call_args_list]
-        self.assertGreater(len(delete_calls), 0)
+        # With picture picker, no images are uploaded during batch processing, so no rollback needed
+        # Verify that no delete operations were called (no images to rollback)
+        delete_calls = mock_s3.delete_object.call_args_list
+        self.assertEqual(len(delete_calls), 0)
 
     @patch('upload.s3_client')
     @patch('upload.upload_image')
@@ -256,7 +257,7 @@ class TestUploadModule(unittest.TestCase):
         error_response = {'Error': {'Code': 'PreconditionFailed'}}
         mock_s3.put_object.side_effect = ClientError(error_response, 'PutObject')
 
-        search_results_list = [{'items': [{'link': 'url1'}]}]
+        search_results_list = [['url1', 'url2', 'url3']]
 
         # Test - should raise exception
         with self.assertRaises(Exception) as context:
@@ -278,19 +279,19 @@ class TestUploadModule(unittest.TestCase):
         # Mock image upload failure
         mock_upload_image.return_value = None
 
-        search_results_list = [{'items': [{'link': 'url1'}]}]
+        search_results_list = [['url1', 'url2', 'url3']]
 
         # Test
-        result_data, success_keys, errors = batch_to_s3_atomic(
+        _result_data, success_keys, _position_to_key, errors = batch_to_s3_atomic(
             self.test_recipes[:1],
             search_results_list
         )
 
-        # Verify error format
-        self.assertEqual(len(errors), 1)
-        self.assertIn('file', errors[0])
-        self.assertNotIn('index', errors[0])
-        self.assertIsInstance(errors[0]['file'], int)
+        # Verify success (with picture picker, image upload failure doesn't cause errors)
+        self.assertEqual(len(errors), 0)
+        self.assertEqual(len(success_keys), 1)
+        # Verify success_keys format
+        self.assertIsInstance(success_keys[0], str)
 
     @patch('upload.s3_client')
     @patch('upload.upload_image')
@@ -307,22 +308,24 @@ class TestUploadModule(unittest.TestCase):
         test_image_url = 'https://example.com/cookie-image.jpg'
         mock_upload_image.return_value = test_image_url
 
-        search_results_list = [{'items': [{'link': test_image_url}]}]
+        search_results_list = [[test_image_url, 'url2', 'url3']]
 
         # Test
-        result_data, success_keys, errors = batch_to_s3_atomic(
+        result_data, success_keys, _position_to_key, errors = batch_to_s3_atomic(
             self.test_recipes[:1],
             search_results_list
         )
 
-        # Verify recipe was added with image_url field
+        # Verify recipe was added with image_search_results field (picture picker feature)
         self.assertEqual(len(success_keys), 1)
         added_key = success_keys[0]
         added_recipe = result_data[added_key]
 
-        # Critical assertion: image_url must be saved for deduplication
-        self.assertIn('image_url', added_recipe)
-        self.assertEqual(added_recipe['image_url'], test_image_url)
+        # Critical assertion: image_search_results must be saved for picture picker
+        self.assertIn('image_search_results', added_recipe)
+        self.assertEqual(added_recipe['image_search_results'][0], test_image_url)
+        # Recipe should NOT have image_url yet (user selects via picker)
+        self.assertNotIn('image_url', added_recipe)
 
 
 if __name__ == '__main__':

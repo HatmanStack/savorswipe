@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { StyleProp, ViewStyle } from 'react-native';
 import { useRecipe } from '@/context/RecipeContext';
 import UploadImage from '@/components/UploadRecipe';
 import { ThemedText } from '@/components/ThemedText';
-import { ImageService } from '@/services';
 import { Recipe } from '@/types';
 import { UploadService } from '@/services/UploadService';
 import { UploadJob, UploadError } from '@/types/upload';
@@ -14,7 +12,8 @@ interface UploadModalProps {
   visible: boolean;
   onClose: () => void;
   uploadCount: number;
-  styles: Record<string, StyleProp<ViewStyle>>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  styles: Record<string, any>;
 }
 
 interface UploadMessageType {
@@ -36,7 +35,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   const [errorDetails, setErrorDetails] = useState<UploadError[]>([]);
   const [errorModalVisible, setErrorModalVisible] = useState(false);
 
-  const { setFirstFile, setAllFiles, jsonData, setJsonData } = useRecipe();
+  const { jsonData, setJsonData } = useRecipe();
 
   // Subscribe to UploadService status updates
   useEffect(() => {
@@ -65,23 +64,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       setUploadText(uploadMessage.returnMessage);
 
       if (uploadMessage.returnMessage.includes('success')) {
-        // Handle successful upload
-        const existingKeys = new Set(Object.keys(jsonData || {}));
-        const newKeys = new Set(Object.keys(uploadMessage.jsonData || {}));
-        const difference = [...newKeys].filter((key) => !existingKeys.has(key));
-        const sortedDifference = difference.sort((a, b) => Number(b) - Number(a));
-
-        // New recipes uploaded
-
-        setAllFiles(sortedDifference);
+        // Update jsonData with new recipes (image queue handles display)
         setJsonData(uploadMessage.jsonData);
-
-        if (sortedDifference.length > 0) {
-          setFirstFile({
-            filename: ImageService.getImageFileName(sortedDifference[0]),
-            file: `data:image/jpeg;base64,${uploadMessage.encodedImages}`,
-          });
-        }
       }
 
       // Clear message after 2 seconds
@@ -91,19 +75,20 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
       return () => clearTimeout(timer);
     }
-  }, [uploadMessage, jsonData, setAllFiles, setJsonData, setFirstFile]);
+  }, [uploadMessage, jsonData, setJsonData]);
 
   // Helper function to build completion message
   const buildCompletionMessage = (job: UploadJob): string => {
     const { completed, failed } = job.progress;
     const total = job.progress.total;
+    const newRecipeCount = job.result?.newRecipeKeys?.length || 0;
 
     if (failed === 0) {
-      return `All ${completed} recipes added successfully!`;
+      return `${completed} recipe${completed !== 1 ? 's' : ''} processed! ${newRecipeCount} new recipe${newRecipeCount !== 1 ? 's' : ''} ready to swipe.`;
     } else if (completed > 0) {
-      return `${completed} of ${total} added. Tap to view ${failed} errors.`;
+      return `${completed}/${total} succeeded, ${failed} failed. Tap to view errors.`;
     } else {
-      return `All ${failed} recipes failed. Tap for details.`;
+      return `Upload failed: ${failed}/${total} errors. Tap for details.`;
     }
   };
 
@@ -150,7 +135,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
       <UploadImage
         key={uploadCount}
-        setUploadMessage={setUploadMessage}
         setUploadVisible={onClose}
       />
     </>

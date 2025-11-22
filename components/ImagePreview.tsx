@@ -98,7 +98,7 @@ const ImagePreviewComponent: React.FC<ImagePreviewProps> = ({
             />
             {isLoading && (
               <View style={styles.loadingOverlay}>
-                <ActivityIndicator size="large" color="#0a7ea4" />
+                <ActivityIndicator size="large" color="#0a7ea4" testID="loading-indicator" />
               </View>
             )}
           </>

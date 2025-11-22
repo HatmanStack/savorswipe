@@ -9,7 +9,8 @@ interface MainMenuModalProps {
   onClose: () => void;
   onInfoPress: () => void;
   onUploadPress: () => void;
-  styles: Record<string, unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  styles: Record<string, any>;
 }
 
 export const MainMenuModal: React.FC<MainMenuModalProps> = ({

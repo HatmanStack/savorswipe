@@ -19,6 +19,7 @@ jest.mock('@/services/RecipeService', () => ({
   isNewRecipe: jest.fn(),
 }));
 jest.mock('@/components/NewRecipeBanner', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { Text } = require('react-native');
   return function MockNewRecipeBanner({ visible }: { visible: boolean }) {
     return visible ? <Text testID="new-recipe-banner">NEW</Text> : null;

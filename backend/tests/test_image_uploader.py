@@ -145,6 +145,28 @@ class TestFetchImageFromUrl:
 class TestUploadImageToS3:
     """Tests for upload_image_to_s3 function."""
 
+    
+    @pytest.fixture(autouse=True)
+    def mock_pil_conversion(self, monkeypatch):
+        """Mock PIL Image conversion to just return the input bytes."""
+        from unittest.mock import MagicMock
+        mock_image = MagicMock()
+        mock_bytes_io = MagicMock()
+        mock_bytes_io.getvalue.return_value = b'test image data'
+        
+        def mock_save(self, file_obj, format=None, **params):
+            # Simulate saving by writing test data
+            file_obj.write(b'converted_jpeg_data')
+            return None
+        
+        mock_image.convert.return_value = mock_image
+        mock_image.save = lambda *args, **kwargs: mock_save(mock_image, *args, **kwargs)
+        
+        def mock_open(*args, **kwargs):
+            return mock_image
+        
+        monkeypatch.setattr('image_uploader.Image.open', mock_open)
+
     def test_successful_upload(self, s3_client, env_vars):
         """Test successfully uploading an image to S3."""
         image_bytes = b'test image data'
@@ -161,7 +183,7 @@ class TestUploadImageToS3:
 
         # Verify image was uploaded
         response = s3_client.get_object(Bucket="test-bucket", Key="images/test_recipe.jpg")
-        assert response['Body'].read() == image_bytes
+        assert len(response['Body'].read()) > 0  # Image converted to JPEG
 
     def test_upload_with_empty_image_bytes(self, s3_client, env_vars):
         """Test uploading empty image bytes."""
@@ -219,10 +241,10 @@ class TestUploadImageToS3:
 
         # Verify both images exist
         result1 = s3_client.get_object(Bucket="test-bucket", Key="images/recipe_1.jpg")
-        assert result1['Body'].read() == image_bytes
+        assert len(result1['Body'].read()) > 0  # Image converted to JPEG
 
         result2 = s3_client.get_object(Bucket="test-bucket", Key="images/recipe_2.jpg")
-        assert result2['Body'].read() == image_bytes
+        assert len(result2['Body'].read()) > 0  # Image converted to JPEG
 
     def test_upload_content_type(self, s3_client, env_vars):
         """Test that upload uses correct content-type."""

@@ -36,6 +36,30 @@ from upload import batch_to_s3_atomic
 from recipe_deletion import delete_recipe_atomic
 from image_uploader import fetch_image_from_url, upload_image_to_s3
 
+ALLOWED_ORIGIN = 'https://savorswipe.hatstack.fun'
+
+
+def add_cors_headers(headers: dict, origin: Optional[str] = None) -> dict:
+    """
+    Add CORS headers to response. Only allows requests from production origin.
+
+    Args:
+        headers: Existing response headers
+        origin: Request origin from event headers
+
+    Returns:
+        Headers dict with CORS added
+    """
+    cors_headers = headers.copy()
+
+    # Only set CORS header for allowed origin
+    if origin == ALLOWED_ORIGIN:
+        cors_headers['Access-Control-Allow-Origin'] = ALLOWED_ORIGIN
+
+    cors_headers['Access-Control-Allow-Methods'] = 'GET, POST, DELETE, OPTIONS'
+    cors_headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    return cors_headers
+
 
 def process_single_recipe(
     recipe_data: Dict,
@@ -143,6 +167,12 @@ def lambda_handler(event, context):
         POST /image: Success/error response with updated recipe
     """
 
+    # Extract origin for CORS (case-insensitive header lookup)
+    headers = event.get('headers', {})
+    # Normalize header keys to lowercase for case-insensitive lookup
+    headers_lower = {k.lower(): v for k, v in headers.items()}
+    origin = headers_lower.get('origin')
+
     # Detect HTTP method from requestContext
     http_method = event.get('requestContext', {}).get('http', {}).get('method', 'POST')
     request_path = event.get('requestContext', {}).get('http', {}).get('path', '')
@@ -150,21 +180,21 @@ def lambda_handler(event, context):
     print(f"[DEBUG] lambda_handler: Detected HTTP method: {http_method}, path: {request_path}")
 
     if http_method == 'GET':
-        return handle_get_request(event, context)
+        return handle_get_request(event, context, origin)
     elif http_method == 'DELETE':
-        return handle_delete_request(event, context)
+        return handle_delete_request(event, context, origin)
     elif http_method == 'POST':
         # Check if this is an image update request or a file upload
         # Use regex to match /recipe/{key}/image to avoid false positives
         if re.match(r'^/recipe/[^/]+/image$', request_path):
-            return handle_post_image_request(event, context)
+            return handle_post_image_request(event, context, origin)
         else:
-            return handle_post_request(event, context)
+            return handle_post_request(event, context, origin)
     else:
-        return handle_post_request(event, context)
+        return handle_post_request(event, context, origin)
 
 
-def handle_get_request(event, context):
+def handle_get_request(event, context, origin=None):
     """
     Handle GET requests for fetching recipe JSON from S3.
 
@@ -192,9 +222,9 @@ def handle_get_request(event, context):
     if not bucket_name:
         return {
             'statusCode': 500,
-            'headers': {
+            'headers': add_cors_headers({
                 'Content-Type': 'application/json'
-            },
+            }, origin),
             'body': json.dumps({'error': 'S3_BUCKET environment variable not set'})
         }
 
@@ -209,12 +239,12 @@ def handle_get_request(event, context):
         # Return with cache-prevention headers
         return {
             'statusCode': 200,
-            'headers': {
+            'headers': add_cors_headers({
                 'Content-Type': 'application/json',
                 'Cache-Control': 'no-cache, no-store, must-revalidate',
                 'Pragma': 'no-cache',
                 'Expires': '0'
-            },
+            }, origin),
             'body': json_data
         }
 
@@ -223,18 +253,18 @@ def handle_get_request(event, context):
         if error_code == 'NoSuchKey':
             return {
                 'statusCode': 404,
-                'headers': {
+                'headers': add_cors_headers({
                     'Content-Type': 'application/json'
-                },
+                }, origin),
                 'body': json.dumps({'error': f'File not found: {json_key}'})
             }
         else:
             print(f'S3 ClientError fetching recipe JSON: {str(e)}')
             return {
                 'statusCode': 500,
-                'headers': {
+                'headers': add_cors_headers({
                     'Content-Type': 'application/json'
-                },
+                }, origin),
                 'body': json.dumps({'error': f'Failed to fetch recipes: {str(e)}'})
             }
 
@@ -242,14 +272,14 @@ def handle_get_request(event, context):
         print(f'Error fetching recipe JSON from S3: {str(e)}')
         return {
             'statusCode': 500,
-            'headers': {
+            'headers': add_cors_headers({
                 'Content-Type': 'application/json'
-            },
+            }, origin),
             'body': json.dumps({'error': f'Failed to fetch recipes: {str(e)}'})
         }
 
 
-def handle_delete_request(event, context):
+def handle_delete_request(event, context, origin=None):
     """
     Handle DELETE requests for recipe deletion.
 
@@ -272,9 +302,9 @@ def handle_delete_request(event, context):
     if not bucket_name:
         return {
             'statusCode': 500,
-            'headers': {
+            'headers': add_cors_headers({
                 'Content-Type': 'application/json'
-            },
+            }, origin),
             'body': json.dumps({'success': False, 'error': 'S3_BUCKET environment variable not set'})
         }
 
@@ -288,9 +318,9 @@ def handle_delete_request(event, context):
     if not match:
         return {
             'statusCode': 400,
-            'headers': {
+            'headers': add_cors_headers({
                 'Content-Type': 'application/json'
-            },
+            }, origin),
             'body': json.dumps({
                 'success': False,
                 'error': 'Invalid path format. Expected: /recipe/{recipe_key}'
@@ -304,9 +334,9 @@ def handle_delete_request(event, context):
     if not re.match(r'^[a-zA-Z0-9_-]+$', recipe_key):
         return {
             'statusCode': 400,
-            'headers': {
+            'headers': add_cors_headers({
                 'Content-Type': 'application/json'
-            },
+            }, origin),
             'body': json.dumps({
                 'success': False,
                 'error': f'Invalid recipe_key format: {recipe_key}'
@@ -329,9 +359,9 @@ def handle_delete_request(event, context):
             print(f"[DELETE] Successfully deleted recipe '{recipe_key}'")
             return {
                 'statusCode': 200,
-                'headers': {
+                'headers': add_cors_headers({
                     'Content-Type': 'application/json'
-                },
+                }, origin),
                 'body': json.dumps({
                     'success': True,
                     'message': f'Recipe {recipe_key} deleted successfully'
@@ -344,9 +374,9 @@ def handle_delete_request(event, context):
                 # Recipe was already deleted or never existed - idempotent operation
                 return {
                     'statusCode': 200,
-                    'headers': {
+                    'headers': add_cors_headers({
                         'Content-Type': 'application/json'
-                    },
+                    }, origin),
                     'body': json.dumps({
                         'success': True,
                         'message': f'Recipe {recipe_key} was already deleted or not found'
@@ -356,9 +386,9 @@ def handle_delete_request(event, context):
                 # Real failure (S3 error, permissions, race condition, etc.)
                 return {
                     'statusCode': 500,
-                    'headers': {
+                    'headers': add_cors_headers({
                         'Content-Type': 'application/json'
-                    },
+                    }, origin),
                     'body': json.dumps({
                         'success': False,
                         'error': f'Failed to delete recipe: {error_message or "Unknown error"}'
@@ -369,9 +399,9 @@ def handle_delete_request(event, context):
         print(f"[DELETE] Unexpected error deleting recipe '{recipe_key}': {str(e)}")
         return {
             'statusCode': 500,
-            'headers': {
+            'headers': add_cors_headers({
                 'Content-Type': 'application/json'
-            },
+            }, origin),
             'body': json.dumps({
                 'success': False,
                 'error': f'Failed to delete recipe: {str(e)}'
@@ -427,7 +457,7 @@ def _validate_image_url_for_api(image_url: str) -> Tuple[bool, Optional[str]]:
         return False, f"Error validating URL: {str(e)}"
 
 
-def handle_post_image_request(event, context):
+def handle_post_image_request(event, context, origin=None):
     """
     Handle POST requests for image selection and update.
 
@@ -456,9 +486,9 @@ def handle_post_image_request(event, context):
     if not bucket_name:
         return {
             'statusCode': 500,
-            'headers': {
+            'headers': add_cors_headers({
                 'Content-Type': 'application/json'
-            },
+            }, origin),
             'body': json.dumps({'success': False, 'error': 'S3_BUCKET environment variable not set'})
         }
 
@@ -472,9 +502,9 @@ def handle_post_image_request(event, context):
     if not match:
         return {
             'statusCode': 400,
-            'headers': {
+            'headers': add_cors_headers({
                 'Content-Type': 'application/json'
-            },
+            }, origin),
             'body': json.dumps({
                 'success': False,
                 'error': 'Invalid path format. Expected: /recipe/{recipe_key}/image'
@@ -497,9 +527,9 @@ def handle_post_image_request(event, context):
         print(f"[POST-IMAGE] JSON decode error: {e}")
         return {
             'statusCode': 400,
-            'headers': {
+            'headers': add_cors_headers({
                 'Content-Type': 'application/json'
-            },
+            }, origin),
             'body': json.dumps({
                 'success': False,
                 'error': f'Invalid JSON in request body: {str(e)}'
@@ -511,9 +541,9 @@ def handle_post_image_request(event, context):
     if not image_url:
         return {
             'statusCode': 400,
-            'headers': {
+            'headers': add_cors_headers({
                 'Content-Type': 'application/json'
-            },
+            }, origin),
             'body': json.dumps({
                 'success': False,
                 'error': 'imageUrl is required'
@@ -526,9 +556,9 @@ def handle_post_image_request(event, context):
         print(f"[POST-IMAGE] URL validation failed: {validation_error}")
         return {
             'statusCode': 400,
-            'headers': {
+            'headers': add_cors_headers({
                 'Content-Type': 'application/json'
-            },
+            }, origin),
             'body': json.dumps({
                 'success': False,
                 'error': f'Invalid image URL: {validation_error}'
@@ -547,9 +577,9 @@ def handle_post_image_request(event, context):
             print(f"[POST-IMAGE] Recipe {recipe_key} not found or has no search results")
             return {
                 'statusCode': 404,
-                'headers': {
+                'headers': add_cors_headers({
                     'Content-Type': 'application/json'
-                },
+                }, origin),
                 'body': json.dumps({
                     'success': False,
                     'error': 'Recipe not found'
@@ -561,9 +591,9 @@ def handle_post_image_request(event, context):
             print(f"[POST-IMAGE] Image URL not in recipe's search results")
             return {
                 'statusCode': 400,
-                'headers': {
+                'headers': add_cors_headers({
                     'Content-Type': 'application/json'
-                },
+                }, origin),
                 'body': json.dumps({
                     'success': False,
                     'error': 'Image URL is not from this recipe\'s search results'
@@ -573,9 +603,9 @@ def handle_post_image_request(event, context):
         print(f"[POST-IMAGE] Error validating image URL against search results: {str(e)}")
         return {
             'statusCode': 500,
-            'headers': {
+            'headers': add_cors_headers({
                 'Content-Type': 'application/json'
-            },
+            }, origin),
             'body': json.dumps({
                 'success': False,
                 'error': 'Failed to validate image selection'
@@ -594,9 +624,9 @@ def handle_post_image_request(event, context):
             print(f"[POST-IMAGE] Failed to fetch image from URL")
             return {
                 'statusCode': 500,
-                'headers': {
+                'headers': add_cors_headers({
                     'Content-Type': 'application/json'
-                },
+                }, origin),
                 'body': json.dumps({
                     'success': False,
                     'error': 'Failed to fetch image from the provided URL'
@@ -612,9 +642,9 @@ def handle_post_image_request(event, context):
             print(f"[POST-IMAGE] Failed to upload image to S3: {error_msg}")
             return {
                 'statusCode': 500,
-                'headers': {
+                'headers': add_cors_headers({
                     'Content-Type': 'application/json'
-                },
+                }, origin),
                 'body': json.dumps({
                     'success': False,
                     'error': f'Failed to upload image to S3: {error_msg}'
@@ -646,9 +676,9 @@ def handle_post_image_request(event, context):
                         print(f"[POST-IMAGE] combined_data.json not found")
                         return {
                             'statusCode': 404,
-                            'headers': {
+                            'headers': add_cors_headers({
                                 'Content-Type': 'application/json'
-                            },
+                            }, origin),
                             'body': json.dumps({
                                 'success': False,
                                 'error': 'Recipe data not found'
@@ -657,9 +687,9 @@ def handle_post_image_request(event, context):
                     else:
                         return {
                             'statusCode': 500,
-                            'headers': {
+                            'headers': add_cors_headers({
                                 'Content-Type': 'application/json'
-                            },
+                            }, origin),
                             'body': json.dumps({
                                 'success': False,
                                 'error': f'Failed to load recipe data: {str(e)}'
@@ -671,9 +701,9 @@ def handle_post_image_request(event, context):
                     print(f"[POST-IMAGE] Recipe '{recipe_key}' not found in combined_data")
                     return {
                         'statusCode': 404,
-                        'headers': {
+                        'headers': add_cors_headers({
                             'Content-Type': 'application/json'
-                        },
+                        }, origin),
                         'body': json.dumps({
                             'success': False,
                             'error': f'Recipe {recipe_key} not found'
@@ -705,9 +735,9 @@ def handle_post_image_request(event, context):
                     # Success!
                     return {
                         'statusCode': 200,
-                        'headers': {
+                        'headers': add_cors_headers({
                             'Content-Type': 'application/json'
-                        },
+                        }, origin),
                         'body': json.dumps({
                             'success': True,
                             'message': 'Image saved and recipe updated',
@@ -727,9 +757,9 @@ def handle_post_image_request(event, context):
                         else:
                             return {
                                 'statusCode': 500,
-                                'headers': {
+                                'headers': add_cors_headers({
                                     'Content-Type': 'application/json'
-                                },
+                                }, origin),
                                 'body': json.dumps({
                                     'success': False,
                                     'error': 'Failed to update recipe after multiple retries'
@@ -739,9 +769,9 @@ def handle_post_image_request(event, context):
                         print(f"[POST-IMAGE] S3 error: {str(e)}")
                         return {
                             'statusCode': 500,
-                            'headers': {
+                            'headers': add_cors_headers({
                                 'Content-Type': 'application/json'
-                            },
+                            }, origin),
                             'body': json.dumps({
                                 'success': False,
                                 'error': f'Failed to update recipe: {str(e)}'
@@ -752,9 +782,9 @@ def handle_post_image_request(event, context):
                 print(f"[POST-IMAGE] Unexpected error: {str(e)}")
                 return {
                     'statusCode': 500,
-                    'headers': {
+                    'headers': add_cors_headers({
                         'Content-Type': 'application/json'
-                    },
+                    }, origin),
                     'body': json.dumps({
                         'success': False,
                         'error': f'Unexpected error: {str(e)}'
@@ -764,9 +794,9 @@ def handle_post_image_request(event, context):
         # Should not reach here
         return {
             'statusCode': 500,
-            'headers': {
+            'headers': add_cors_headers({
                 'Content-Type': 'application/json'
-            },
+            }, origin),
             'body': json.dumps({
                 'success': False,
                 'error': 'Failed to update recipe after multiple attempts'
@@ -777,9 +807,9 @@ def handle_post_image_request(event, context):
         print(f"[POST-IMAGE] Unexpected error processing image: {str(e)}")
         return {
             'statusCode': 500,
-            'headers': {
+            'headers': add_cors_headers({
                 'Content-Type': 'application/json'
-            },
+            }, origin),
             'body': json.dumps({
                 'success': False,
                 'error': f'Failed to process image: {str(e)}'
@@ -787,7 +817,7 @@ def handle_post_image_request(event, context):
         }
 
 
-def handle_post_request(event, context):
+def handle_post_request(event, context, origin=None):
     """
     Handle POST requests for recipe uploads.
 
@@ -821,9 +851,9 @@ def handle_post_request(event, context):
         print(f"[DEBUG] handle_post_request: JSON decode error: {e!r}")
         return {
             'statusCode': 400,
-            'headers': {
+            'headers': add_cors_headers({
                 'Content-Type': 'application/json'
-            },
+            }, origin),
             'body': json.dumps({'returnMessage': f'Invalid JSON in request body: {str(e)}'})
         }
 
@@ -832,9 +862,9 @@ def handle_post_request(event, context):
         print(f"[DEBUG] handle_post_request: ERROR: No 'files' key in body. Body keys: {list(body.keys())}")
         return {
             'statusCode': 400,
-            'headers': {
+            'headers': add_cors_headers({
                 'Content-Type': 'application/json'
-            },
+            }, origin),
             'body': json.dumps({'returnMessage': 'No files provided in request'})
         }
 
@@ -852,9 +882,9 @@ def handle_post_request(event, context):
     if not bucket_name:
         return {
             'statusCode': 500,
-            'headers': {
+            'headers': add_cors_headers({
                 'Content-Type': 'application/json'
-            },
+            }, origin),
             'body': json.dumps({'returnMessage': 'S3_BUCKET environment variable not set'})
         }
 
@@ -882,9 +912,9 @@ def handle_post_request(event, context):
         traceback.print_exc()
         return {
             'statusCode': 500,
-            'headers': {
+            'headers': add_cors_headers({
                 'Content-Type': 'application/json'
-            },
+            }, origin),
             'body': json.dumps({'returnMessage': f'Service initialization failed: {str(e)}'})
         }
 
@@ -1066,9 +1096,9 @@ def handle_post_request(event, context):
         traceback.print_exc()
         return {
             'statusCode': 500,
-            'headers': {
+            'headers': add_cors_headers({
                 'Content-Type': 'application/json'
-            },
+            }, origin),
             'body': json.dumps({'returnMessage': f'Parallel processing failed: {str(e)}'})
         }
 
@@ -1149,9 +1179,9 @@ def handle_post_request(event, context):
         traceback.print_exc()
         return {
             'statusCode': 500,
-            'headers': {
+            'headers': add_cors_headers({
                 'Content-Type': 'application/json'
-            },
+            }, origin),
             'body': json.dumps({'returnMessage': f'Batch upload failed: {str(e)}'})
         }
 
@@ -1229,9 +1259,9 @@ def handle_post_request(event, context):
     print(f"[LAMBDA] Returning response with status 200")
     return {
         'statusCode': 200,
-        'headers': {
+        'headers': add_cors_headers({
             'Content-Type': 'application/json'
-        },
+        }, origin),
         'body': json.dumps({
             'returnMessage': message,
             'successCount': success_count,

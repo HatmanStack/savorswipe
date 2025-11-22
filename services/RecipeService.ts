@@ -13,7 +13,7 @@ export class RecipeService {
       const localData = require('@/assets/data/combined_data.json');
       return localData as S3JsonData;
     } catch (error) {
-      console.error('Error loading local recipes:', error);
+
       // Return empty object as fallback
       return {};
     }
@@ -36,16 +36,16 @@ export class RecipeService {
       });
 
       if (!response.ok) {
-        console.error(`HTTP error ${response.status} while fetching JSON: ${response.statusText}`);
+
         const errorText = await response.text();
-        console.error('Error details:', errorText);
+
         throw new Error(`Failed to fetch JSON from Lambda. Status: ${response.status}`);
       }
 
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Error fetching JSON from Lambda:', error);
+
       throw error;
     }
   }
@@ -65,7 +65,7 @@ export class RecipeService {
       }
       return null;
     } catch (error) {
-      console.error('Error fetching recipe by ID:', error);
+
       throw error;
     }
   }
@@ -133,7 +133,7 @@ export class RecipeService {
         headers: Object.fromEntries(response.headers.entries()),
       };
     } catch (error) {
-      console.error('Error uploading recipe:', error);
+
       throw error;
     }
   }
@@ -156,7 +156,6 @@ export class RecipeService {
     const endpoint = `${lambdaUrl}/recipe/${recipeKey}/image`;
 
     try {
-      console.log(`[RecipeService] Selecting image for recipe: ${recipeKey}`);
 
       const response = await Promise.race([
         fetch(endpoint, {
@@ -173,7 +172,6 @@ export class RecipeService {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`[RecipeService] Image selection failed with status ${response.status}:`, errorText);
 
         if (response.status === 404) {
           throw new Error('Recipe not found');
@@ -188,16 +186,14 @@ export class RecipeService {
 
       if (!result.success) {
         const errorMessage = result.error || 'Failed to select image';
-        console.error('[RecipeService] Image selection error:', errorMessage);
+
         throw new Error(errorMessage);
       }
-
-      console.log(`[RecipeService] Image selected successfully for recipe: ${recipeKey}`);
 
       // Return recipe with key attached
       return { ...result.recipe, key: recipeKey };
     } catch (error) {
-      console.error('[RecipeService] Error selecting recipe image:', error);
+
       throw error;
     }
   }
@@ -219,7 +215,6 @@ export class RecipeService {
     const endpoint = `${lambdaUrl}/recipe/${recipeKey}`;
 
     try {
-      console.log(`[RecipeService] Deleting recipe: ${recipeKey}`);
 
       const response = await Promise.race([
         fetch(endpoint, {
@@ -232,7 +227,6 @@ export class RecipeService {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`[RecipeService] Recipe deletion failed with status ${response.status}:`, errorText);
 
         if (response.status === 404) {
           throw new Error('Recipe not found');
@@ -244,14 +238,13 @@ export class RecipeService {
 
       if (!result.success) {
         const errorMessage = result.error || 'Failed to delete recipe';
-        console.error('[RecipeService] Recipe deletion error:', errorMessage);
+
         throw new Error(errorMessage);
       }
 
-      console.log(`[RecipeService] Recipe deleted successfully: ${recipeKey}`);
       return true;
     } catch (error) {
-      console.error('[RecipeService] Error deleting recipe:', error);
+
       throw error;
     }
   }

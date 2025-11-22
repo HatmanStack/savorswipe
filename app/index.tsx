@@ -117,7 +117,7 @@ export default function HomeScreen() {
   }, [advanceQueue, currentRecipe?.key, router, showImagePickerModal]);
 
   // Debounce function (keep existing)
-  const debounce = <T extends (...args: any[]) => void>(func: T, delay: number): ((...args: Parameters<T>) => void) => {
+  const debounce = <T extends (...args: never[]) => void>(func: T, delay: number): ((...args: Parameters<T>) => void) => {
     let timeout: NodeJS.Timeout | undefined;
     return (...args: Parameters<T>) => {
       if (timeout) clearTimeout(timeout);

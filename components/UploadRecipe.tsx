@@ -4,10 +4,10 @@ import * as ImagePicker from 'expo-image-picker'
 import * as ImageManipulator from 'expo-image-manipulator'
 import * as DocumentPicker from 'expo-document-picker'
 import * as FileSystem from 'expo-file-system'
-import { EncodingType } from 'expo-file-system'
 import { PDFDocument } from 'pdf-lib'
 import { UploadService } from '@/services/UploadService'
 import { UploadFile } from '@/types/upload'
+import { ToastQueue } from '@/components/Toast'
 
 /**
  * Resize image to max dimensions and return base64
@@ -35,7 +35,8 @@ export const splitPDFIntoChunks = async (
 
   // Read PDF file as base64
   const base64 = await FileSystem.readAsStringAsync(pdfUri, {
-    encoding: EncodingType.Base64,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    encoding: 'base64' as any,
   })
 
   // Convert base64 to ArrayBuffer
@@ -86,7 +87,6 @@ export const splitPDFIntoChunks = async (
  * Handles file validation, PDF chunking, and background upload
  */
 export const selectAndUploadImage = async (
-  setUploadMessage: (result: { returnMessage: string; jsonData: unknown; encodedImages: string } | null) => void,
   setUploadVisible: (visible: boolean) => void
 ): Promise<void> => {
   // Constants
@@ -155,9 +155,7 @@ export const selectAndUploadImage = async (
           })
         }
       }
-    } catch (error) {
-      console.error(`Error processing file ${asset.name}:`, error)
-      Alert.alert('Error', `Failed to process file '${asset.name}'. Skipping.`)
+    } catch {Alert.alert('Error', `Failed to process file '${asset.name}'. Skipping.`)
       skippedFiles++
     }
   }
@@ -212,25 +210,26 @@ export const selectAndUploadImage = async (
   // Start upload in background (non-blocking)
   UploadService.queueUpload(files)
 
+  // Show processing toast
+  ToastQueue.show('Processing...')
+
   // Close modal immediately
   setUploadVisible(false)
 }
 
 type UploadFilesProps = {
-  setUploadMessage: (message: { returnMessage: string; jsonData: unknown; encodedImages: string } | null) => void
   setUploadVisible: (visible: boolean) => void
 }
 
 const UploadFiles: React.FC<UploadFilesProps> = ({
-  setUploadMessage,
   setUploadVisible,
 }) => {
   useEffect(() => {
     const initiateUpload = async () => {
-      await selectAndUploadImage(setUploadMessage, setUploadVisible)
+      await selectAndUploadImage(setUploadVisible)
     }
     initiateUpload()
-  }, [setUploadMessage, setUploadVisible])
+  }, [setUploadVisible])
 
   return null
 }

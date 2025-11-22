@@ -7,9 +7,11 @@ interface RecipeContextType {
   currentRecipe: Recipe | null;
   setCurrentRecipe: (recipe: Recipe | null) => void;
   jsonData: S3JsonData | null;
-  setJsonData: (data: S3JsonData | null) => void;
+  setJsonData: React.Dispatch<React.SetStateAction<S3JsonData | null>>;
   mealTypeFilters: MealType[];
   setMealTypeFilters: (filters: MealType[]) => void;
+  pendingRecipeForPicker: Recipe | null;
+  setPendingRecipeForPicker: (recipe: Recipe | null) => void;
 }
 
 // Create the context
@@ -30,6 +32,7 @@ export const RecipeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     'side dish',
     'beverage'
   ]);
+  const [pendingRecipeForPicker, setPendingRecipeForPicker] = useState<Recipe | null>(null);
 
   // Load recipe JSON data with stale-while-revalidate pattern
   useEffect(() => {
@@ -64,9 +67,6 @@ export const RecipeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         });
       } catch (error) {
         // Silent fallback: continue using local cached data
-        if (__DEV__) {
-          console.error('Failed to fetch fresh recipe data (using cached):', error);
-        }
       }
     };
 
@@ -80,8 +80,10 @@ export const RecipeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     jsonData,
     setJsonData,
     mealTypeFilters,
-    setMealTypeFilters
-  }), [currentRecipe, jsonData, mealTypeFilters]);
+    setMealTypeFilters,
+    pendingRecipeForPicker,
+    setPendingRecipeForPicker
+  }), [currentRecipe, jsonData, mealTypeFilters, pendingRecipeForPicker]);
 
   return (
     <RecipeContext.Provider value={value}>

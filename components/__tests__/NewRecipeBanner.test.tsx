@@ -31,6 +31,7 @@ describe('NewRecipeBanner', () => {
   });
 
   it('should use theme colors', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { useThemeColor } = require('@/hooks/useThemeColor');
 
     render(<NewRecipeBanner visible={true} />);
