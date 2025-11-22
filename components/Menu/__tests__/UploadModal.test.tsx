@@ -407,7 +407,7 @@ describe('UploadModal', () => {
         />
       )
 
-      const newJsonData = { recipe1: { title: 'New Recipe' } }
+      const newJsonData = { recipe1: { key: 'recipe1', Title: 'New Recipe' } }
       const completedJob: UploadJob = {
         id: 'job-1',
         files: [],

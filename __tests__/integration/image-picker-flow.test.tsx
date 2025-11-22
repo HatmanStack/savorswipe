@@ -111,7 +111,7 @@ describe('Integration: Image Picker Modal Flow', () => {
       });
 
       // Trigger re-render to detect new pending recipe
-      rerender();
+      rerender({});
 
       // Wait for modal to appear
       await waitFor(() => {
@@ -137,8 +137,10 @@ describe('Integration: Image Picker Modal Flow', () => {
       // Verify success toast
       expect(ToastQueue.show).toHaveBeenCalledWith('Image saved');
 
-      // Verify modal closed
-      expect(result.current.showImagePickerModal).toBe(false);
+      // Wait for modal to close
+      await waitFor(() => {
+        expect(result.current.showImagePickerModal).toBe(false);
+      }, { timeout: 3000 });
       expect(result.current.pendingRecipe).toBeNull();
     });
 
@@ -197,7 +199,7 @@ describe('Integration: Image Picker Modal Flow', () => {
         setPendingRecipeForPicker: jest.fn(),
       });
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -260,7 +262,7 @@ describe('Integration: Image Picker Modal Flow', () => {
         expect(result.current.isLoading).toBe(false);
       }, { timeout: 3000 });
 
-      rerender();
+      rerender({});
 
       // Wait for modal
       await waitFor(() => {
@@ -280,8 +282,10 @@ describe('Integration: Image Picker Modal Flow', () => {
       // Verify success toast
       expect(ToastQueue.show).toHaveBeenCalledWith('Recipe deleted');
 
-      // Verify modal cleared
-      expect(result.current.showImagePickerModal).toBe(false);
+      // Wait for modal to close
+      await waitFor(() => {
+        expect(result.current.showImagePickerModal).toBe(false);
+      }, { timeout: 3000 });
       expect(result.current.pendingRecipe).toBeNull();
     });
   });
@@ -327,7 +331,7 @@ describe('Integration: Image Picker Modal Flow', () => {
         expect(result.current.isLoading).toBe(false);
       }, { timeout: 3000 });
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -338,9 +342,9 @@ describe('Integration: Image Picker Modal Flow', () => {
         await result.current.onConfirmImage('https://google.com/img1.jpg');
       });
 
-      // Verify error was shown
+      // Verify error was shown (transformed to user-friendly message)
       expect(ToastQueue.show).toHaveBeenCalledWith(
-        'Failed to save image: Failed to fetch image from Google'
+        "Failed to save image: Image couldn't be loaded from source. Please select another image."
       );
 
       // Modal should remain open
@@ -388,7 +392,7 @@ describe('Integration: Image Picker Modal Flow', () => {
         expect(result.current.isLoading).toBe(false);
       }, { timeout: 3000 });
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -399,8 +403,8 @@ describe('Integration: Image Picker Modal Flow', () => {
         await result.current.onDeleteRecipe();
       });
 
-      // Verify error was shown
-      expect(ToastQueue.show).toHaveBeenCalledWith('Failed to delete recipe: Recipe not found');
+      // Verify error was shown (transformed to user-friendly message)
+      expect(ToastQueue.show).toHaveBeenCalledWith('Failed to delete recipe: Recipe not found. It may have been deleted.');
 
       // Modal should remain open
       expect(result.current.showImagePickerModal).toBe(true);

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useRecipe } from '@/context/RecipeContext';
 import UploadImage from '@/components/UploadRecipe';
 import { ThemedText } from '@/components/ThemedText';
-import { Recipe } from '@/types';
 import { UploadService } from '@/services/UploadService';
 import { UploadJob, UploadError } from '@/types/upload';
 import { ErrorDetailModal } from '@/components/ErrorDetailModal';
@@ -16,26 +15,18 @@ interface UploadModalProps {
   styles: Record<string, any>;
 }
 
-interface UploadMessageType {
-  returnMessage: string;
-  jsonData: Record<string, Recipe>;
-  encodedImages: string;
-}
-
 export const UploadModal: React.FC<UploadModalProps> = ({
   visible,
   onClose,
   uploadCount,
   styles
 }) => {
-  const [uploadMessage] = useState<UploadMessageType | null>(null);
-  const [uploadText, setUploadText] = useState<string | null>(null);
   const [uploadStatus, setUploadStatus] = useState<UploadJob | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<UploadError[]>([]);
   const [errorModalVisible, setErrorModalVisible] = useState(false);
 
-  const { jsonData, setJsonData } = useRecipe();
+  const { setJsonData } = useRecipe();
 
   // Subscribe to UploadService status updates
   useEffect(() => {
@@ -57,25 +48,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
     return () => unsubscribe();
   }, [setJsonData]);
-
-  // Legacy support for old upload flow
-  useEffect(() => {
-    if (uploadMessage) {
-      setUploadText(uploadMessage.returnMessage);
-
-      if (uploadMessage.returnMessage.includes('success')) {
-        // Update jsonData with new recipes (image queue handles display)
-        setJsonData(uploadMessage.jsonData);
-      }
-
-      // Clear message after 2 seconds
-      const timer = setTimeout(() => {
-        setUploadText(null);
-      }, 2000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [uploadMessage, jsonData, setJsonData]);
 
   // Helper function to build completion message
   const buildCompletionMessage = (job: UploadJob): string => {
@@ -114,11 +86,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
   return (
     <>
-      {/* Legacy upload message */}
-      {uploadText && (
-        <ThemedText style={styles.uploadMessage}>{uploadText}</ThemedText>
-      )}
-
       {/* Progress display during upload */}
       {uploadStatus?.status === 'processing' && (
         <ThemedText style={styles.uploadMessage}>

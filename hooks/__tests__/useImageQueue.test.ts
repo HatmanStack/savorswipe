@@ -4,7 +4,7 @@ import { ImageQueueService } from '@/services/ImageQueueService';
 import { RecipeService } from '@/services/RecipeService';
 import { useRecipe } from '@/context/RecipeContext';
 import { ToastQueue } from '@/components/Toast';
-import { S3JsonData } from '@/types';
+import { S3JsonData, Recipe } from '@/types';
 
 // Mock dependencies
 jest.mock('@/services/ImageQueueService');

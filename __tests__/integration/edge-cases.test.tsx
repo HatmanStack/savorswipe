@@ -279,16 +279,18 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         recipe1: { key: 'recipe1', Title: 'Recipe 1', image_url: 'https://s3.../recipe1.jpg' } as Recipe,
         delete_consistency_recipe: pendingRecipe,
       };
+      let currentPendingRecipe: Recipe | null = pendingRecipe;
 
       const mockSetJsonDataLocal = jest.fn((data: S3JsonData) => { mockData = data; });
-      (useRecipe as jest.Mock).mockReturnValue({
+      const mockSetPendingRecipe = jest.fn((recipe: Recipe | null) => { currentPendingRecipe = recipe; });
+      (useRecipe as jest.Mock).mockImplementation(() => ({
         jsonData: mockData,
         setJsonData: mockSetJsonDataLocal,
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
-        pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
-      });
+        pendingRecipeForPicker: currentPendingRecipe,
+        setPendingRecipeForPicker: mockSetPendingRecipe,
+      }));
 
       (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
         images: [{ filename: 'images/recipe1.jpg', file: 'blob:1' }],
@@ -316,8 +318,11 @@ describe('Integration: Edge Cases & Data Integrity', () => {
 
       // Verify setJsonData was called to remove recipe
       expect(mockSetJsonDataLocal).toHaveBeenCalled();
-      // Modal should be closed
-      expect(result.current.showImagePickerModal).toBe(false);
+
+      // Wait for modal to close
+      await waitFor(() => {
+        expect(result.current.showImagePickerModal).toBe(false);
+      }, { timeout: 3000 });
     });
 
     it('should prevent duplicate submissions (idempotency)', async () => {

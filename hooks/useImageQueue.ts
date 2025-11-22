@@ -79,6 +79,7 @@ export function useImageQueue(): ImageQueueHook {
   const [currentImage, setCurrentImage] = useState<ImageFile | null>(null);
   const [nextImage, setNextImage] = useState<ImageFile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Recipe key pool (mutable ref, doesn't trigger re-renders)
   const recipeKeyPoolRef = useRef<string[]>([]);
@@ -254,7 +255,7 @@ export function useImageQueue(): ImageQueueHook {
   // Handle image selection confirmation
   const onConfirmImage = useCallback(
     async (imageUrl: string) => {
-      if (!pendingRecipe || !jsonData) {
+      if (!pendingRecipe || !jsonData || isSubmitting) {
 
         return;
       }
@@ -262,6 +263,7 @@ export function useImageQueue(): ImageQueueHook {
       // Capture recipe key before clearing state
       const recipeKey = pendingRecipe.key;
 
+      setIsSubmitting(true);
       ToastQueue.show('Saving image selection...');
 
       try {
@@ -294,14 +296,16 @@ export function useImageQueue(): ImageQueueHook {
 
         ToastQueue.show(`Failed to save image: ${userFriendlyError}`);
         // Keep modal open on failure so user can retry
+      } finally {
+        setIsSubmitting(false);
       }
     },
-    [pendingRecipe, jsonData, setJsonData, injectRecipes, resetPendingRecipe]
+    [pendingRecipe, jsonData, isSubmitting, setJsonData, injectRecipes, resetPendingRecipe]
   );
 
   // Handle recipe deletion
   const onDeleteRecipe = useCallback(async () => {
-    if (!pendingRecipe || !jsonData) {
+    if (!pendingRecipe || !jsonData || isSubmitting) {
 
       return;
     }
@@ -309,6 +313,7 @@ export function useImageQueue(): ImageQueueHook {
     // Capture recipe key before clearing state
     const recipeKey = pendingRecipe.key;
 
+    setIsSubmitting(true);
     ToastQueue.show('Deleting recipe...');
 
     try {
@@ -333,8 +338,10 @@ export function useImageQueue(): ImageQueueHook {
 
       ToastQueue.show(`Failed to delete recipe: ${userFriendlyError}`);
       // Keep modal open on failure so user can retry
+    } finally {
+      setIsSubmitting(false);
     }
-  }, [pendingRecipe, jsonData, setJsonData, resetPendingRecipe]);
+  }, [pendingRecipe, jsonData, isSubmitting, setJsonData, resetPendingRecipe]);
 
   // Initialize queue on first load
   const initializeQueue = useCallback(async () => {

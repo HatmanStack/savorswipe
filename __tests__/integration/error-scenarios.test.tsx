@@ -132,7 +132,7 @@ describe('Integration: Error Scenario Testing', () => {
         new Error('Request timeout')
       );
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -184,7 +184,7 @@ describe('Integration: Error Scenario Testing', () => {
         new Error('Recipe not found')
       );
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -234,7 +234,7 @@ describe('Integration: Error Scenario Testing', () => {
         new Error('Invalid image URL')
       );
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -284,7 +284,7 @@ describe('Integration: Error Scenario Testing', () => {
         new Error('Failed to select image. Status: 500')
       );
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -334,7 +334,7 @@ describe('Integration: Error Scenario Testing', () => {
         new Error('Recipe not found')
       );
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -386,7 +386,7 @@ describe('Integration: Error Scenario Testing', () => {
         new Error('Failed to fetch image from Google')
       );
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -434,7 +434,7 @@ describe('Integration: Error Scenario Testing', () => {
         new Error('Recipe not found')
       );
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -493,7 +493,7 @@ describe('Integration: Error Scenario Testing', () => {
         new Error('Network request failed')
       );
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -544,7 +544,7 @@ describe('Integration: Error Scenario Testing', () => {
         new Error('Network request failed')
       );
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -596,7 +596,7 @@ describe('Integration: Error Scenario Testing', () => {
         new Error('Test error')
       );
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);

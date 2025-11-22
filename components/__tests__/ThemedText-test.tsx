@@ -6,10 +6,10 @@ import { ThemedText } from '../ThemedText';
 import { act } from 'react-test-renderer';
 
 it(`renders correctly`, async () => {
-  let tree;
+  let tree: renderer.ReactTestRenderer;
   await act(async () => {
     tree = renderer.create(<ThemedText>Snapshot test!</ThemedText>);
   });
 
-  expect(tree.toJSON()).toMatchSnapshot();
+  expect(tree!.toJSON()).toMatchSnapshot();
 });
