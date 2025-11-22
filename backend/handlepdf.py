@@ -1,12 +1,13 @@
-#from pdf2image import convert_from_path
+# from pdf2image import convert_from_path
 import base64
 import os
 
-@staticmethod
+
 def encode_image(image_path):
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode("utf-8")
-    
+
+
 def pdf_to_base64_images(base64_pdf):
     pdf_data = base64.b64decode(base64_pdf)
     with open('/tmp/temp_pdf.pdf', 'wb') as temp_pdf_file:

@@ -19,7 +19,7 @@ describe('Integration: Error Scenario Testing', () => {
   // Helper function to set up a test scenario
   const setupTest = () => {
     let mockData: S3JsonData = {
-      recipe1: { Title: 'Recipe 1', image_url: 'https://s3.../recipe1.jpg' },
+      recipe1: { key: 'recipe1', Title: 'Recipe 1', image_url: 'https://s3.../recipe1.jpg' } as Recipe,
     };
 
     (useRecipe as jest.Mock).mockReturnValue({
@@ -81,7 +81,7 @@ describe('Integration: Error Scenario Testing', () => {
         new Error('Request timeout')
       );
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);

@@ -49,7 +49,9 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         image_url: null,
       };
 
-      let mockData = { recipe1: { Title: 'Recipe 1', image_url: 'https://s3.../recipe1.jpg' } };
+      let mockData: S3JsonData = {
+        recipe1: { key: 'recipe1', Title: 'Recipe 1', image_url: 'https://s3.../recipe1.jpg' } as Recipe
+      };
       const mockSetJsonData = jest.fn((data: S3JsonData) => { mockData = data; });
       (useRecipe as jest.Mock).mockReturnValue({
         jsonData: mockData,
@@ -78,7 +80,7 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         setPendingRecipeForPicker: jest.fn(),
       });
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -97,7 +99,9 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         image_url: null, // Explicitly null
       };
 
-      let mockData = { recipe1: { Title: 'Recipe 1', image_url: 'https://s3.../recipe1.jpg' } };
+      let mockData: S3JsonData = {
+        recipe1: { key: 'recipe1', Title: 'Recipe 1', image_url: 'https://s3.../recipe1.jpg' } as Recipe
+      };
       const mockSetJsonData = jest.fn((data: S3JsonData) => { mockData = data; });
       (useRecipe as jest.Mock).mockReturnValue({
         jsonData: mockData,
@@ -137,7 +141,7 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         setPendingRecipeForPicker: jest.fn(),
       });
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -156,7 +160,9 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         image_url: null,
       };
 
-      let mockData = { recipe1: { Title: 'Recipe 1', image_url: 'https://s3.../recipe1.jpg' } };
+      let mockData: S3JsonData = {
+        recipe1: { key: 'recipe1', Title: 'Recipe 1', image_url: 'https://s3.../recipe1.jpg' } as Recipe
+      };
       const mockSetJsonData = jest.fn((data: S3JsonData) => { mockData = data; });
       (useRecipe as jest.Mock).mockReturnValue({
         jsonData: mockData,
@@ -195,7 +201,7 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         setPendingRecipeForPicker: jest.fn(),
       });
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -213,7 +219,9 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         image_url: null,
       };
 
-      let mockData = { recipe1: { Title: 'Recipe 1', image_url: 'https://s3.../recipe1.jpg' } };
+      let mockData: S3JsonData = {
+        recipe1: { key: 'recipe1', Title: 'Recipe 1', image_url: 'https://s3.../recipe1.jpg' } as Recipe
+      };
       const mockSetJsonData = jest.fn((data: S3JsonData) => { mockData = data; });
       (useRecipe as jest.Mock).mockReturnValue({
         jsonData: mockData,
@@ -246,7 +254,7 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         setPendingRecipeForPicker: jest.fn(),
       });
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -267,8 +275,8 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         image_url: null,
       };
 
-      let mockData = {
-        recipe1: { Title: 'Recipe 1', image_url: 'https://s3.../recipe1.jpg' },
+      let mockData: S3JsonData = {
+        recipe1: { key: 'recipe1', Title: 'Recipe 1', image_url: 'https://s3.../recipe1.jpg' } as Recipe,
         delete_consistency_recipe: pendingRecipe,
       };
 
@@ -295,7 +303,7 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         expect(result.current.isLoading).toBe(false);
       }, { timeout: 3000 });
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -320,7 +328,9 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         image_url: null,
       };
 
-      let mockData = { recipe1: { Title: 'Recipe 1', image_url: 'https://s3.../recipe1.jpg' } };
+      let mockData: S3JsonData = {
+        recipe1: { key: 'recipe1', Title: 'Recipe 1', image_url: 'https://s3.../recipe1.jpg' } as Recipe
+      };
       const mockSetJsonData = jest.fn((data: S3JsonData) => { mockData = data; });
       (useRecipe as jest.Mock).mockReturnValue({
         jsonData: mockData,
@@ -358,7 +368,7 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         setPendingRecipeForPicker: jest.fn(),
       });
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -399,7 +409,9 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         image_search_results: ['https://google.com/img1.jpg'],
       };
 
-      let mockData = { recipe1: { Title: 'Recipe 1', image_url: 'https://s3.../recipe1.jpg' } };
+      let mockData: S3JsonData = {
+        recipe1: { key: 'recipe1', Title: 'Recipe 1', image_url: 'https://s3.../recipe1.jpg' } as Recipe
+      };
       (useRecipe as jest.Mock).mockReturnValue({
         jsonData: mockData,
         setJsonData: (data: S3JsonData) => { mockData = data; },

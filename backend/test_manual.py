@@ -4,6 +4,7 @@ Manual testing script for Lambda endpoints.
 Tests DELETE and POST image endpoints locally by simulating Lambda events.
 """
 
+from lambda_function import handle_delete_request, handle_post_image_request
 import json
 import os
 import sys
@@ -18,8 +19,6 @@ os.environ['AWS_SECURITY_TOKEN'] = 'testing'
 os.environ['AWS_SESSION_TOKEN'] = 'testing'
 os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
 os.environ['S3_BUCKET'] = 'test-bucket'
-
-from lambda_function import handle_delete_request, handle_post_image_request
 
 
 def setup_test_data(s3_client):
@@ -148,7 +147,7 @@ def test_post_image_selection():
 
     # Mock image fetching
     with patch('lambda_function.fetch_image_from_url') as mock_fetch, \
-         patch('lambda_function.upload_image_to_s3') as mock_upload:
+            patch('lambda_function.upload_image_to_s3') as mock_upload:
         mock_fetch.return_value = (b"fake image data", "image/jpeg")
         mock_upload.return_value = ("images/1.jpg", None)
 
@@ -170,7 +169,8 @@ def test_post_image_selection():
     print(f"  Recipe 1 exists: {('1' in data)}")
     print(f"  Image URL set: {bool(recipe.get('image_url'))}")
     print(f"  Image URL value: {recipe.get('image_url')}")
-    print(f"  ✓ POST image test passed" if response['statusCode'] == 200 else "  ✗ POST image test failed")
+    print(f"  ✓ POST image test passed" if response['statusCode']
+          == 200 else "  ✗ POST image test failed")
 
     return response['statusCode'] == 200
 
@@ -202,7 +202,7 @@ def test_complete_workflow():
     }
 
     with patch('lambda_function.fetch_image_from_url') as mock_fetch, \
-         patch('lambda_function.upload_image_to_s3') as mock_upload:
+            patch('lambda_function.upload_image_to_s3') as mock_upload:
         mock_fetch.return_value = (b"fake image data", "image/jpeg")
         mock_upload.return_value = ("images/2.jpg", None)
         select_response = handle_post_image_request(select_event, None)

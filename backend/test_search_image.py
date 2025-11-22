@@ -16,8 +16,9 @@ class TestSearchImageModule(unittest.TestCase):
             'https://example.com/image5.jpg'
         ]
 
+    @patch('search_image.validate_image_urls')
     @patch('search_image.requests.get')
-    def test_google_search_image_returns_multiple(self, mock_get):
+    def test_google_search_image_returns_multiple(self, mock_get, mock_validate):
         """Test that google_search_image returns multiple URLs."""
         # Mock API response with 10 results
         mock_response = Mock()
@@ -30,6 +31,9 @@ class TestSearchImageModule(unittest.TestCase):
         mock_response.status_code = 200
         mock_get.return_value = mock_response
 
+        # Mock validate_image_urls to return all URLs as valid
+        mock_validate.side_effect = lambda urls, timeout=5: urls
+
         # Test
         results = google_search_image('chocolate cookies', count=10)
 
@@ -37,8 +41,9 @@ class TestSearchImageModule(unittest.TestCase):
         self.assertEqual(len(results), 10)
         self.assertTrue(all(isinstance(url, str) for url in results))
 
+    @patch('search_image.validate_image_urls')
     @patch('search_image.requests.get')
-    def test_google_search_image_handles_count_param(self, mock_get):
+    def test_google_search_image_handles_count_param(self, mock_get, mock_validate):
         """Test that count parameter is passed to API."""
         # Mock API response
         mock_response = Mock()
@@ -50,6 +55,9 @@ class TestSearchImageModule(unittest.TestCase):
         }
         mock_response.status_code = 200
         mock_get.return_value = mock_response
+
+        # Mock validate to return all URLs as valid
+        mock_validate.side_effect = lambda urls, timeout=5: urls
 
         # Test with count=5
         results = google_search_image('test query', count=5)
@@ -190,8 +198,9 @@ class TestSearchImageModule(unittest.TestCase):
         # Should return empty string
         self.assertEqual(unique_url, '')
 
+    @patch('search_image.validate_image_urls')
     @patch('search_image.requests.get')
-    def test_integration(self, mock_get):
+    def test_integration(self, mock_get, mock_validate):
         """Test full integration flow with deduplication."""
         # Mock Google API response
         mock_response = Mock()
@@ -206,6 +215,9 @@ class TestSearchImageModule(unittest.TestCase):
         }
         mock_response.status_code = 200
         mock_get.return_value = mock_response
+
+        # Mock validate to return all URLs as valid
+        mock_validate.side_effect = lambda urls, timeout=5: urls
 
         # Existing recipes using images 1-3
         json_data = {

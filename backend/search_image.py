@@ -1,7 +1,7 @@
 import os
 import requests
 import re
-from typing import List, Set, Dict
+from typing import List, Set, Dict, Optional
 import logging
 
 # Configure logging
@@ -107,11 +107,12 @@ def validate_image_urls(image_urls: List[str], timeout: int = 5) -> List[str]:
         except Exception as e:
             logger.error(f"[SEARCH] Unexpected error validating URL: {str(e)}")
 
-    logger.info(f"[SEARCH] URL validation complete: {len(valid_urls)}/{len(image_urls)} URLs are valid")
+    logger.info(
+        f"[SEARCH] URL validation complete: {len(valid_urls)}/{len(image_urls)} URLs are valid")
     return valid_urls
 
 
-def google_search_image(title: str, count: int = 10, recipe_type: str = None) -> List[str]:
+def google_search_image(title: str, count: int = 10, recipe_type: Optional[str] = None) -> List[str]:
     """
     Search for images using Google Custom Search API with automatic query simplification.
 
@@ -147,7 +148,8 @@ def google_search_image(title: str, count: int = 10, recipe_type: str = None) ->
 
     # Strategy 2: If we got very few results, try with "recipe photo"
     if len(results) < 5:
-        print(f"[SEARCH] Only found {len(results)} results, trying strategy 2: '{simplified_title} recipe photo'...")
+        print(
+            f"[SEARCH] Only found {len(results)} results, trying strategy 2: '{simplified_title} recipe photo'...")
         recipe_results = _search_google_images(f"{simplified_title} recipe photo", count)
 
         # Use whichever gave us more results
@@ -157,12 +159,14 @@ def google_search_image(title: str, count: int = 10, recipe_type: str = None) ->
 
     # Strategy 3: If still very few, try just simplified title as fallback
     if len(results) < 5:
-        print(f"[SEARCH] Only found {len(results)} results, trying strategy 3: '{simplified_title}'...")
+        print(
+            f"[SEARCH] Only found {len(results)} results, trying strategy 3: '{simplified_title}'...")
         simple_results = _search_google_images(simplified_title, count)
 
         # Use whichever gave us more results
         if len(simple_results) > len(results):
-            print(f"[SEARCH] Strategy 3 (simplified only) found more results: {len(simple_results)}")
+            print(
+                f"[SEARCH] Strategy 3 (simplified only) found more results: {len(simple_results)}")
             results = simple_results
 
     # Validate URLs to ensure they're actually accessible
@@ -284,7 +288,8 @@ def select_unique_image_url(search_results: List[str], used_urls: Set[str]) -> s
         >>> select_unique_image_url([], set())
         ''  # Empty results
     """
-    print(f"[SEARCH] Selecting unique URL from {len(search_results)} results, {len(used_urls)} URLs already used")
+    print(
+        f"[SEARCH] Selecting unique URL from {len(search_results)} results, {len(used_urls)} URLs already used")
     if not search_results:
         print(f"[SEARCH] No search results provided")
         return ''

@@ -64,7 +64,7 @@ def _validate_image_url(image_url: str) -> bool:
 
             # Reject private, loopback, link-local, multicast addresses
             if (ip.is_private or ip.is_loopback or ip.is_link_local or
-                ip.is_multicast or ip.is_reserved):
+                    ip.is_multicast or ip.is_reserved):
                 logger.warning(
                     f"[IMAGE] Refusing to fetch private/reserved IP: {hostname} -> {ip_str}"
                 )
@@ -131,7 +131,8 @@ def fetch_image_from_url(image_url: str, timeout: int = 10) -> Tuple[Optional[by
             return None, None
 
         image_bytes = response.content
-        logger.info(f"[IMAGE] Successfully fetched {len(image_bytes)} bytes, content-type: {content_type}")
+        logger.info(
+            f"[IMAGE] Successfully fetched {len(image_bytes)} bytes, content-type: {content_type}")
 
         return image_bytes, content_type
 
@@ -144,8 +145,6 @@ def fetch_image_from_url(image_url: str, timeout: int = 10) -> Tuple[Optional[by
     except Exception as e:
         logger.error(f"[IMAGE] Unexpected error fetching image: {str(e)}")
         return None, None
-
-
 
 
 def upload_image_to_s3(
@@ -231,5 +230,3 @@ def upload_image_to_s3(
             return None, f"Unexpected error: {str(e)}"
 
     return None, f"Max retries ({max_retries}) exceeded"
-
-
