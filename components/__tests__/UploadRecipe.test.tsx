@@ -30,7 +30,6 @@ import { UploadService } from '@/services/UploadService'
 import { UploadFile } from '@/types/upload'
 
 describe('UploadRecipe', () => {
-  const mockSetUploadMessage = jest.fn()
   const mockSetUploadVisible = jest.fn()
 
   beforeEach(() => {

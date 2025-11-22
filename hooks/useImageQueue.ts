@@ -238,6 +238,12 @@ export function useImageQueue(): ImageQueueHook {
         setNextImage(newQueue[1]);
       }
 
+      // Injecting a new recipe (especially with high priority) should update currentImage if queue was effectively empty
+      if (prev.length === 0 && newQueue.length > 0) {
+        setCurrentImage(newQueue[0]);
+        setIsLoading(false); // Ensure loading state is cleared if we inject into an empty queue
+      }
+
       return newQueue;
     });
 

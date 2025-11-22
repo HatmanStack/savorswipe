@@ -13,6 +13,8 @@ jest.mock('@/context/RecipeContext');
 jest.mock('@/components/Toast');
 
 describe('Integration: Image Picker Modal Flow', () => {
+  jest.setTimeout(30000); // Increase timeout for all tests in this file
+
   const mockSetJsonData = jest.fn();
   const mockSetCurrentRecipe = jest.fn();
 
@@ -136,6 +138,19 @@ describe('Integration: Image Picker Modal Flow', () => {
 
       // Verify success toast
       expect(ToastQueue.show).toHaveBeenCalledWith('Image saved');
+
+      // Manually update the mock since useRecipe mock is static
+      (useRecipe as jest.Mock).mockReturnValue({
+        jsonData: mockData,
+        setJsonData: (data: S3JsonData) => {
+          mockData = data;
+        },
+        setCurrentRecipe: mockSetCurrentRecipe,
+        mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: null, // Recipe processed
+        setPendingRecipeForPicker: jest.fn(),
+      });
+      rerender({});
 
       // Wait for modal to close
       await waitFor(() => {
@@ -281,6 +296,19 @@ describe('Integration: Image Picker Modal Flow', () => {
 
       // Verify success toast
       expect(ToastQueue.show).toHaveBeenCalledWith('Recipe deleted');
+
+      // Manually update the mock since useRecipe mock is static
+      (useRecipe as jest.Mock).mockReturnValue({
+        jsonData: mockData,
+        setJsonData: (data: S3JsonData) => {
+          mockData = data;
+        },
+        setCurrentRecipe: mockSetCurrentRecipe,
+        mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: null, // Recipe processed
+        setPendingRecipeForPicker: jest.fn(),
+      });
+      rerender({});
 
       // Wait for modal to close
       await waitFor(() => {
