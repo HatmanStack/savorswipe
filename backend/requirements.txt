@@ -3,3 +3,4 @@ pdf2image
 boto3
 requests
 Pillow
+requests-mock

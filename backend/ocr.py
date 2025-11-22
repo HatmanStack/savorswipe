@@ -3,7 +3,21 @@ import os
 import json
 from fix_ingredients import normalize_recipe
 
-client = OpenAI(api_key=os.getenv('API_KEY'))
+# Lazy initialization will happen in functions
+client = None
+
+def get_client():
+    global client
+    if client is None:
+        # Check if API_KEY is present
+        api_key = os.getenv('API_KEY')
+        if api_key:
+            client = OpenAI(api_key=api_key)
+        else:
+            # For testing environments where key might be missing but mocked
+            # This allows import without crashing
+            client = OpenAI(api_key="dummy-key-for-init")
+    return client
 
 
 def _repair_partial_json(recipe_json: str) -> str:
@@ -79,7 +93,7 @@ Here is the partial extraction we have so far:
 
     partial_str = json.dumps(partial_data, indent=2)
 
-    response = client.chat.completions.create(
+    response = get_client().chat.completions.create(
         model="gpt-4o",  # Can be upgraded to "o1" or "gpt-5" when available
         response_format={"type": "json_object"},
         messages=[
@@ -302,7 +316,7 @@ Example 3 - Multiple partial recipes (e.g., index page with snippets):
     # Append safety note if this is a retry
     system_prompt = system_prompt + safety_note
 
-    response = client.chat.completions.create(
+    response = get_client().chat.completions.create(
         model="gpt-4o",
         response_format={ "type": "json_object" },
         messages=[
@@ -475,7 +489,7 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
 
     try:
         print("[PARSEJSON] Calling OpenAI API...")
-        response = client.chat.completions.create(
+        response = get_client().chat.completions.create(
             model="gpt-4o",
             response_format={ "type": "json_object" },
 

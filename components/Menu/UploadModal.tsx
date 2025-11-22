@@ -28,7 +28,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   uploadCount,
   styles
 }) => {
-  const [uploadMessage, setUploadMessage] = useState<UploadMessageType | null>(null);
+  const [uploadMessage] = useState<UploadMessageType | null>(null);
   const [uploadText, setUploadText] = useState<string | null>(null);
   const [uploadStatus, setUploadStatus] = useState<UploadJob | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);

@@ -1,0 +1,2738 @@
+
+> savorswipe@1.0.0 test
+> jest --watchAll
+
+PASS __tests__/integration/upload-flow.test.ts
+FAIL __tests__/integration/error-scenarios.test.tsx
+  ● Integration: Error Scenario Testing › Network Errors › should handle network timeout gracefully during image selection
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/error-scenarios.test.tsx:80:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Error Scenario Testing › Network Errors › should handle network timeout during recipe deletion
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/error-scenarios.test.tsx:129:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Error Scenario Testing › Backend Error Responses › should handle 404 Recipe not found during image selection
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/error-scenarios.test.tsx:179:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Error Scenario Testing › Backend Error Responses › should handle 400 Invalid image URL error
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/error-scenarios.test.tsx:227:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Error Scenario Testing › Backend Error Responses › should handle 500 Server error during image selection
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/error-scenarios.test.tsx:275:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Error Scenario Testing › Backend Error Responses › should handle 404 Recipe not found during deletion
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/error-scenarios.test.tsx:323:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Error Scenario Testing › Malformed Response Handling › should handle error responses from backend gracefully
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/error-scenarios.test.tsx:373:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Error Scenario Testing › Race Conditions › should handle recipe already deleted scenario during selection
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/error-scenarios.test.tsx:419:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Error Scenario Testing › Offline Scenarios › should handle offline network during image selection
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/error-scenarios.test.tsx:474:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Error Scenario Testing › Offline Scenarios › should handle offline network during deletion
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/error-scenarios.test.tsx:523:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Error Scenario Testing › State Management › should keep modal open after error occurs
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/error-scenarios.test.tsx:573:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+FAIL components/__tests__/UploadRecipe.test.tsx
+  ● UploadRecipe › test_permissions_denied: should close modal and alert when permissions denied
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: false
+
+    Number of calls: 0
+
+      70 |       expect.stringContaining('permissions')
+      71 |     )
+    > 72 |     expect(mockSetUploadVisible).toHaveBeenCalledWith(false)
+         |                                  ^
+      73 |     expect(DocumentPicker.getDocumentAsync).not.toHaveBeenCalled()
+      74 |   })
+      75 |
+
+      at Object.toHaveBeenCalledWith (components/__tests__/UploadRecipe.test.tsx:72:34)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● UploadRecipe › test_handles_cancelled_selection: should close modal when user cancels
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: false
+
+    Number of calls: 0
+
+      105 |     await selectAndUploadImage(mockSetUploadMessage, mockSetUploadVisible)
+      106 |
+    > 107 |     expect(mockSetUploadVisible).toHaveBeenCalledWith(false)
+          |                                  ^
+      108 |     expect(UploadService.queueUpload).not.toHaveBeenCalled()
+      109 |   })
+      110 |
+
+      at Object.toHaveBeenCalledWith (components/__tests__/UploadRecipe.test.tsx:107:34)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● UploadRecipe › test_closes_modal_immediately: should call setUploadVisible(false) immediately
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: false
+
+    Number of calls: 0
+
+      365 |     await selectAndUploadImage(mockSetUploadMessage, mockSetUploadVisible)
+      366 |
+    > 367 |     expect(mockSetUploadVisible).toHaveBeenCalledWith(false)
+          |                                  ^
+      368 |   })
+      369 |
+      370 |   // Test 13: Mixed files (images + PDF)
+
+      at Object.toHaveBeenCalledWith (components/__tests__/UploadRecipe.test.tsx:367:34)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● UploadRecipe › test_all_files_skipped: should show alert and close modal when all files skipped
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: false
+
+    Number of calls: 0
+
+      488 |       expect.stringContaining('No valid files to upload')
+      489 |     )
+    > 490 |     expect(mockSetUploadVisible).toHaveBeenCalledWith(false)
+          |                                  ^
+      491 |     expect(UploadService.queueUpload).not.toHaveBeenCalled()
+      492 |   })
+      493 |
+
+      at Object.toHaveBeenCalledWith (components/__tests__/UploadRecipe.test.tsx:490:34)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● UploadRecipe › test_user_cancels_long_upload: should close modal without upload when user cancels
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: false
+
+    Number of calls: 0
+
+      571 |     await selectAndUploadImage(mockSetUploadMessage, mockSetUploadVisible)
+      572 |
+    > 573 |     expect(mockSetUploadVisible).toHaveBeenCalledWith(false)
+          |                                  ^
+      574 |     expect(UploadService.queueUpload).not.toHaveBeenCalled()
+      575 |   })
+      576 | })
+
+      at Object.toHaveBeenCalledWith (components/__tests__/UploadRecipe.test.tsx:573:34)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+FAIL services/__tests__/RecipeService.test.ts
+  ● RecipeService › getRecipesFromS3 › should fetch recipes from Lambda URL
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "https://test-lambda.execute-api.us-east-1.amazonaws.com", ObjectContaining {"headers": {"Content-Type": "application/json"}, "method": "GET"}
+    Received: "https://test-lambda.execute-api.us-east-1.amazonaws.com", {"method": "GET"}
+
+    Number of calls: 1
+
+      42 |
+      43 |       // Assert
+    > 44 |       expect(global.fetch).toHaveBeenCalledWith(
+         |                            ^
+      45 |         MOCK_LAMBDA_URL,
+      46 |         expect.objectContaining({
+      47 |           method: 'GET',
+
+      at Object.toHaveBeenCalledWith (services/__tests__/RecipeService.test.ts:44:28)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● RecipeService › getRecipeById › should return null if recipe not found
+
+    TypeError: Cannot read properties of undefined (reading 'ok')
+
+      36 |       });
+      37 |
+    > 38 |       if (!response.ok) {
+         |                     ^
+      39 |
+      40 |         const errorText = await response.text();
+      41 |
+
+      at Function.ok (services/RecipeService.ts:38:21)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+FAIL __tests__/integration/edge-cases.test.tsx
+  ● Console
+
+    console.error
+      An update to TestComponent inside a test was not wrapped in act(...).
+
+      When testing, code that causes React state updates should be wrapped into act(...):
+
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+      371 |
+      372 |       // Update queue
+    > 373 |       setQueue(allImages);
+          |       ^
+      374 |
+      375 |       // Remove fetched keys from pool (including failed ones to avoid retrying)
+      376 |       const fetchedCount = batch1.images.length + batch1.failedKeys.length +
+
+      at node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11801:19
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11800:9)
+      at scheduleUpdateOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:10326:9)
+      at dispatchSetStateInternal (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4148:13)
+      at dispatchSetState (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4107:7)
+      at setQueue (hooks/useImageQueue.ts:373:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+    console.error
+      An update to TestComponent inside a test was not wrapped in act(...).
+
+      When testing, code that causes React state updates should be wrapped into act(...):
+
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+      381 |       // Set current and next images
+      382 |       if (allImages[0]) {
+    > 383 |         setCurrentImage(allImages[0]);
+          |         ^
+      384 |       }
+      385 |
+      386 |       if (allImages[1]) {
+
+      at node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11801:19
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11800:9)
+      at scheduleUpdateOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:10326:9)
+      at dispatchSetStateInternal (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4148:13)
+      at dispatchSetState (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4107:7)
+      at setCurrentImage (hooks/useImageQueue.ts:383:9)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+    console.error
+      An update to TestComponent inside a test was not wrapped in act(...).
+
+      When testing, code that causes React state updates should be wrapped into act(...):
+
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+      385 |
+      386 |       if (allImages[1]) {
+    > 387 |         setNextImage(allImages[1]);
+          |         ^
+      388 |       }
+      389 |     } catch {
+      390 |       // Initialization error - already handled by finally block
+
+      at node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11801:19
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11800:9)
+      at scheduleUpdateOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:10326:9)
+      at dispatchSetStateInternal (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4148:13)
+      at dispatchSetState (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4107:7)
+      at setNextImage (hooks/useImageQueue.ts:387:9)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+    console.error
+      An update to TestComponent inside a test was not wrapped in act(...).
+
+      When testing, code that causes React state updates should be wrapped into act(...):
+
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+      392 |       isInitializingRef.current = false;
+      393 |       if (isMountedRef.current) {
+    > 394 |         setIsLoading(false);
+          |         ^
+      395 |       }
+      396 |     }
+      397 |   }, [jsonData, mealTypeFilters]);
+
+      at node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11801:19
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11800:9)
+      at scheduleUpdateOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:10326:9)
+      at dispatchSetStateInternal (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4148:13)
+      at dispatchSetState (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4107:7)
+      at setIsLoading (hooks/useImageQueue.ts:394:9)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Edge Cases & Data Integrity › Missing or Invalid Data › should handle missing image_search_results gracefully
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: false
+    Received: true
+
+      80 |
+      81 |       // Empty image_search_results should not trigger modal
+    > 82 |       expect(result.current.showImagePickerModal).toBe(false);
+         |                                                   ^
+      83 |       expect(result.current.pendingRecipe).toBeNull();
+      84 |     });
+      85 |
+
+      at Object.toBe (__tests__/integration/edge-cases.test.tsx:82:51)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Edge Cases & Data Integrity › Missing or Invalid Data › should handle null image_url gracefully
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/edge-cases.test.tsx:130:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Edge Cases & Data Integrity › Special Characters & Encoding › should handle recipe keys with special characters
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/edge-cases.test.tsx:184:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Edge Cases & Data Integrity › Special Characters & Encoding › should handle recipe titles with unicode characters
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/edge-cases.test.tsx:231:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Edge Cases & Data Integrity › Data Consistency › should remove recipe from local state after successful deletion
+
+    expect(jest.fn()).toHaveBeenCalled()
+
+    Expected number of calls: >= 1
+    Received number of calls:    0
+
+      288 |
+      289 |       // Verify setJsonData was called to remove recipe
+    > 290 |       expect(mockSetJsonDataLocal).toHaveBeenCalled();
+          |                                    ^
+      291 |       // Modal should be closed
+      292 |       expect(result.current.showImagePickerModal).toBe(false);
+      293 |     });
+
+      at Object.toHaveBeenCalled (__tests__/integration/edge-cases.test.tsx:290:36)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Edge Cases & Data Integrity › Data Consistency › should prevent duplicate submissions (idempotency)
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/edge-cases.test.tsx:337:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Edge Cases & Data Integrity › Null/Undefined Safety › should handle undefined recipe gracefully
+
+    expect(received).toBeNull()
+
+    Received: undefined
+
+      358 |
+      359 |       // pendingRecipe should start as null
+    > 360 |       expect(result.current.pendingRecipe).toBeNull();
+          |                                            ^
+      361 |
+      362 |       // Should not crash when calling with null
+      363 |       await act(async () => {
+
+      at Object.toBeNull (__tests__/integration/edge-cases.test.tsx:360:44)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ● Integration: Edge Cases & Data Integrity › Null/Undefined Safety › should validate recipe data before operations
+
+    expect(received).toBeNull()
+
+    Received: undefined
+
+      396 |
+      397 |       // Should handle invalid recipe data gracefully
+    > 398 |       expect(result.current.pendingRecipe).toBeNull();
+          |                                            ^
+      399 |       expect(result.current.showImagePickerModal).toBe(false);
+      400 |     });
+      401 |   });
+
+      at Object.toBeNull (__tests__/integration/edge-cases.test.tsx:398:44)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+PASS services/__tests__/UploadService.test.ts
+FAIL __tests__/integration/image-picker-flow.test.tsx
+  ● Integration: Image Picker Modal Flow › Scenario 1: Upload recipe -> modal appears -> select image -> recipe injected › should show modal, handle image selection, and inject recipe into queue
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/image-picker-flow.test.tsx:108:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Image Picker Modal Flow › Scenario 1: Upload recipe -> modal appears -> select image -> recipe injected › should inject recipe at position 2 in queue
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/image-picker-flow.test.tsx:190:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Image Picker Modal Flow › Scenario 2: Upload recipe -> delete -> queue continues › should remove recipe and clear modal on deletion
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "delete_test_recipe"
+    Received: undefined
+
+      256 |       }, { timeout: 3000 });
+      257 |
+    > 258 |       expect(result.current.pendingRecipe?.key).toBe('delete_test_recipe');
+          |                                                 ^
+      259 |
+      260 |       // Delete recipe
+      261 |       await act(async () => {
+
+      at Object.toBe (__tests__/integration/image-picker-flow.test.tsx:258:49)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Image Picker Modal Flow › Scenario 3: Error handling › should show error toast and keep modal open on image selection failure
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "Failed to save image: Failed to fetch image from Google"
+
+    Number of calls: 0
+
+      326 |
+      327 |       // Verify error was shown
+    > 328 |       expect(ToastQueue.show).toHaveBeenCalledWith(
+          |                               ^
+      329 |         'Failed to save image: Failed to fetch image from Google'
+      330 |       );
+      331 |
+
+      at Object.toHaveBeenCalledWith (__tests__/integration/image-picker-flow.test.tsx:328:31)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Image Picker Modal Flow › Scenario 3: Error handling › should show error toast and keep modal open on deletion failure
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "Failed to delete recipe: Recipe not found"
+
+    Number of calls: 0
+
+      385 |
+      386 |       // Verify error was shown
+    > 387 |       expect(ToastQueue.show).toHaveBeenCalledWith('Failed to delete recipe: Recipe not found');
+          |                               ^
+      388 |
+      389 |       // Modal should remain open
+      390 |       expect(result.current.showImagePickerModal).toBe(true);
+
+      at Object.toHaveBeenCalledWith (__tests__/integration/image-picker-flow.test.tsx:387:31)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+FAIL hooks/__tests__/useImageQueue.test.ts (13.132 s)
+  ● useImageQueue › image picker modal - pending recipe detection › should detect pending recipe and show modal
+
+    expect(received).toBeTruthy()
+
+    Received: undefined
+
+      769 |
+      770 |       // Wait for pending recipe to be detected
+    > 771 |       await waitFor(() => {
+          |                    ^
+      772 |         expect(result.current.showImagePickerModal).toBe(true);
+      773 |         expect(result.current.pendingRecipe).toBeTruthy();
+      774 |       }, { timeout: 3000 });
+
+      at Object.<anonymous> (hooks/__tests__/useImageQueue.test.ts:771:20)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● useImageQueue › image picker modal - pending recipe detection › should not detect recipe with image_url as pending
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: false
+    Received: true
+
+      802 |       }, { timeout: 3000 });
+      803 |
+    > 804 |       expect(result.current.showImagePickerModal).toBe(false);
+          |                                                   ^
+      805 |       expect(result.current.pendingRecipe).toBeNull();
+      806 |     });
+      807 |
+
+      at Object.toBe (hooks/__tests__/useImageQueue.test.ts:804:51)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● useImageQueue › image picker modal - pending recipe detection › should not detect recipe without image_search_results as pending
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: false
+    Received: true
+
+      829 |       }, { timeout: 3000 });
+      830 |
+    > 831 |       expect(result.current.showImagePickerModal).toBe(false);
+          |                                                   ^
+      832 |       expect(result.current.pendingRecipe).toBeNull();
+      833 |     });
+      834 |
+
+      at Object.toBe (hooks/__tests__/useImageQueue.test.ts:831:51)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● useImageQueue › image picker modal - pending recipe detection › should reset pending recipe state
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      136 |   // Reset pending recipe state
+      137 |   const resetPendingRecipe = useCallback(() => {
+    > 138 |     setPendingRecipeForPicker(null);
+          |     ^
+      139 |   }, [setPendingRecipeForPicker]);
+      140 |
+      141 |   // Inject new recipes into queue with retry logic
+
+      at Object.setPendingRecipeForPicker [as resetPendingRecipe] (hooks/useImageQueue.ts:138:5)
+      at resetPendingRecipe (hooks/__tests__/useImageQueue.test.ts:860:24)
+      at callback (node_modules/@testing-library/react-native/src/act.ts:31:24)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:789:22)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at Object.<anonymous> (hooks/__tests__/useImageQueue.test.ts:859:10)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● useImageQueue › image picker modal - pending recipe detection › should prioritize pending recipe detection over new recipe injection
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "pending_new"
+    Received: undefined
+
+      938 |       // Should show pending recipe in modal, not inject both
+      939 |       expect(result.current.showImagePickerModal).toBe(true);
+    > 940 |       expect(result.current.pendingRecipe?.key).toBe('pending_new');
+          |                                                 ^
+      941 |     });
+      942 |   });
+      943 |
+
+      at Object.toBe (hooks/__tests__/useImageQueue.test.ts:940:49)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● useImageQueue › modal callbacks - onConfirmImage › should confirm image selection and inject recipe
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "pending_recipe", "https://example.com/selected.jpg"
+
+    Number of calls: 0
+
+      976 |
+      977 |       // Should have called RecipeService.selectRecipeImage
+    > 978 |       expect(RecipeService.selectRecipeImage).toHaveBeenCalledWith(
+          |                                               ^
+      979 |         'pending_recipe',
+      980 |         imageUrl
+      981 |       );
+
+      at Object.toHaveBeenCalledWith (hooks/__tests__/useImageQueue.test.ts:978:47)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● useImageQueue › modal callbacks - onConfirmImage › should show error toast on image selection failure
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "Failed to save image: Network error"
+
+    Number of calls: 0
+
+      1023 |
+      1024 |       // Should show error toast
+    > 1025 |       expect(ToastQueue.show).toHaveBeenCalledWith('Failed to save image: Network error');
+           |                               ^
+      1026 |
+      1027 |       // Modal should remain visible
+      1028 |       expect(result.current.showImagePickerModal).toBe(true);
+
+      at Object.toHaveBeenCalledWith (hooks/__tests__/useImageQueue.test.ts:1025:31)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● useImageQueue › modal callbacks - onDeleteRecipe › should delete recipe successfully
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "pending_recipe"
+
+    Number of calls: 0
+
+      1062 |
+      1063 |       // Should have called RecipeService.deleteRecipe
+    > 1064 |       expect(RecipeService.deleteRecipe).toHaveBeenCalledWith('pending_recipe');
+           |                                          ^
+      1065 |
+      1066 |       // Should show success toast
+      1067 |       expect(ToastQueue.show).toHaveBeenCalledWith('Recipe deleted');
+
+      at Object.toHaveBeenCalledWith (hooks/__tests__/useImageQueue.test.ts:1064:42)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● useImageQueue › modal callbacks - onDeleteRecipe › should show error toast on deletion failure
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "Failed to delete recipe: Recipe not found"
+
+    Number of calls: 0
+
+      1106 |
+      1107 |       // Should show error toast
+    > 1108 |       expect(ToastQueue.show).toHaveBeenCalledWith('Failed to delete recipe: Recipe not found');
+           |                               ^
+      1109 |
+      1110 |       // Modal should remain visible
+      1111 |       expect(result.current.showImagePickerModal).toBe(true);
+
+      at Object.toHaveBeenCalledWith (hooks/__tests__/useImageQueue.test.ts:1108:31)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+PASS components/__tests__/ImagePickerModal.test.tsx (6.51 s)
+PASS services/__tests__/IngredientScalingService.test.ts
+PASS services/__tests__/ImageQueueService.test.ts
+PASS services/__tests__/UploadPersistence.test.ts
+FAIL app/__tests__/index.test.tsx
+  ● Test suite failed to run
+
+    Invariant Violation: TurboModuleRegistry.getEnforcing(...): 'DevMenu' could not be found. Verify that a module by this name is registered in the native binary.
+
+      35 | jest.mock('react-native', () => {
+      36 |   const RN = jest.requireActual('react-native');
+    > 37 |   return {
+         |   ^
+      38 |     ...RN,
+      39 |     AccessibilityInfo: {
+      40 |       isReduceMotionEnabled: jest.fn(() => Promise.resolve(false)),
+
+      at invariant (node_modules/invariant/invariant.js:40:15)
+      at Object.getEnforcing (node_modules/react-native/Libraries/TurboModule/TurboModuleRegistry.js:47:12)
+      at Object.getEnforcing (node_modules/react-native/src/private/devsupport/devmenu/specs/NativeDevMenu.js:22:37)
+      at Object.require (node_modules/react-native/src/private/devsupport/devmenu/DevMenu.js:11:1)
+      at Object.require (node_modules/react-native/index.js:202:12)
+          at Function.assign (<anonymous>)
+      at assign (app/__tests__/index.test.tsx:37:3)
+      at Object.require (node_modules/@react-native/virtualized-lists/Lists/VirtualizedListCellRenderer.js:23:1)
+      at Object.require (node_modules/@react-native/virtualized-lists/Lists/VirtualizedList.js:36:1)
+      at Object.require [as VirtualizedList] (node_modules/@react-native/virtualized-lists/index.js:46:12)
+      at Object.VirtualizedList (node_modules/react-native/Libraries/Lists/FlatList.js:33:42)
+      at Object.require [as FlatList] (node_modules/react-native/index.js:46:12)
+          at Function.assign (<anonymous>)
+      at assign (app/__tests__/index.test.tsx:37:3)
+      at Object.require (node_modules/@testing-library/react-native/src/helpers/host-component-names.tsx:3:1)
+      at Object.require (node_modules/@testing-library/react-native/src/fire-event.ts:11:1)
+      at Object.require (node_modules/@testing-library/react-native/src/pure.ts:3:1)
+      at Object.require (node_modules/@testing-library/react-native/src/index.ts:1:1)
+      at Object.require (app/__tests__/index.test.tsx:2:1)
+
+FAIL components/Menu/__tests__/UploadModal.test.tsx (11.939 s)
+  ● UploadModal › Toast Notifications › shows toast on completion with all success
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "All 5 recipes added successfully!", ObjectContaining {"tappable": false}
+    Received: "5 recipes processed! 0 new recipes ready to swipe.", {"onTap": [Function handleToastTap], "tappable": false}
+
+    Number of calls: 1
+
+      186 |       })
+      187 |
+    > 188 |       await waitFor(() => {
+          |                    ^
+      189 |         expect(ToastQueue.show).toHaveBeenCalledWith(
+      190 |           'All 5 recipes added successfully!',
+      191 |           expect.objectContaining({
+
+      at Object.<anonymous> (components/Menu/__tests__/UploadModal.test.tsx:188:20)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ● UploadModal › Toast Notifications › shows correct message for all success
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "All 5 recipes added successfully!", Any<Object>
+    Received: "5 recipes processed! 0 new recipes ready to swipe.", {"onTap": [Function handleToastTap], "tappable": false}
+
+    Number of calls: 1
+
+      236 |       })
+      237 |
+    > 238 |       await waitFor(() => {
+          |                    ^
+      239 |         expect(ToastQueue.show).toHaveBeenCalledWith(
+      240 |           'All 5 recipes added successfully!',
+      241 |           expect.any(Object)
+
+      at Object.<anonymous> (components/Menu/__tests__/UploadModal.test.tsx:238:20)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ● UploadModal › Toast Notifications › shows correct message for partial failure
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "3 of 5 added. Tap to view 2 errors.", ObjectContaining {"tappable": true}
+    Received: "3/5 succeeded, 2 failed. Tap to view errors.", {"onTap": [Function handleToastTap], "tappable": true}
+
+    Number of calls: 1
+
+      290 |       })
+      291 |
+    > 292 |       await waitFor(() => {
+          |                    ^
+      293 |         expect(ToastQueue.show).toHaveBeenCalledWith(
+      294 |           '3 of 5 added. Tap to view 2 errors.',
+      295 |           expect.objectContaining({
+
+      at Object.<anonymous> (components/Menu/__tests__/UploadModal.test.tsx:292:20)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ● UploadModal › Error Modal › shows tappable toast when there are errors
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "All 2 recipes failed. Tap for details.", ObjectContaining {"onTap": Any<Function>, "tappable": true}
+    Received: "Upload failed: 2/2 errors. Tap for details.", {"onTap": [Function handleToastTap], "tappable": true}
+
+    Number of calls: 1
+
+      336 |       })
+      337 |
+    > 338 |       await waitFor(() => {
+          |                    ^
+      339 |         expect(ToastQueue.show).toHaveBeenCalledWith(
+      340 |           'All 2 recipes failed. Tap for details.',
+      341 |           expect.objectContaining({
+
+      at Object.<anonymous> (components/Menu/__tests__/UploadModal.test.tsx:338:20)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ● UploadModal › Error Modal › shows non-tappable toast when there are no errors
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "All 5 recipes added successfully!", ObjectContaining {"tappable": false}
+    Received: "5 recipes processed! 0 new recipes ready to swipe.", {"onTap": [Function handleToastTap], "tappable": false}
+
+    Number of calls: 1
+
+      378 |       })
+      379 |
+    > 380 |       await waitFor(() => {
+          |                    ^
+      381 |         expect(ToastQueue.show).toHaveBeenCalledWith(
+      382 |           'All 5 recipes added successfully!',
+      383 |           expect.objectContaining({
+
+      at Object.<anonymous> (components/Menu/__tests__/UploadModal.test.tsx:380:20)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+PASS services/__tests__/SearchService.test.ts
+PASS components/__tests__/ServingSizeControl.test.tsx
+PASS components/__tests__/ErrorDetailModal.test.tsx
+PASS components/__tests__/Toast.test.tsx
+  ● Console
+
+    console.error
+      An update to Toast inside a test was not wrapped in act(...).
+
+      When testing, code that causes React state updates should be wrapped into act(...):
+
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+      55 |   useEffect(() => {
+      56 |     const updateQueue = () => {
+    > 57 |       setInternalQueue([...toastQueue])
+         |       ^
+      58 |     }
+      59 |
+      60 |     queueUpdateListeners.add(updateQueue)
+
+      at node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11801:19
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11800:9)
+      at scheduleUpdateOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:10326:9)
+      at dispatchSetStateInternal (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4148:13)
+      at dispatchSetState (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4107:7)
+      at setInternalQueue (components/Toast.tsx:57:7)
+      at listener (components/Toast.tsx:25:46)
+          at Set.forEach (<anonymous>)
+      at forEach (components/Toast.tsx:25:24)
+      at Object.notifyQueueUpdate [as clear] (components/Toast.tsx:43:5)
+      at Object.clear (components/__tests__/Toast.test.tsx:21:16)
+
+    console.error
+      An update to Toast inside a test was not wrapped in act(...).
+
+      When testing, code that causes React state updates should be wrapped into act(...):
+
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+      55 |   useEffect(() => {
+      56 |     const updateQueue = () => {
+    > 57 |       setInternalQueue([...toastQueue])
+         |       ^
+      58 |     }
+      59 |
+      60 |     queueUpdateListeners.add(updateQueue)
+
+      at node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11801:19
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11800:9)
+      at scheduleUpdateOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:10326:9)
+      at dispatchSetStateInternal (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4148:13)
+      at dispatchSetState (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4107:7)
+      at setInternalQueue (components/Toast.tsx:57:7)
+      at listener (components/Toast.tsx:25:46)
+          at Set.forEach (<anonymous>)
+      at forEach (components/Toast.tsx:25:24)
+      at Object.notifyQueueUpdate [as clear] (components/Toast.tsx:43:5)
+      at Object.clear (components/__tests__/Toast.test.tsx:21:16)
+
+    console.error
+      An update to Toast inside a test was not wrapped in act(...).
+
+      When testing, code that causes React state updates should be wrapped into act(...):
+
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+      55 |   useEffect(() => {
+      56 |     const updateQueue = () => {
+    > 57 |       setInternalQueue([...toastQueue])
+         |       ^
+      58 |     }
+      59 |
+      60 |     queueUpdateListeners.add(updateQueue)
+
+      at node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11801:19
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11800:9)
+      at scheduleUpdateOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:10326:9)
+      at dispatchSetStateInternal (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4148:13)
+      at dispatchSetState (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4107:7)
+      at setInternalQueue (components/Toast.tsx:57:7)
+      at listener (components/Toast.tsx:25:46)
+          at Set.forEach (<anonymous>)
+      at forEach (components/Toast.tsx:25:24)
+      at Object.notifyQueueUpdate [as clear] (components/Toast.tsx:43:5)
+      at Object.clear (components/__tests__/Toast.test.tsx:21:16)
+
+    console.error
+      An update to Toast inside a test was not wrapped in act(...).
+
+      When testing, code that causes React state updates should be wrapped into act(...):
+
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+      55 |   useEffect(() => {
+      56 |     const updateQueue = () => {
+    > 57 |       setInternalQueue([...toastQueue])
+         |       ^
+      58 |     }
+      59 |
+      60 |     queueUpdateListeners.add(updateQueue)
+
+      at node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11801:19
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11800:9)
+      at scheduleUpdateOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:10326:9)
+      at dispatchSetStateInternal (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4148:13)
+      at dispatchSetState (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4107:7)
+      at setInternalQueue (components/Toast.tsx:57:7)
+      at listener (components/Toast.tsx:25:46)
+          at Set.forEach (<anonymous>)
+      at forEach (components/Toast.tsx:25:24)
+      at Object.notifyQueueUpdate [as clear] (components/Toast.tsx:43:5)
+      at Object.clear (components/__tests__/Toast.test.tsx:21:16)
+
+    console.error
+      An update to Toast inside a test was not wrapped in act(...).
+
+      When testing, code that causes React state updates should be wrapped into act(...):
+
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+      55 |   useEffect(() => {
+      56 |     const updateQueue = () => {
+    > 57 |       setInternalQueue([...toastQueue])
+         |       ^
+      58 |     }
+      59 |
+      60 |     queueUpdateListeners.add(updateQueue)
+
+      at node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11801:19
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11800:9)
+      at scheduleUpdateOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:10326:9)
+      at dispatchSetStateInternal (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4148:13)
+      at dispatchSetState (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:4107:7)
+      at setInternalQueue (components/Toast.tsx:57:7)
+      at listener (components/Toast.tsx:25:46)
+          at Set.forEach (<anonymous>)
+      at forEach (components/Toast.tsx:25:24)
+      at Object.notifyQueueUpdate [as clear] (components/Toast.tsx:43:5)
+      at Object.clear (components/__tests__/Toast.test.tsx:21:16)
+
+PASS services/__tests__/SearchStorageService.test.ts
+PASS components/__tests__/RecentSearches.test.tsx
+PASS components/__tests__/SearchResultItem.test.tsx
+PASS components/__tests__/SearchInput.test.tsx
+PASS components/__tests__/SearchEmptyState.test.tsx
+PASS components/__tests__/SearchResultsList.test.tsx
+PASS components/__tests__/NewRecipeBanner.test.tsx
+
+ReferenceError: You are trying to `import` a file after the Jest environment has been torn down. From components/__tests__/ThemedText-test.tsx.
+
+      12 |   colorName: keyof typeof Colors.light & keyof typeof Colors.dark
+      13 | ) {
+    > 14 |   const theme = useColorScheme() ?? 'light';
+         |                 ^
+      15 |   const colorFromProps = props[theme];
+      16 |
+      17 |   if (colorFromProps) {
+
+      at Object.require [as useColorScheme] (node_modules/react-native/index.js:324:12)
+      at useColorScheme (hooks/useThemeColor.ts:14:17)
+      at ThemedText (components/ThemedText.tsx:19:30)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:13976:20)
+      at renderWithHooks (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2866:22)
+      at updateFunctionComponent (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:6006:19)
+      at beginWork (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:7474:18)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at performUnitOfWork (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:10972:22)
+      at workLoopSync (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:10816:41)
+      at renderRootSync (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:10797:11)
+      at performWorkOnRoot (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:10349:13)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2094:7)
+      at Immediate.performWorkUntilDeadline [as _onImmediate] (node_modules/scheduler/cjs/scheduler.native.development.js:45:48)
+
+  ●  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "An error occurred in the <ThemedText> component.
+
+    Consider adding an error boundary to your tree to customize error handling behavior.
+    Visit https://react.dev/link/error-boundaries to learn more about error boundaries.
+    ".
+
+      at console.warn (node_modules/@jest/console/build/BufferedConsole.js:191:10)
+      at defaultOnUncaughtError (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5452:15)
+      at logUncaughtError (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5512:11)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at lane.callback (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:5542:9)
+      at callCallback (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2700:16)
+      at commitCallbacks (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2720:11)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitLayoutEffectOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8936:15)
+      at flushLayoutEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11356:13)
+      at commitRoot (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11310:9)
+      at commitRootWhenReady (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:10532:7)
+      at performWorkOnRoot (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:10494:15)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2094:7)
+      at Immediate.performWorkUntilDeadline [as _onImmediate] (node_modules/scheduler/cjs/scheduler.native.development.js:45:48)
+
+FAIL components/__tests__/ThemedText-test.tsx
+  ● Console
+
+    console.error
+      An update to Root inside a test was not wrapped in act(...).
+
+      When testing, code that causes React state updates should be wrapped into act(...):
+
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+       5 |
+       6 | it(`renders correctly`, () => {
+    >  7 |   const tree = renderer.create(<ThemedText>Snapshot test!</ThemedText>).toJSON();
+         |                         ^
+       8 |
+       9 |   expect(tree).toMatchSnapshot();
+      10 | });
+
+      at node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11801:19
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11800:9)
+      at scheduleUpdateOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:10326:9)
+      at updateContainerImpl (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12382:10)
+      at updateContainer (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:12326:7)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.create (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14630:7)
+      at Object.create (components/__tests__/ThemedText-test.tsx:7:25)
+
+  ● renders correctly
+
+    expect(received).toMatchSnapshot()
+
+    Snapshot name: `renders correctly 1`
+
+    Snapshot: <Text
+      style={
+        [
+          {
+            "color": "#11181C",
+          },
+          {
+            "fontSize": 16,
+            "lineHeight": 24,
+          },
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+        ]
+      }
+    >
+      Snapshot test!
+    </Text>
+    Received: null
+
+       7 |   const tree = renderer.create(<ThemedText>Snapshot test!</ThemedText>).toJSON();
+       8 |
+    >  9 |   expect(tree).toMatchSnapshot();
+         |                ^
+      10 | });
+      11 |
+
+      at Object.toMatchSnapshot (components/__tests__/ThemedText-test.tsx:9:16)
+
+ › 1 snapshot failed.
+A worker process has failed to exit gracefully and has been force exited. This is likely caused by tests leaking due to improper teardown. Try running with --detectOpenHandles to find leaks. Active timers can also cause this, ensure that .unref() was called on them.
+Summary of all failing tests
+FAIL __tests__/integration/error-scenarios.test.tsx
+  ● Integration: Error Scenario Testing › Network Errors › should handle network timeout gracefully during image selection
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/error-scenarios.test.tsx:80:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Error Scenario Testing › Network Errors › should handle network timeout during recipe deletion
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/error-scenarios.test.tsx:129:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Error Scenario Testing › Backend Error Responses › should handle 404 Recipe not found during image selection
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/error-scenarios.test.tsx:179:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Error Scenario Testing › Backend Error Responses › should handle 400 Invalid image URL error
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/error-scenarios.test.tsx:227:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Error Scenario Testing › Backend Error Responses › should handle 500 Server error during image selection
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/error-scenarios.test.tsx:275:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Error Scenario Testing › Backend Error Responses › should handle 404 Recipe not found during deletion
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/error-scenarios.test.tsx:323:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Error Scenario Testing › Malformed Response Handling › should handle error responses from backend gracefully
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/error-scenarios.test.tsx:373:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Error Scenario Testing › Race Conditions › should handle recipe already deleted scenario during selection
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/error-scenarios.test.tsx:419:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Error Scenario Testing › Offline Scenarios › should handle offline network during image selection
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/error-scenarios.test.tsx:474:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Error Scenario Testing › Offline Scenarios › should handle offline network during deletion
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/error-scenarios.test.tsx:523:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Error Scenario Testing › State Management › should keep modal open after error occurs
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/error-scenarios.test.tsx:573:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+FAIL components/__tests__/UploadRecipe.test.tsx
+  ● UploadRecipe › test_permissions_denied: should close modal and alert when permissions denied
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: false
+
+    Number of calls: 0
+
+      70 |       expect.stringContaining('permissions')
+      71 |     )
+    > 72 |     expect(mockSetUploadVisible).toHaveBeenCalledWith(false)
+         |                                  ^
+      73 |     expect(DocumentPicker.getDocumentAsync).not.toHaveBeenCalled()
+      74 |   })
+      75 |
+
+      at Object.toHaveBeenCalledWith (components/__tests__/UploadRecipe.test.tsx:72:34)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● UploadRecipe › test_handles_cancelled_selection: should close modal when user cancels
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: false
+
+    Number of calls: 0
+
+      105 |     await selectAndUploadImage(mockSetUploadMessage, mockSetUploadVisible)
+      106 |
+    > 107 |     expect(mockSetUploadVisible).toHaveBeenCalledWith(false)
+          |                                  ^
+      108 |     expect(UploadService.queueUpload).not.toHaveBeenCalled()
+      109 |   })
+      110 |
+
+      at Object.toHaveBeenCalledWith (components/__tests__/UploadRecipe.test.tsx:107:34)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● UploadRecipe › test_closes_modal_immediately: should call setUploadVisible(false) immediately
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: false
+
+    Number of calls: 0
+
+      365 |     await selectAndUploadImage(mockSetUploadMessage, mockSetUploadVisible)
+      366 |
+    > 367 |     expect(mockSetUploadVisible).toHaveBeenCalledWith(false)
+          |                                  ^
+      368 |   })
+      369 |
+      370 |   // Test 13: Mixed files (images + PDF)
+
+      at Object.toHaveBeenCalledWith (components/__tests__/UploadRecipe.test.tsx:367:34)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● UploadRecipe › test_all_files_skipped: should show alert and close modal when all files skipped
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: false
+
+    Number of calls: 0
+
+      488 |       expect.stringContaining('No valid files to upload')
+      489 |     )
+    > 490 |     expect(mockSetUploadVisible).toHaveBeenCalledWith(false)
+          |                                  ^
+      491 |     expect(UploadService.queueUpload).not.toHaveBeenCalled()
+      492 |   })
+      493 |
+
+      at Object.toHaveBeenCalledWith (components/__tests__/UploadRecipe.test.tsx:490:34)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● UploadRecipe › test_user_cancels_long_upload: should close modal without upload when user cancels
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: false
+
+    Number of calls: 0
+
+      571 |     await selectAndUploadImage(mockSetUploadMessage, mockSetUploadVisible)
+      572 |
+    > 573 |     expect(mockSetUploadVisible).toHaveBeenCalledWith(false)
+          |                                  ^
+      574 |     expect(UploadService.queueUpload).not.toHaveBeenCalled()
+      575 |   })
+      576 | })
+
+      at Object.toHaveBeenCalledWith (components/__tests__/UploadRecipe.test.tsx:573:34)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+FAIL services/__tests__/RecipeService.test.ts
+  ● RecipeService › getRecipesFromS3 › should fetch recipes from Lambda URL
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "https://test-lambda.execute-api.us-east-1.amazonaws.com", ObjectContaining {"headers": {"Content-Type": "application/json"}, "method": "GET"}
+    Received: "https://test-lambda.execute-api.us-east-1.amazonaws.com", {"method": "GET"}
+
+    Number of calls: 1
+
+      42 |
+      43 |       // Assert
+    > 44 |       expect(global.fetch).toHaveBeenCalledWith(
+         |                            ^
+      45 |         MOCK_LAMBDA_URL,
+      46 |         expect.objectContaining({
+      47 |           method: 'GET',
+
+      at Object.toHaveBeenCalledWith (services/__tests__/RecipeService.test.ts:44:28)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● RecipeService › getRecipeById › should return null if recipe not found
+
+    TypeError: Cannot read properties of undefined (reading 'ok')
+
+      36 |       });
+      37 |
+    > 38 |       if (!response.ok) {
+         |                     ^
+      39 |
+      40 |         const errorText = await response.text();
+      41 |
+
+      at Function.ok (services/RecipeService.ts:38:21)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+FAIL __tests__/integration/edge-cases.test.tsx
+  ● Integration: Edge Cases & Data Integrity › Missing or Invalid Data › should handle missing image_search_results gracefully
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: false
+    Received: true
+
+      80 |
+      81 |       // Empty image_search_results should not trigger modal
+    > 82 |       expect(result.current.showImagePickerModal).toBe(false);
+         |                                                   ^
+      83 |       expect(result.current.pendingRecipe).toBeNull();
+      84 |     });
+      85 |
+
+      at Object.toBe (__tests__/integration/edge-cases.test.tsx:82:51)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Edge Cases & Data Integrity › Missing or Invalid Data › should handle null image_url gracefully
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/edge-cases.test.tsx:130:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Edge Cases & Data Integrity › Special Characters & Encoding › should handle recipe keys with special characters
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/edge-cases.test.tsx:184:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Edge Cases & Data Integrity › Special Characters & Encoding › should handle recipe titles with unicode characters
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/edge-cases.test.tsx:231:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Edge Cases & Data Integrity › Data Consistency › should remove recipe from local state after successful deletion
+
+    expect(jest.fn()).toHaveBeenCalled()
+
+    Expected number of calls: >= 1
+    Received number of calls:    0
+
+      288 |
+      289 |       // Verify setJsonData was called to remove recipe
+    > 290 |       expect(mockSetJsonDataLocal).toHaveBeenCalled();
+          |                                    ^
+      291 |       // Modal should be closed
+      292 |       expect(result.current.showImagePickerModal).toBe(false);
+      293 |     });
+
+      at Object.toHaveBeenCalled (__tests__/integration/edge-cases.test.tsx:290:36)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Edge Cases & Data Integrity › Data Consistency › should prevent duplicate submissions (idempotency)
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/edge-cases.test.tsx:337:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Edge Cases & Data Integrity › Null/Undefined Safety › should handle undefined recipe gracefully
+
+    expect(received).toBeNull()
+
+    Received: undefined
+
+      358 |
+      359 |       // pendingRecipe should start as null
+    > 360 |       expect(result.current.pendingRecipe).toBeNull();
+          |                                            ^
+      361 |
+      362 |       // Should not crash when calling with null
+      363 |       await act(async () => {
+
+      at Object.toBeNull (__tests__/integration/edge-cases.test.tsx:360:44)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ● Integration: Edge Cases & Data Integrity › Null/Undefined Safety › should validate recipe data before operations
+
+    expect(received).toBeNull()
+
+    Received: undefined
+
+      396 |
+      397 |       // Should handle invalid recipe data gracefully
+    > 398 |       expect(result.current.pendingRecipe).toBeNull();
+          |                                            ^
+      399 |       expect(result.current.showImagePickerModal).toBe(false);
+      400 |     });
+      401 |   });
+
+      at Object.toBeNull (__tests__/integration/edge-cases.test.tsx:398:44)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+FAIL __tests__/integration/image-picker-flow.test.tsx
+  ● Integration: Image Picker Modal Flow › Scenario 1: Upload recipe -> modal appears -> select image -> recipe injected › should show modal, handle image selection, and inject recipe into queue
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/image-picker-flow.test.tsx:108:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Image Picker Modal Flow › Scenario 1: Upload recipe -> modal appears -> select image -> recipe injected › should inject recipe at position 2 in queue
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      595 |         // This prevents infinite loops from creating new object references
+      596 |         if (!pendingRecipe || pendingRecipe.key !== key) {
+    > 597 |           setPendingRecipeForPicker({ ...recipe, key });
+          |           ^
+      598 |         }
+      599 |
+      600 |         // Don't inject pending recipe into queue yet - pause until selection is complete
+
+      at setPendingRecipeForPicker (hooks/useImageQueue.ts:597:11)
+      at Object.react-stack-bottom-frame (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:14062:20)
+      at runWithFiberInDEV (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:1574:13)
+      at commitHookEffectListMount (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8376:29)
+      at commitHookPassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:8463:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9782:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9756:11)
+      at commitPassiveMountOnFiber (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:9794:11)
+      at flushPendingEffects (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:11528:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-test-renderer/cjs/react-test-renderer.development.js:2082:11)
+      at flushActQueue (node_modules/react/cjs/react.development.js:566:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:859:10)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at node_modules/@testing-library/react-native/src/render.tsx:161:13
+      at baseRerender (node_modules/@testing-library/react-native/src/render-hook.tsx:45:12)
+      at Object.rerender (__tests__/integration/image-picker-flow.test.tsx:190:7)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Image Picker Modal Flow › Scenario 2: Upload recipe -> delete -> queue continues › should remove recipe and clear modal on deletion
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "delete_test_recipe"
+    Received: undefined
+
+      256 |       }, { timeout: 3000 });
+      257 |
+    > 258 |       expect(result.current.pendingRecipe?.key).toBe('delete_test_recipe');
+          |                                                 ^
+      259 |
+      260 |       // Delete recipe
+      261 |       await act(async () => {
+
+      at Object.toBe (__tests__/integration/image-picker-flow.test.tsx:258:49)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Image Picker Modal Flow › Scenario 3: Error handling › should show error toast and keep modal open on image selection failure
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "Failed to save image: Failed to fetch image from Google"
+
+    Number of calls: 0
+
+      326 |
+      327 |       // Verify error was shown
+    > 328 |       expect(ToastQueue.show).toHaveBeenCalledWith(
+          |                               ^
+      329 |         'Failed to save image: Failed to fetch image from Google'
+      330 |       );
+      331 |
+
+      at Object.toHaveBeenCalledWith (__tests__/integration/image-picker-flow.test.tsx:328:31)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● Integration: Image Picker Modal Flow › Scenario 3: Error handling › should show error toast and keep modal open on deletion failure
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "Failed to delete recipe: Recipe not found"
+
+    Number of calls: 0
+
+      385 |
+      386 |       // Verify error was shown
+    > 387 |       expect(ToastQueue.show).toHaveBeenCalledWith('Failed to delete recipe: Recipe not found');
+          |                               ^
+      388 |
+      389 |       // Modal should remain open
+      390 |       expect(result.current.showImagePickerModal).toBe(true);
+
+      at Object.toHaveBeenCalledWith (__tests__/integration/image-picker-flow.test.tsx:387:31)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+FAIL hooks/__tests__/useImageQueue.test.ts (13.132 s)
+  ● useImageQueue › image picker modal - pending recipe detection › should detect pending recipe and show modal
+
+    expect(received).toBeTruthy()
+
+    Received: undefined
+
+      769 |
+      770 |       // Wait for pending recipe to be detected
+    > 771 |       await waitFor(() => {
+          |                    ^
+      772 |         expect(result.current.showImagePickerModal).toBe(true);
+      773 |         expect(result.current.pendingRecipe).toBeTruthy();
+      774 |       }, { timeout: 3000 });
+
+      at Object.<anonymous> (hooks/__tests__/useImageQueue.test.ts:771:20)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● useImageQueue › image picker modal - pending recipe detection › should not detect recipe with image_url as pending
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: false
+    Received: true
+
+      802 |       }, { timeout: 3000 });
+      803 |
+    > 804 |       expect(result.current.showImagePickerModal).toBe(false);
+          |                                                   ^
+      805 |       expect(result.current.pendingRecipe).toBeNull();
+      806 |     });
+      807 |
+
+      at Object.toBe (hooks/__tests__/useImageQueue.test.ts:804:51)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● useImageQueue › image picker modal - pending recipe detection › should not detect recipe without image_search_results as pending
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: false
+    Received: true
+
+      829 |       }, { timeout: 3000 });
+      830 |
+    > 831 |       expect(result.current.showImagePickerModal).toBe(false);
+          |                                                   ^
+      832 |       expect(result.current.pendingRecipe).toBeNull();
+      833 |     });
+      834 |
+
+      at Object.toBe (hooks/__tests__/useImageQueue.test.ts:831:51)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● useImageQueue › image picker modal - pending recipe detection › should reset pending recipe state
+
+    TypeError: setPendingRecipeForPicker is not a function
+
+      136 |   // Reset pending recipe state
+      137 |   const resetPendingRecipe = useCallback(() => {
+    > 138 |     setPendingRecipeForPicker(null);
+          |     ^
+      139 |   }, [setPendingRecipeForPicker]);
+      140 |
+      141 |   // Inject new recipes into queue with retry logic
+
+      at Object.setPendingRecipeForPicker [as resetPendingRecipe] (hooks/useImageQueue.ts:138:5)
+      at resetPendingRecipe (hooks/__tests__/useImageQueue.test.ts:860:24)
+      at callback (node_modules/@testing-library/react-native/src/act.ts:31:24)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:789:22)
+      at actImplementation (node_modules/@testing-library/react-native/src/act.ts:30:25)
+      at Object.<anonymous> (hooks/__tests__/useImageQueue.test.ts:859:10)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● useImageQueue › image picker modal - pending recipe detection › should prioritize pending recipe detection over new recipe injection
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "pending_new"
+    Received: undefined
+
+      938 |       // Should show pending recipe in modal, not inject both
+      939 |       expect(result.current.showImagePickerModal).toBe(true);
+    > 940 |       expect(result.current.pendingRecipe?.key).toBe('pending_new');
+          |                                                 ^
+      941 |     });
+      942 |   });
+      943 |
+
+      at Object.toBe (hooks/__tests__/useImageQueue.test.ts:940:49)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● useImageQueue › modal callbacks - onConfirmImage › should confirm image selection and inject recipe
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "pending_recipe", "https://example.com/selected.jpg"
+
+    Number of calls: 0
+
+      976 |
+      977 |       // Should have called RecipeService.selectRecipeImage
+    > 978 |       expect(RecipeService.selectRecipeImage).toHaveBeenCalledWith(
+          |                                               ^
+      979 |         'pending_recipe',
+      980 |         imageUrl
+      981 |       );
+
+      at Object.toHaveBeenCalledWith (hooks/__tests__/useImageQueue.test.ts:978:47)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● useImageQueue › modal callbacks - onConfirmImage › should show error toast on image selection failure
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "Failed to save image: Network error"
+
+    Number of calls: 0
+
+      1023 |
+      1024 |       // Should show error toast
+    > 1025 |       expect(ToastQueue.show).toHaveBeenCalledWith('Failed to save image: Network error');
+           |                               ^
+      1026 |
+      1027 |       // Modal should remain visible
+      1028 |       expect(result.current.showImagePickerModal).toBe(true);
+
+      at Object.toHaveBeenCalledWith (hooks/__tests__/useImageQueue.test.ts:1025:31)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● useImageQueue › modal callbacks - onDeleteRecipe › should delete recipe successfully
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "pending_recipe"
+
+    Number of calls: 0
+
+      1062 |
+      1063 |       // Should have called RecipeService.deleteRecipe
+    > 1064 |       expect(RecipeService.deleteRecipe).toHaveBeenCalledWith('pending_recipe');
+           |                                          ^
+      1065 |
+      1066 |       // Should show success toast
+      1067 |       expect(ToastQueue.show).toHaveBeenCalledWith('Recipe deleted');
+
+      at Object.toHaveBeenCalledWith (hooks/__tests__/useImageQueue.test.ts:1064:42)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+  ● useImageQueue › modal callbacks - onDeleteRecipe › should show error toast on deletion failure
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "Failed to delete recipe: Recipe not found"
+
+    Number of calls: 0
+
+      1106 |
+      1107 |       // Should show error toast
+    > 1108 |       expect(ToastQueue.show).toHaveBeenCalledWith('Failed to delete recipe: Recipe not found');
+           |                               ^
+      1109 |
+      1110 |       // Modal should remain visible
+      1111 |       expect(result.current.showImagePickerModal).toBe(true);
+
+      at Object.toHaveBeenCalledWith (hooks/__tests__/useImageQueue.test.ts:1108:31)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+FAIL app/__tests__/index.test.tsx
+  ● Test suite failed to run
+
+    Invariant Violation: TurboModuleRegistry.getEnforcing(...): 'DevMenu' could not be found. Verify that a module by this name is registered in the native binary.
+
+      35 | jest.mock('react-native', () => {
+      36 |   const RN = jest.requireActual('react-native');
+    > 37 |   return {
+         |   ^
+      38 |     ...RN,
+      39 |     AccessibilityInfo: {
+      40 |       isReduceMotionEnabled: jest.fn(() => Promise.resolve(false)),
+
+      at invariant (node_modules/invariant/invariant.js:40:15)
+      at Object.getEnforcing (node_modules/react-native/Libraries/TurboModule/TurboModuleRegistry.js:47:12)
+      at Object.getEnforcing (node_modules/react-native/src/private/devsupport/devmenu/specs/NativeDevMenu.js:22:37)
+      at Object.require (node_modules/react-native/src/private/devsupport/devmenu/DevMenu.js:11:1)
+      at Object.require (node_modules/react-native/index.js:202:12)
+          at Function.assign (<anonymous>)
+      at assign (app/__tests__/index.test.tsx:37:3)
+      at Object.require (node_modules/@react-native/virtualized-lists/Lists/VirtualizedListCellRenderer.js:23:1)
+      at Object.require (node_modules/@react-native/virtualized-lists/Lists/VirtualizedList.js:36:1)
+      at Object.require [as VirtualizedList] (node_modules/@react-native/virtualized-lists/index.js:46:12)
+      at Object.VirtualizedList (node_modules/react-native/Libraries/Lists/FlatList.js:33:42)
+      at Object.require [as FlatList] (node_modules/react-native/index.js:46:12)
+          at Function.assign (<anonymous>)
+      at assign (app/__tests__/index.test.tsx:37:3)
+      at Object.require (node_modules/@testing-library/react-native/src/helpers/host-component-names.tsx:3:1)
+      at Object.require (node_modules/@testing-library/react-native/src/fire-event.ts:11:1)
+      at Object.require (node_modules/@testing-library/react-native/src/pure.ts:3:1)
+      at Object.require (node_modules/@testing-library/react-native/src/index.ts:1:1)
+      at Object.require (app/__tests__/index.test.tsx:2:1)
+
+FAIL components/Menu/__tests__/UploadModal.test.tsx (11.939 s)
+  ● UploadModal › Toast Notifications › shows toast on completion with all success
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "All 5 recipes added successfully!", ObjectContaining {"tappable": false}
+    Received: "5 recipes processed! 0 new recipes ready to swipe.", {"onTap": [Function handleToastTap], "tappable": false}
+
+    Number of calls: 1
+
+      186 |       })
+      187 |
+    > 188 |       await waitFor(() => {
+          |                    ^
+      189 |         expect(ToastQueue.show).toHaveBeenCalledWith(
+      190 |           'All 5 recipes added successfully!',
+      191 |           expect.objectContaining({
+
+      at Object.<anonymous> (components/Menu/__tests__/UploadModal.test.tsx:188:20)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ● UploadModal › Toast Notifications › shows correct message for all success
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "All 5 recipes added successfully!", Any<Object>
+    Received: "5 recipes processed! 0 new recipes ready to swipe.", {"onTap": [Function handleToastTap], "tappable": false}
+
+    Number of calls: 1
+
+      236 |       })
+      237 |
+    > 238 |       await waitFor(() => {
+          |                    ^
+      239 |         expect(ToastQueue.show).toHaveBeenCalledWith(
+      240 |           'All 5 recipes added successfully!',
+      241 |           expect.any(Object)
+
+      at Object.<anonymous> (components/Menu/__tests__/UploadModal.test.tsx:238:20)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ● UploadModal › Toast Notifications › shows correct message for partial failure
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "3 of 5 added. Tap to view 2 errors.", ObjectContaining {"tappable": true}
+    Received: "3/5 succeeded, 2 failed. Tap to view errors.", {"onTap": [Function handleToastTap], "tappable": true}
+
+    Number of calls: 1
+
+      290 |       })
+      291 |
+    > 292 |       await waitFor(() => {
+          |                    ^
+      293 |         expect(ToastQueue.show).toHaveBeenCalledWith(
+      294 |           '3 of 5 added. Tap to view 2 errors.',
+      295 |           expect.objectContaining({
+
+      at Object.<anonymous> (components/Menu/__tests__/UploadModal.test.tsx:292:20)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ● UploadModal › Error Modal › shows tappable toast when there are errors
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "All 2 recipes failed. Tap for details.", ObjectContaining {"onTap": Any<Function>, "tappable": true}
+    Received: "Upload failed: 2/2 errors. Tap for details.", {"onTap": [Function handleToastTap], "tappable": true}
+
+    Number of calls: 1
+
+      336 |       })
+      337 |
+    > 338 |       await waitFor(() => {
+          |                    ^
+      339 |         expect(ToastQueue.show).toHaveBeenCalledWith(
+      340 |           'All 2 recipes failed. Tap for details.',
+      341 |           expect.objectContaining({
+
+      at Object.<anonymous> (components/Menu/__tests__/UploadModal.test.tsx:338:20)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+  ● UploadModal › Error Modal › shows non-tappable toast when there are no errors
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "All 5 recipes added successfully!", ObjectContaining {"tappable": false}
+    Received: "5 recipes processed! 0 new recipes ready to swipe.", {"onTap": [Function handleToastTap], "tappable": false}
+
+    Number of calls: 1
+
+      378 |       })
+      379 |
+    > 380 |       await waitFor(() => {
+          |                    ^
+      381 |         expect(ToastQueue.show).toHaveBeenCalledWith(
+      382 |           'All 5 recipes added successfully!',
+      383 |           expect.objectContaining({
+
+      at Object.<anonymous> (components/Menu/__tests__/UploadModal.test.tsx:380:20)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at Object.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+
+FAIL components/__tests__/ThemedText-test.tsx
+  ● renders correctly
+
+    expect(received).toMatchSnapshot()
+
+    Snapshot name: `renders correctly 1`
+
+    Snapshot: <Text
+      style={
+        [
+          {
+            "color": "#11181C",
+          },
+          {
+            "fontSize": 16,
+            "lineHeight": 24,
+          },
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+        ]
+      }
+    >
+      Snapshot test!
+    </Text>
+    Received: null
+
+       7 |   const tree = renderer.create(<ThemedText>Snapshot test!</ThemedText>).toJSON();
+       8 |
+    >  9 |   expect(tree).toMatchSnapshot();
+         |                ^
+      10 | });
+      11 |
+
+      at Object.toMatchSnapshot (components/__tests__/ThemedText-test.tsx:9:16)
+
+
+Snapshot Summary
+ › 1 snapshot failed from 1 test suite. Inspect your code changes or press `u` to update them.
+
+Test Suites: 9 failed, 17 passed, 26 total
+Tests:       46 failed, 5 skipped, 248 passed, 299 total
+Snapshots:   1 failed, 1 total
+Time:        27.582 s
+Ran all test suites.

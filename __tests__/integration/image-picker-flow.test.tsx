@@ -25,6 +25,8 @@ describe('Integration: Image Picker Modal Flow', () => {
       setJsonData: mockSetJsonData,
       setCurrentRecipe: mockSetCurrentRecipe,
       mealTypeFilters: ['main dish', 'dessert'],
+      pendingRecipeForPicker: null,
+      setPendingRecipeForPicker: jest.fn(),
     });
 
     // Setup ImageQueueService mocks
@@ -73,6 +75,8 @@ describe('Integration: Image Picker Modal Flow', () => {
         },
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: null,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       const { result, rerender } = renderHook(() => useImageQueue());
@@ -102,6 +106,8 @@ describe('Integration: Image Picker Modal Flow', () => {
         },
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: pendingRecipe,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       // Trigger re-render to detect new pending recipe
@@ -161,6 +167,8 @@ describe('Integration: Image Picker Modal Flow', () => {
         },
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: null,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       const { result, rerender } = renderHook(() => useImageQueue());
@@ -185,6 +193,8 @@ describe('Integration: Image Picker Modal Flow', () => {
         },
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: pendingRecipe,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       rerender();
@@ -232,6 +242,8 @@ describe('Integration: Image Picker Modal Flow', () => {
         },
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: pendingRecipe,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
@@ -296,6 +308,8 @@ describe('Integration: Image Picker Modal Flow', () => {
         },
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: pendingRecipe,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
@@ -355,6 +369,8 @@ describe('Integration: Image Picker Modal Flow', () => {
         },
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: pendingRecipe,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
