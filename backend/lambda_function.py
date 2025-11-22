@@ -39,7 +39,7 @@ from image_uploader import fetch_image_from_url, upload_image_to_s3
 ALLOWED_ORIGIN = 'https://savorswipe.hatstack.fun'
 
 
-def add_cors_headers(headers: dict, origin: str = None) -> dict:
+def add_cors_headers(headers: dict, origin: Optional[str] = None) -> dict:
     """
     Add CORS headers to response. Only allows requests from production origin.
 
@@ -167,8 +167,11 @@ def lambda_handler(event, context):
         POST /image: Success/error response with updated recipe
     """
 
-    # Extract origin for CORS
-    origin = event.get('headers', {}).get('origin')
+    # Extract origin for CORS (case-insensitive header lookup)
+    headers = event.get('headers', {})
+    # Normalize header keys to lowercase for case-insensitive lookup
+    headers_lower = {k.lower(): v for k, v in headers.items()}
+    origin = headers_lower.get('origin')
 
     # Detect HTTP method from requestContext
     http_method = event.get('requestContext', {}).get('http', {}).get('method', 'POST')

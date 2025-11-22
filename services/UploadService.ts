@@ -68,7 +68,11 @@ export class UploadService {
 
     // Start processing if not already running (don't await)
     if (!this.isProcessing) {
-      this.processQueue().catch((error) => {})
+      this.processQueue().catch(() => {
+        // Errors are handled within processJob and reported via job status
+        // This catch prevents unhandled promise rejection if processQueue itself throws
+        // isProcessing is reset in processQueue's finally block
+      })
     }
 
     return jobId
@@ -286,10 +290,8 @@ export class UploadService {
       } catch (error) {}
     })
 
-    // Persist queue state to AsyncStorage
-    UploadPersistence.saveQueue(this.jobQueue).catch(error => {
-      if (__DEV__) {}
-    })
+    // Persist queue state to AsyncStorage (errors silently ignored - persistence is optional)
+    UploadPersistence.saveQueue(this.jobQueue).catch(() => {})
   }
 
   /**

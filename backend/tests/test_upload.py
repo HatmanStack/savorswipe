@@ -57,7 +57,7 @@ class TestUploadModule(unittest.TestCase):
         mock_s3.get_object.return_value = mock_response
 
         # Test with empty list
-        result_data, success_keys, position_to_key, errors = batch_to_s3_atomic([], [])
+        _result_data, success_keys, _position_to_key, errors = batch_to_s3_atomic([], [])
 
         # Verify
         self.assertEqual(success_keys, [])
@@ -86,7 +86,7 @@ class TestUploadModule(unittest.TestCase):
         ]
 
         # Test
-        result_data, success_keys, position_to_key, errors = batch_to_s3_atomic(
+        _result_data, success_keys, _position_to_key, errors = batch_to_s3_atomic(
             self.test_recipes,
             search_results_list
         )
@@ -138,7 +138,7 @@ class TestUploadModule(unittest.TestCase):
         search_results_list = [['url1', 'url2', 'url3']]
 
         # Test with duplicate title
-        result_data, success_keys, position_to_key, errors = batch_to_s3_atomic(
+        _result_data, success_keys, _position_to_key, errors = batch_to_s3_atomic(
             self.test_recipes[:1],
             search_results_list
         )
@@ -166,7 +166,7 @@ class TestUploadModule(unittest.TestCase):
         search_results_list = [['url1', 'url2', 'url3']]
 
         # Test
-        result_data, success_keys, position_to_key, errors = batch_to_s3_atomic(
+        _result_data, success_keys, _position_to_key, errors = batch_to_s3_atomic(
             self.test_recipes[:1],
             search_results_list
         )
@@ -199,7 +199,7 @@ class TestUploadModule(unittest.TestCase):
         search_results_list = [['url1', 'url2', 'url3']]
 
         # Test
-        result_data, success_keys, position_to_key, errors = batch_to_s3_atomic(
+        _result_data, success_keys, _position_to_key, errors = batch_to_s3_atomic(
             self.test_recipes[:1],
             search_results_list
         )
@@ -237,7 +237,7 @@ class TestUploadModule(unittest.TestCase):
 
         # With picture picker, no images are uploaded during batch processing, so no rollback needed
         # Verify that no delete operations were called (no images to rollback)
-        delete_calls = [call for call in mock_s3.delete_object.call_args_list]
+        delete_calls = mock_s3.delete_object.call_args_list
         self.assertEqual(len(delete_calls), 0)
 
     @patch('upload.s3_client')
@@ -282,7 +282,7 @@ class TestUploadModule(unittest.TestCase):
         search_results_list = [['url1', 'url2', 'url3']]
 
         # Test
-        result_data, success_keys, position_to_key, errors = batch_to_s3_atomic(
+        _result_data, success_keys, _position_to_key, errors = batch_to_s3_atomic(
             self.test_recipes[:1],
             search_results_list
         )
@@ -311,7 +311,7 @@ class TestUploadModule(unittest.TestCase):
         search_results_list = [[test_image_url, 'url2', 'url3']]
 
         # Test
-        result_data, success_keys, position_to_key, errors = batch_to_s3_atomic(
+        result_data, success_keys, _position_to_key, errors = batch_to_s3_atomic(
             self.test_recipes[:1],
             search_results_list
         )

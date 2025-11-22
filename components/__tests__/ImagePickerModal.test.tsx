@@ -146,7 +146,7 @@ describe('ImagePickerModal', () => {
 
     // Test 6: Grid renders exactly 9 thumbnails
     it('test_grid_renders_9_thumbnails: should render exactly 9 thumbnail items', () => {
-      render(
+      const { getAllByTestId } = render(
         <ImageGrid
           recipeTitle={mockRecipe.Title}
           imageUrls={mockRecipe.image_search_results || []}
@@ -156,9 +156,9 @@ describe('ImagePickerModal', () => {
         />
       )
 
-      // Each thumbnail is a TouchableOpacity without specific label, so check by finding multiple pressables
-      // We check for the FlatList structure which renders 9 items in 3 rows
-      expect(mockRecipe.image_search_results?.length).toBe(9)
+      // Verify that 9 thumbnail elements are actually rendered
+      const thumbnails = getAllByTestId('image-thumbnail')
+      expect(thumbnails).toHaveLength(9)
     })
 
     // Test 7: Delete button visibility
@@ -259,7 +259,7 @@ describe('ImagePickerModal', () => {
 
     // Test 9: Preview shows loading spinner initially
     it('test_preview_loading_state: should show loading spinner initially', () => {
-      render(
+      const { getByTestId } = render(
         <ImagePreview
           imageUrl={testImageUrl}
           onConfirm={mockPreviewOnConfirm}
@@ -267,10 +267,9 @@ describe('ImagePickerModal', () => {
         />
       )
 
-      // ActivityIndicator is rendered with testID
-      // Note: We need to check component structure; ActivityIndicator might not have testID by default
-      // Just verify component renders without error
-      expect(true).toBe(true)
+      // Verify that loading indicator is displayed initially
+      const loadingIndicator = getByTestId('loading-indicator')
+      expect(loadingIndicator).toBeTruthy()
     })
 
     // Test 10: Preview displays back button

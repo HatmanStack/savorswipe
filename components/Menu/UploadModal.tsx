@@ -135,7 +135,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
       <UploadImage
         key={uploadCount}
-        setUploadMessage={setUploadMessage}
         setUploadVisible={onClose}
       />
     </>

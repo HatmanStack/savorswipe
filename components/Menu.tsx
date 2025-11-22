@@ -197,7 +197,6 @@ export default function Menu() {
       {uploadVisible && (
         <UploadImage
           key={uploadCount}
-          setUploadMessage={setUploadMessage}
           setUploadVisible={setUploadVisible}
         />
       )}

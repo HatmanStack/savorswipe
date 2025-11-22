@@ -87,7 +87,6 @@ export const splitPDFIntoChunks = async (
  * Handles file validation, PDF chunking, and background upload
  */
 export const selectAndUploadImage = async (
-  setUploadMessage: (result: { returnMessage: string; jsonData: unknown; encodedImages: string } | null) => void,
   setUploadVisible: (visible: boolean) => void
 ): Promise<void> => {
   // Constants
@@ -219,21 +218,18 @@ export const selectAndUploadImage = async (
 }
 
 type UploadFilesProps = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  setUploadMessage: any
   setUploadVisible: (visible: boolean) => void
 }
 
 const UploadFiles: React.FC<UploadFilesProps> = ({
-  setUploadMessage,
   setUploadVisible,
 }) => {
   useEffect(() => {
     const initiateUpload = async () => {
-      await selectAndUploadImage(setUploadMessage, setUploadVisible)
+      await selectAndUploadImage(setUploadVisible)
     }
     initiateUpload()
-  }, [setUploadMessage, setUploadVisible])
+  }, [setUploadVisible])
 
   return null
 }

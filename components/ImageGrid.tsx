@@ -134,6 +134,7 @@ const ImageGridComponent: React.FC<ImageGridProps> = ({
         style={styles.thumbnailWrapper}
         onPress={() => handleThumbnailPress(imageUrl)}
         activeOpacity={0.8}
+        testID="image-thumbnail"
       >
         <View style={styles.thumbnailInner}>
           <Image

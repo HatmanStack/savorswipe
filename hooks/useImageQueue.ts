@@ -40,16 +40,12 @@ function transformErrorMessage(rawError: string): string {
     return 'Taking longer than expected. Please check your internet and try again.';
   }
 
-  if (errorLower.includes('network') || errorLower.includes('failed')) {
-    return 'Unable to connect. Please check your internet connection.';
-  }
-
-  // Recipe not found
+  // Recipe not found - check before generic 404
   if (errorLower.includes('recipe not found') || errorLower.includes('404')) {
     return 'Recipe not found. It may have been deleted.';
   }
 
-  // Invalid image URL
+  // Invalid image URL - check before generic 400
   if (
     errorLower.includes('invalid image url') ||
     errorLower.includes('invalid url') ||
@@ -58,14 +54,19 @@ function transformErrorMessage(rawError: string): string {
     return "Image couldn't be loaded. Please select another image.";
   }
 
-  // Server errors
+  // Server errors - check before generic "failed"
   if (errorLower.includes('500') || errorLower.includes('server error')) {
     return 'Server error. Please try again later.';
   }
 
-  // Google image fetch failures
+  // Google image fetch failures - check before generic "failed"
   if (errorLower.includes('fetch image from google')) {
     return "Image couldn't be loaded from source. Please select another image.";
+  }
+
+  // Generic network/failed errors - check last to avoid misclassification
+  if (errorLower.includes('network') || errorLower.includes('failed')) {
+    return 'Unable to connect. Please check your internet connection.';
   }
 
   // Fallback for unknown errors
@@ -253,16 +254,13 @@ export function useImageQueue(): ImageQueueHook {
   // Handle image selection confirmation
   const onConfirmImage = useCallback(
     async (imageUrl: string) => {
-      if (!pendingRecipe || !jsonData || !setJsonData) {
+      if (!pendingRecipe || !jsonData) {
 
         return;
       }
 
       // Capture recipe key before clearing state
       const recipeKey = pendingRecipe.key;
-
-      // Hide modal immediately for better UX
-      resetPendingRecipe();
 
       ToastQueue.show('Saving image selection...');
 
@@ -284,6 +282,9 @@ export function useImageQueue(): ImageQueueHook {
         // Inject recipe into queue
         await injectRecipes([recipeKey]);
 
+        // Hide modal only after successful completion
+        resetPendingRecipe();
+
         ToastQueue.show('Image saved');
 
       } catch (error) {
@@ -292,6 +293,7 @@ export function useImageQueue(): ImageQueueHook {
         const userFriendlyError = transformErrorMessage(rawError);
 
         ToastQueue.show(`Failed to save image: ${userFriendlyError}`);
+        // Keep modal open on failure so user can retry
       }
     },
     [pendingRecipe, jsonData, setJsonData, injectRecipes, resetPendingRecipe]
@@ -299,16 +301,13 @@ export function useImageQueue(): ImageQueueHook {
 
   // Handle recipe deletion
   const onDeleteRecipe = useCallback(async () => {
-    if (!pendingRecipe || !jsonData || !setJsonData) {
+    if (!pendingRecipe || !jsonData) {
 
       return;
     }
 
     // Capture recipe key before clearing state
     const recipeKey = pendingRecipe.key;
-
-    // Hide modal immediately for better UX
-    resetPendingRecipe();
 
     ToastQueue.show('Deleting recipe...');
 
@@ -322,6 +321,9 @@ export function useImageQueue(): ImageQueueHook {
       delete updatedJsonData[recipeKey];
       setJsonData(updatedJsonData);
 
+      // Hide modal only after successful completion
+      resetPendingRecipe();
+
       ToastQueue.show('Recipe deleted');
 
     } catch (error) {
@@ -330,6 +332,7 @@ export function useImageQueue(): ImageQueueHook {
       const userFriendlyError = transformErrorMessage(rawError);
 
       ToastQueue.show(`Failed to delete recipe: ${userFriendlyError}`);
+      // Keep modal open on failure so user can retry
     }
   }, [pendingRecipe, jsonData, setJsonData, resetPendingRecipe]);
 
