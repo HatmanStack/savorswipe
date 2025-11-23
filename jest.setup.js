@@ -102,3 +102,77 @@ jest.mock('@expo/vector-icons', () => {
     FontAwesome5: Text,
   };
 });
+
+// Mock react-native core modules
+jest.mock('react-native', () => {
+  const RN = jest.requireActual('react-native');
+
+  // Patch TurboModuleRegistry to avoid missing module errors
+  if (RN.TurboModuleRegistry) {
+    const originalGetEnforcing = RN.TurboModuleRegistry.getEnforcing;
+    RN.TurboModuleRegistry.getEnforcing = (name) => {
+      if (name === 'PlatformConstants') {
+          return {
+              getConstants: () => ({
+                  forceTouchAvailable: false,
+                  isTesting: true,
+                  reactNativeVersion: { major: 0, minor: 71, patch: 0 }
+              })
+          };
+      }
+
+      const ignoredModules = ['DevMenu', 'SettingsManager', 'DevSettings'];
+      if (ignoredModules.includes(name)) {
+        return null;
+      }
+      return originalGetEnforcing(name);
+    };
+  }
+
+  return Object.setPrototypeOf(
+    {
+      NativeModules: {
+        ...RN.NativeModules,
+        DevMenu: {
+          show: jest.fn(),
+          reload: jest.fn(),
+          debugRemotely: jest.fn(),
+          setProfilingEnabled: jest.fn(),
+          setHotLoadingEnabled: jest.fn(),
+        },
+        DevSettings: {
+          addMenuItem: jest.fn(),
+          reload: jest.fn(),
+        },
+        SettingsManager: {
+          settings: {},
+        },
+        PlatformConstants: {
+            forceTouchAvailable: false,
+        },
+      },
+    },
+    RN
+  );
+});
+
+// Mock expo-router
+jest.mock('expo-router', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    back: jest.fn(),
+    setParams: jest.fn(),
+    canGoBack: () => true,
+    navigation: {
+      dispatch: jest.fn(),
+      navigate: jest.fn(),
+      goBack: jest.fn(),
+    },
+  }),
+  useLocalSearchParams: () => ({}),
+  Link: 'Link',
+  Stack: ({ children }) => children,
+  Tabs: ({ children }) => children,
+  Slot: () => null,
+}));

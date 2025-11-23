@@ -43,12 +43,9 @@ describe('RecipeService', () => {
       // Assert
       expect(global.fetch).toHaveBeenCalledWith(
         MOCK_LAMBDA_URL,
-        expect.objectContaining({
+        {
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        })
+        }
       );
       expect(result).toEqual(mockRecipes);
     });

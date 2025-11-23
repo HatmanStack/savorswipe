@@ -31,16 +31,8 @@ jest.mock('@/hooks', () => ({
   })),
 }));
 
-// Mock AccessibilityInfo
-jest.mock('react-native', () => {
-  const RN = jest.requireActual('react-native');
-  return {
-    ...RN,
-    AccessibilityInfo: {
-      isReduceMotionEnabled: jest.fn(() => Promise.resolve(false)),
-    },
-  };
-});
+// Mock AccessibilityInfo - override just this part
+jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockImplementation(() => Promise.resolve(false));
 
 describe('HomeScreen Integration Tests', () => {
   const mockRouter = {

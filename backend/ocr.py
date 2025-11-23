@@ -3,7 +3,20 @@ import os
 import json
 from fix_ingredients import normalize_recipe
 
-client = OpenAI(api_key=os.getenv('API_KEY'))
+# Lazy initialization will happen in functions
+client = None
+
+
+def get_client():
+    global client
+    if client is None:
+        # Check if API_KEY is present
+        api_key = os.getenv('API_KEY')
+        if api_key:
+            client = OpenAI(api_key=api_key)
+        else:
+            raise ValueError("API_KEY environment variable not set. Mock get_client() in tests.")
+    return client
 
 
 def _repair_partial_json(recipe_json: str) -> str:
@@ -24,6 +37,7 @@ def _repair_partial_json(recipe_json: str) -> str:
     if repaired.count('{') > repaired.count('}'):
         repaired += '\n}'
     return repaired
+
 
 def complete_recipe_with_gpt4o(partial_recipe_json, base64_image):
     """
@@ -79,7 +93,7 @@ Here is the partial extraction we have so far:
 
     partial_str = json.dumps(partial_data, indent=2)
 
-    response = client.chat.completions.create(
+    response = get_client().chat.completions.create(
         model="gpt-4o",  # Can be upgraded to "o1" or "gpt-5" when available
         response_format={"type": "json_object"},
         messages=[
@@ -91,7 +105,8 @@ Here is the partial extraction we have so far:
                 "role": "user",
                 "content": [
                     {"type": "text", "text": f"Partial extraction:\n{partial_str}\n\nPlease complete this recipe using the image:"},
-                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}", "detail": "high"}}
+                    {"type": "image_url", "image_url": {
+                        "url": f"data:image/jpeg;base64,{base64_image}", "detail": "high"}}
                 ]
             }
         ],
@@ -102,6 +117,7 @@ Here is the partial extraction we have so far:
     completed_json = response.choices[0].message.content
 
     return completed_json
+
 
 def extract_recipe_data(base64_image, retry_attempt=0):
     # Add safety instruction on retry to avoid content filter
@@ -302,9 +318,9 @@ Example 3 - Multiple partial recipes (e.g., index page with snippets):
     # Append safety note if this is a retry
     system_prompt = system_prompt + safety_note
 
-    response = client.chat.completions.create(
+    response = get_client().chat.completions.create(
         model="gpt-4o",
-        response_format={ "type": "json_object" },
+        response_format={"type": "json_object"},
         messages=[
             {
                 "role": "system",
@@ -314,7 +330,8 @@ Example 3 - Multiple partial recipes (e.g., index page with snippets):
                 "role": "user",
                 "content": [
                     {"type": "text", "text": "extract the data in this recipe and output into JSON "},
-                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}", "detail": "high"}}
+                    {"type": "image_url", "image_url": {
+                        "url": f"data:image/jpeg;base64,{base64_image}", "detail": "high"}}
                 ]
             }
         ],
@@ -361,6 +378,7 @@ Example 3 - Multiple partial recipes (e.g., index page with snippets):
     except json.JSONDecodeError:
         # Return None to signal parsing failure
         return None
+
 
 def parseJSON(recipes):
     print(f"[PARSEJSON] Received {len(recipes)} recipe object(s)")
@@ -475,9 +493,9 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
 
     try:
         print("[PARSEJSON] Calling OpenAI API...")
-        response = client.chat.completions.create(
+        response = get_client().chat.completions.create(
             model="gpt-4o",
-            response_format={ "type": "json_object" },
+            response_format={"type": "json_object"},
 
             messages=[
                 {
@@ -517,7 +535,8 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
 
         if isinstance(recipe_data, dict) and 'recipes' in recipe_data:
             # Format 1: Wrapped array
-            print(f"[PARSEJSON] Detected wrapped array format with {len(recipe_data['recipes'])} recipes")
+            print(
+                f"[PARSEJSON] Detected wrapped array format with {len(recipe_data['recipes'])} recipes")
             recipes_to_normalize = recipe_data['recipes']
         elif isinstance(recipe_data, list):
             # Format 2: Direct array
@@ -525,7 +544,8 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
             recipes_to_normalize = recipe_data
         else:
             # Format 3: Single recipe
-            print(f"[PARSEJSON] Detected single recipe format: {recipe_data.get('Title', 'Unknown')}")
+            print(
+                f"[PARSEJSON] Detected single recipe format: {recipe_data.get('Title', 'Unknown')}")
             normalized_recipe = normalize_recipe(recipe_data)
             result = json.dumps(normalized_recipe, ensure_ascii=False)
             return result

@@ -1,0 +1,18 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.0.1, pluggy-1.6.0
+rootdir: /app
+plugins: requests-mock-1.12.1, anyio-4.11.0
+collected 150 items
+
+backend/tests/test_duplicate_detector.py ............                    [  8%]
+backend/tests/test_embedding_generator.py .............                  [ 16%]
+backend/tests/test_embeddings.py ..........                              [ 23%]
+backend/tests/test_endpoints_delete.py ..............                    [ 32%]
+backend/tests/test_image_uploader.py ..................                  [ 44%]
+backend/tests/test_integration_endpoints.py .......                      [ 49%]
+backend/tests/test_lambda_function.py ..................                 [ 61%]
+backend/tests/test_recipe_deletion.py ..................                 [ 73%]
+backend/tests/test_search_image.py .............................         [ 92%]
+backend/tests/test_upload.py ...........                                 [100%]
+
+============================= 150 passed in 14.12s =============================

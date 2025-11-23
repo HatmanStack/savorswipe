@@ -1,3 +1,4 @@
+from lambda_function import process_single_recipe, lambda_handler
 import unittest
 from unittest.mock import MagicMock, patch, call, Mock
 import json
@@ -6,8 +7,6 @@ import os
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from lambda_function import process_single_recipe, lambda_handler
 
 
 class TestLambdaFunction(unittest.TestCase):
@@ -223,7 +222,8 @@ class TestLambdaFunction(unittest.TestCase):
             # Mock executor
             mock_executor = MagicMock()
             mock_future = MagicMock()
-            mock_future.result.return_value = (self.test_recipe, self.test_embedding, self.test_search_results, None)
+            mock_future.result.return_value = (
+                self.test_recipe, self.test_embedding, self.test_search_results, None)
             mock_executor.submit.return_value = mock_future
             mock_executor.__enter__.return_value = mock_executor
             mock_executor_class.return_value = mock_executor
@@ -430,7 +430,7 @@ class TestLambdaFunction(unittest.TestCase):
 
             # Verify S3 put_object called for completion flag
             put_calls = [call for call in mock_s3.put_object.call_args_list
-                        if 'upload-status/' in str(call)]
+                         if 'upload-status/' in str(call)]
             self.assertGreater(len(put_calls), 0)
 
     @patch('lambda_function.boto3.client')
@@ -520,7 +520,8 @@ class TestLambdaGetRequest(unittest.TestCase):
             # Assert
             self.assertEqual(result['statusCode'], 200)
             self.assertEqual(result['headers']['Content-Type'], 'application/json')
-            self.assertEqual(result['headers']['Cache-Control'], 'no-cache, no-store, must-revalidate')
+            self.assertEqual(result['headers']['Cache-Control'],
+                             'no-cache, no-store, must-revalidate')
             self.assertEqual(result['headers']['Pragma'], 'no-cache')
             self.assertEqual(result['headers']['Expires'], '0')
             self.assertIn('Access-Control-Allow-Origin', result['headers'])

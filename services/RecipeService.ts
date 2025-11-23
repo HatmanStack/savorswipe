@@ -54,10 +54,15 @@ export class RecipeService {
    * Fetches a recipe by its key/ID
    */
   static async getRecipeById(recipeId: string, allRecipes?: S3JsonData): Promise<Recipe | null> {
-    if (allRecipes && allRecipes[recipeId]) {
-      return { ...allRecipes[recipeId], key: recipeId };
+    // If allRecipes is provided, use it and don't fetch from S3
+    if (allRecipes) {
+      if (allRecipes[recipeId]) {
+        return { ...allRecipes[recipeId], key: recipeId };
+      }
+      return null;
     }
 
+    // Otherwise fetch from S3
     try {
       const recipes = await this.getRecipesFromS3();
       if (recipes[recipeId]) {

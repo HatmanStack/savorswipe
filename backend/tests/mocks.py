@@ -11,7 +11,7 @@ import json
 class MockS3Response:
     """Mock S3 response object."""
 
-    def __init__(self, data: Dict = None, status_code: int = 200):
+    def __init__(self, data: Optional[Dict] = None, status_code: int = 200):
         self.data = data or {}
         self.status_code = status_code
         self.etag = '"mock-etag-12345"'
@@ -43,14 +43,14 @@ class MockS3Client:
             self.buckets[Bucket] = {}
 
     def put_object(
-        self, Bucket: str, Key: str, Body: bytes = None, **kwargs
+        self, Bucket: str, Key: str, Body: Optional[bytes] = None, **kwargs
     ):
         """Put object into mock bucket."""
         if Bucket not in self.buckets:
             self.buckets[Bucket] = {}
         if isinstance(Body, str):
             Body = Body.encode("utf-8")
-        self.buckets[Bucket][Key] = Body
+        self.buckets[Bucket][Key] = Body or b""
         return {"ETag": '"mock-etag-12345"'}
 
     def get_object(self, Bucket: str, Key: str, **kwargs):

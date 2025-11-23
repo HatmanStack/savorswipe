@@ -92,7 +92,7 @@ class EmbeddingStore:
                 params['IfMatch'] = etag
 
             # Attempt write
-            self.s3_client.put_object(**params)
+            self.s3_client.put_object(**params)  # type: ignore
             return True
 
         except ClientError as e:

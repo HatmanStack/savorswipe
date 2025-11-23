@@ -24,7 +24,6 @@ FRACTION_MAP = {
 # Special character cleanup
 SPECIAL_CHAR_MAP = {
     'â€"': '—',  # em dash
-    'â€"': '-',  # alternate em dash
     'Â°': '°',   # degree symbol
     'Ã©': 'é',   # accented e
     'Ã': 'à',    # accented a
@@ -197,13 +196,6 @@ def main():
         data = json.load(f)
 
     print(f"Processing {len(data)} recipes...")
-
-    # Track changes
-    changes = {
-        'fractions': 0,
-        'abbreviations': 0,
-        'special_chars': 0
-    }
 
     # Process the data
     data = normalize_ingredients(data)

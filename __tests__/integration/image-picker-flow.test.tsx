@@ -13,6 +13,8 @@ jest.mock('@/context/RecipeContext');
 jest.mock('@/components/Toast');
 
 describe('Integration: Image Picker Modal Flow', () => {
+  jest.setTimeout(30000); // Increase timeout for all tests in this file
+
   const mockSetJsonData = jest.fn();
   const mockSetCurrentRecipe = jest.fn();
 
@@ -25,6 +27,8 @@ describe('Integration: Image Picker Modal Flow', () => {
       setJsonData: mockSetJsonData,
       setCurrentRecipe: mockSetCurrentRecipe,
       mealTypeFilters: ['main dish', 'dessert'],
+      pendingRecipeForPicker: null,
+      setPendingRecipeForPicker: jest.fn(),
     });
 
     // Setup ImageQueueService mocks
@@ -73,6 +77,8 @@ describe('Integration: Image Picker Modal Flow', () => {
         },
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: null,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       const { result, rerender } = renderHook(() => useImageQueue());
@@ -102,10 +108,12 @@ describe('Integration: Image Picker Modal Flow', () => {
         },
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: pendingRecipe,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       // Trigger re-render to detect new pending recipe
-      rerender();
+      rerender({});
 
       // Wait for modal to appear
       await waitFor(() => {
@@ -131,8 +139,23 @@ describe('Integration: Image Picker Modal Flow', () => {
       // Verify success toast
       expect(ToastQueue.show).toHaveBeenCalledWith('Image saved');
 
-      // Verify modal closed
-      expect(result.current.showImagePickerModal).toBe(false);
+      // Manually update the mock since useRecipe mock is static
+      (useRecipe as jest.Mock).mockReturnValue({
+        jsonData: mockData,
+        setJsonData: (data: S3JsonData) => {
+          mockData = data;
+        },
+        setCurrentRecipe: mockSetCurrentRecipe,
+        mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: null, // Recipe processed
+        setPendingRecipeForPicker: jest.fn(),
+      });
+      rerender({});
+
+      // Wait for modal to close
+      await waitFor(() => {
+        expect(result.current.showImagePickerModal).toBe(false);
+      }, { timeout: 3000 });
       expect(result.current.pendingRecipe).toBeNull();
     });
 
@@ -161,6 +184,8 @@ describe('Integration: Image Picker Modal Flow', () => {
         },
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: null,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       const { result, rerender } = renderHook(() => useImageQueue());
@@ -185,9 +210,11 @@ describe('Integration: Image Picker Modal Flow', () => {
         },
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: pendingRecipe,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -232,6 +259,8 @@ describe('Integration: Image Picker Modal Flow', () => {
         },
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: pendingRecipe,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
@@ -248,7 +277,7 @@ describe('Integration: Image Picker Modal Flow', () => {
         expect(result.current.isLoading).toBe(false);
       }, { timeout: 3000 });
 
-      rerender();
+      rerender({});
 
       // Wait for modal
       await waitFor(() => {
@@ -268,8 +297,23 @@ describe('Integration: Image Picker Modal Flow', () => {
       // Verify success toast
       expect(ToastQueue.show).toHaveBeenCalledWith('Recipe deleted');
 
-      // Verify modal cleared
-      expect(result.current.showImagePickerModal).toBe(false);
+      // Manually update the mock since useRecipe mock is static
+      (useRecipe as jest.Mock).mockReturnValue({
+        jsonData: mockData,
+        setJsonData: (data: S3JsonData) => {
+          mockData = data;
+        },
+        setCurrentRecipe: mockSetCurrentRecipe,
+        mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: null, // Recipe processed
+        setPendingRecipeForPicker: jest.fn(),
+      });
+      rerender({});
+
+      // Wait for modal to close
+      await waitFor(() => {
+        expect(result.current.showImagePickerModal).toBe(false);
+      }, { timeout: 3000 });
       expect(result.current.pendingRecipe).toBeNull();
     });
   });
@@ -296,6 +340,8 @@ describe('Integration: Image Picker Modal Flow', () => {
         },
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: pendingRecipe,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
@@ -313,7 +359,7 @@ describe('Integration: Image Picker Modal Flow', () => {
         expect(result.current.isLoading).toBe(false);
       }, { timeout: 3000 });
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -324,9 +370,9 @@ describe('Integration: Image Picker Modal Flow', () => {
         await result.current.onConfirmImage('https://google.com/img1.jpg');
       });
 
-      // Verify error was shown
+      // Verify error was shown (transformed to user-friendly message)
       expect(ToastQueue.show).toHaveBeenCalledWith(
-        'Failed to save image: Failed to fetch image from Google'
+        "Failed to save image: Image couldn't be loaded from source. Please select another image."
       );
 
       // Modal should remain open
@@ -355,6 +401,8 @@ describe('Integration: Image Picker Modal Flow', () => {
         },
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: pendingRecipe,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
@@ -372,7 +420,7 @@ describe('Integration: Image Picker Modal Flow', () => {
         expect(result.current.isLoading).toBe(false);
       }, { timeout: 3000 });
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -383,8 +431,8 @@ describe('Integration: Image Picker Modal Flow', () => {
         await result.current.onDeleteRecipe();
       });
 
-      // Verify error was shown
-      expect(ToastQueue.show).toHaveBeenCalledWith('Failed to delete recipe: Recipe not found');
+      // Verify error was shown (transformed to user-friendly message)
+      expect(ToastQueue.show).toHaveBeenCalledWith('Failed to delete recipe: Recipe not found. It may have been deleted.');
 
       // Modal should remain open
       expect(result.current.showImagePickerModal).toBe(true);

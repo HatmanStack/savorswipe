@@ -20,7 +20,7 @@ export default function Menu() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [infoVisible, setInfoVisible] = useState(false);
   const [uploadVisible, setUploadVisible] = useState(false);
-  const [uploadMessage, setUploadMessage] = useState<{
+  const [uploadMessage] = useState<{
     returnMessage: string;
     jsonData: unknown;
     encodedImages: string;

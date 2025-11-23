@@ -444,7 +444,7 @@ def _validate_image_url_for_api(image_url: str) -> Tuple[bool, Optional[str]]:
 
             # Reject private, loopback, link-local, multicast addresses
             if (ip.is_private or ip.is_loopback or ip.is_link_local or
-                ip.is_multicast or ip.is_reserved):
+                    ip.is_multicast or ip.is_reserved):
                 return False, f"Refusing to fetch private/reserved IP: {hostname} -> {ip_str}"
 
             print(f"[SSRF-CHECK] URL validation passed: {hostname} -> {ip_str}")
@@ -636,7 +636,8 @@ def handle_post_image_request(event, context, origin=None):
         print(f"[POST-IMAGE] Image fetched: {len(image_bytes)} bytes, content-type: {content_type}")
 
         # Step 2: Upload image to S3
-        s3_path, error_msg = upload_image_to_s3(recipe_key, image_bytes, s3_client, bucket_name, content_type=content_type)
+        s3_path, error_msg = upload_image_to_s3(
+            recipe_key, image_bytes, s3_client, bucket_name, content_type=content_type)
 
         if s3_path is None:
             print(f"[POST-IMAGE] Failed to upload image to S3: {error_msg}")
@@ -667,10 +668,12 @@ def handle_post_image_request(event, context, origin=None):
 
                 # Load existing data with ETag
                 try:
-                    response = s3_client.get_object(Bucket=bucket_name, Key='jsondata/combined_data.json')
+                    response = s3_client.get_object(
+                        Bucket=bucket_name, Key='jsondata/combined_data.json')
                     json_data = json.loads(response['Body'].read())
                     etag = response['ETag'].strip('"')
-                    print(f"[POST-IMAGE] Loaded combined_data with {len(json_data)} recipes, ETag: {etag}")
+                    print(
+                        f"[POST-IMAGE] Loaded combined_data with {len(json_data)} recipes, ETag: {etag}")
                 except ClientError as e:
                     if e.response['Error']['Code'] == 'NoSuchKey':
                         print(f"[POST-IMAGE] combined_data.json not found")
@@ -713,7 +716,8 @@ def handle_post_image_request(event, context, origin=None):
                 # Update recipe's image_url with Google URL for deduplication tracking
                 recipe = json_data[recipe_key]
                 recipe['image_url'] = image_url
-                print(f"[POST-IMAGE] Updated recipe '{recipe_key}' with image_url: {image_url[:100]}...")
+                print(
+                    f"[POST-IMAGE] Updated recipe '{recipe_key}' with image_url: {image_url[:100]}...")
 
                 # Atomic write back to S3
                 try:
@@ -831,7 +835,8 @@ def handle_post_request(event, context, origin=None):
 
     # Check if body exists and log it
     if 'body' in event:
-        print(f"[DEBUG] Body exists, type: {type(event['body'])}, length: {len(str(event['body']))}")
+        print(
+            f"[DEBUG] Body exists, type: {type(event['body'])}, length: {len(str(event['body']))}")
         print(f"[DEBUG] Body preview: {str(event['body'])[:200]}")
     else:
         print("[DEBUG] No 'body' key in event!")
@@ -859,7 +864,8 @@ def handle_post_request(event, context, origin=None):
 
     # Validate files key exists
     if 'files' not in body:
-        print(f"[DEBUG] handle_post_request: ERROR: No 'files' key in body. Body keys: {list(body.keys())}")
+        print(
+            f"[DEBUG] handle_post_request: ERROR: No 'files' key in body. Body keys: {list(body.keys())}")
         return {
             'statusCode': 400,
             'headers': add_cors_headers({
@@ -935,7 +941,8 @@ def handle_post_request(event, context, origin=None):
 
             # Strip data URI prefix if present (e.g., "data:image/jpeg;base64,...")
             if file_content.startswith('data:'):
-                file_content = file_content.split(',', 1)[1] if ',' in file_content else file_content
+                file_content = file_content.split(
+                    ',', 1)[1] if ',' in file_content else file_content
 
             # Upload user file for records
             try:
@@ -976,8 +983,10 @@ def handle_post_request(event, context, origin=None):
             for img_idx, base64_image in enumerate(base64_images):
                 print(f"[DEBUG] Calling OCR for image {img_idx + 1}/{len(base64_images)}...")
                 recipe_json = ocr.extract_recipe_data(base64_image)
-                print(f"[DEBUG] OCR completed for image {img_idx + 1}, result: {len(str(recipe_json)) if recipe_json else 0} chars")
-                upload.upload_user_data('user_images_json', 'application/json', 'json', recipe_json, app_time)
+                print(
+                    f"[DEBUG] OCR completed for image {img_idx + 1}, result: {len(str(recipe_json)) if recipe_json else 0} chars")
+                upload.upload_user_data('user_images_json', 'application/json',
+                                        'json', recipe_json, app_time)
 
                 if recipe_json is None:
                     continue
@@ -1054,7 +1063,8 @@ def handle_post_request(event, context, origin=None):
             # Submit all recipes for processing
             future_to_idx = {}
             for recipe, file_idx in all_recipes:
-                print(f"[LAMBDA] Submitting recipe '{recipe.get('Title', 'unknown')}' for processing...")
+                print(
+                    f"[LAMBDA] Submitting recipe '{recipe.get('Title', 'unknown')}' for processing...")
                 future = executor.submit(
                     process_single_recipe,
                     recipe,
@@ -1063,17 +1073,20 @@ def handle_post_request(event, context, origin=None):
                 )
                 future_to_idx[future] = (recipe, file_idx)
 
-            print(f"[LAMBDA] Submitted {len(future_to_idx)} recipe(s) for processing, waiting for results...")
+            print(
+                f"[LAMBDA] Submitted {len(future_to_idx)} recipe(s) for processing, waiting for results...")
 
             # Collect results as they complete
             for idx, future in enumerate(as_completed(future_to_idx)):
                 recipe, file_idx = future_to_idx[future]
-                print(f"[LAMBDA] Processing result {idx+1}/{len(future_to_idx)} for '{recipe.get('Title', 'unknown')}'...")
+                print(
+                    f"[LAMBDA] Processing result {idx+1}/{len(future_to_idx)} for '{recipe.get('Title', 'unknown')}'...")
                 result_recipe, embedding, search_results, error_reason = future.result()
 
                 if error_reason:
                     # Processing failed
-                    print(f"[LAMBDA] Recipe '{recipe.get('Title', 'unknown')}' failed: {error_reason}")
+                    print(
+                        f"[LAMBDA] Recipe '{recipe.get('Title', 'unknown')}' failed: {error_reason}")
                     file_errors.append({
                         'file': file_idx,
                         'title': recipe.get('Title', 'unknown'),
@@ -1081,14 +1094,16 @@ def handle_post_request(event, context, origin=None):
                     })
                 else:
                     # Success - add to batch
-                    print(f"[LAMBDA] Recipe '{recipe.get('Title', 'unknown')}' processed successfully")
+                    print(
+                        f"[LAMBDA] Recipe '{recipe.get('Title', 'unknown')}' processed successfully")
                     position = len(unique_recipes)
                     unique_recipes.append(result_recipe)
                     search_results_list.append(search_results)
                     new_embeddings[position] = embedding
                     position_to_file_idx[position] = file_idx
 
-        print(f"[LAMBDA] Parallel processing complete: {len(unique_recipes)} successful, {len(file_errors)} failed")
+        print(
+            f"[LAMBDA] Parallel processing complete: {len(unique_recipes)} successful, {len(file_errors)} failed")
 
     except Exception as e:
         print(f"[LAMBDA ERROR] Parallel processing failed: {str(e)}")
@@ -1114,7 +1129,8 @@ def handle_post_request(event, context, origin=None):
             print("[LAMBDA] Loading existing recipe data from S3...")
             s3_client = boto3.client('s3')
             try:
-                response = s3_client.get_object(Bucket=bucket_name, Key='jsondata/combined_data.json')
+                response = s3_client.get_object(
+                    Bucket=bucket_name, Key='jsondata/combined_data.json')
                 json_data = json.loads(response['Body'].read())
                 print(f"[LAMBDA] Loaded {len(json_data)} existing recipes from S3")
             except s3_client.exceptions.NoSuchKey:

@@ -29,7 +29,8 @@ class EmbeddingGenerator:
         self.api_key = api_key if api_key else os.getenv('API_KEY')
 
         if not self.api_key:
-            raise ValueError('API key is required. Provide via constructor or API_KEY environment variable.')
+            raise ValueError(
+                'API key is required. Provide via constructor or API_KEY environment variable.')
 
     def generate_embedding(self, text: str) -> List[float]:
         """
@@ -71,7 +72,8 @@ class EmbeddingGenerator:
             try:
                 data = response.json()
             except ValueError as json_err:
-                raise Exception(f'Failed to parse OpenAI response as JSON: {json_err}') from json_err
+                raise Exception(
+                    f'Failed to parse OpenAI response as JSON: {json_err}') from json_err
 
             # Validate response structure
             if 'data' not in data or not data['data'] or 'embedding' not in data['data'][0]:
