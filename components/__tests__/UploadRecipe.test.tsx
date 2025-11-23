@@ -30,7 +30,6 @@ import { UploadService } from '@/services/UploadService'
 import { UploadFile } from '@/types/upload'
 
 describe('UploadRecipe', () => {
-  const mockSetUploadMessage = jest.fn()
   const mockSetUploadVisible = jest.fn()
 
   beforeEach(() => {
@@ -52,7 +51,7 @@ describe('UploadRecipe', () => {
       canceled: true,
     })
 
-    await selectAndUploadImage(mockSetUploadMessage, mockSetUploadVisible)
+    await selectAndUploadImage(mockSetUploadVisible)
 
     expect(ImagePicker.requestMediaLibraryPermissionsAsync).toHaveBeenCalled()
   })
@@ -63,7 +62,7 @@ describe('UploadRecipe', () => {
       status: 'denied',
     })
 
-    await selectAndUploadImage(mockSetUploadMessage, mockSetUploadVisible)
+    await selectAndUploadImage(mockSetUploadVisible)
 
     expect(Alert.alert).toHaveBeenCalledWith(
       expect.any(String),
@@ -82,7 +81,7 @@ describe('UploadRecipe', () => {
       canceled: true,
     })
 
-    await selectAndUploadImage(mockSetUploadMessage, mockSetUploadVisible)
+    await selectAndUploadImage(mockSetUploadVisible)
 
     expect(DocumentPicker.getDocumentAsync).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -102,7 +101,7 @@ describe('UploadRecipe', () => {
       canceled: true,
     })
 
-    await selectAndUploadImage(mockSetUploadMessage, mockSetUploadVisible)
+    await selectAndUploadImage(mockSetUploadVisible)
 
     expect(mockSetUploadVisible).toHaveBeenCalledWith(false)
     expect(UploadService.queueUpload).not.toHaveBeenCalled()
@@ -140,7 +139,7 @@ describe('UploadRecipe', () => {
       base64: 'base64data',
     })
 
-    await selectAndUploadImage(mockSetUploadMessage, mockSetUploadVisible)
+    await selectAndUploadImage(mockSetUploadVisible)
 
     expect(UploadService.queueUpload).toHaveBeenCalledWith(
       expect.arrayContaining([
@@ -180,7 +179,7 @@ describe('UploadRecipe', () => {
       base64: 'base64data',
     })
 
-    await selectAndUploadImage(mockSetUploadMessage, mockSetUploadVisible)
+    await selectAndUploadImage(mockSetUploadVisible)
 
     expect(Alert.alert).toHaveBeenCalledWith(
       expect.any(String),
@@ -270,7 +269,7 @@ describe('UploadRecipe', () => {
     ;(PDFDocument.create as jest.Mock).mockResolvedValue(mockChunkDoc)
     ;(FileSystem.readAsStringAsync as jest.Mock).mockResolvedValue('mockbase64')
 
-    await selectAndUploadImage(mockSetUploadMessage, mockSetUploadVisible)
+    await selectAndUploadImage(mockSetUploadVisible)
 
       expect(UploadService.queueUpload).toHaveBeenCalled()
       const uploadCall = (UploadService.queueUpload as jest.Mock).mock.calls[0][0]
@@ -300,7 +299,7 @@ describe('UploadRecipe', () => {
       base64: 'base64data',
     })
 
-    await selectAndUploadImage(mockSetUploadMessage, mockSetUploadVisible)
+    await selectAndUploadImage(mockSetUploadVisible)
 
     expect(ImageManipulator.manipulateAsync).toHaveBeenCalledWith(
       'file://img.jpg',
@@ -329,7 +328,7 @@ describe('UploadRecipe', () => {
       base64: 'base64data',
     })
 
-    await selectAndUploadImage(mockSetUploadMessage, mockSetUploadVisible)
+    await selectAndUploadImage(mockSetUploadVisible)
 
     expect(UploadService.queueUpload).toHaveBeenCalledWith(
       expect.arrayContaining([
@@ -362,7 +361,7 @@ describe('UploadRecipe', () => {
       base64: 'base64data',
     })
 
-    await selectAndUploadImage(mockSetUploadMessage, mockSetUploadVisible)
+    await selectAndUploadImage(mockSetUploadVisible)
 
     expect(mockSetUploadVisible).toHaveBeenCalledWith(false)
   })
@@ -406,7 +405,7 @@ describe('UploadRecipe', () => {
     ;(PDFDocument.load as jest.Mock).mockResolvedValue(mockPdfDoc)
     ;(FileSystem.readAsStringAsync as jest.Mock).mockResolvedValue('mockbase64')
 
-    await selectAndUploadImage(mockSetUploadMessage, mockSetUploadVisible)
+    await selectAndUploadImage(mockSetUploadVisible)
 
     const uploadCall = (UploadService.queueUpload as jest.Mock).mock.calls[0][0]
     expect(uploadCall).toHaveLength(3) // 2 images + 1 PDF chunk
@@ -448,7 +447,7 @@ describe('UploadRecipe', () => {
       base64: 'base64data',
     })
 
-    await selectAndUploadImage(mockSetUploadMessage, mockSetUploadVisible)
+    await selectAndUploadImage(mockSetUploadVisible)
 
     expect(Alert.alert).toHaveBeenCalledWith(
       expect.any(String),
@@ -481,7 +480,7 @@ describe('UploadRecipe', () => {
       ],
     })
 
-    await selectAndUploadImage(mockSetUploadMessage, mockSetUploadVisible)
+    await selectAndUploadImage(mockSetUploadVisible)
 
     expect(Alert.alert).toHaveBeenCalledWith(
       expect.any(String),
@@ -524,7 +523,7 @@ describe('UploadRecipe', () => {
     ;(PDFDocument.load as jest.Mock).mockResolvedValue(mockPdfDoc)
     ;(FileSystem.readAsStringAsync as jest.Mock).mockResolvedValue('mockbase64')
 
-    await selectAndUploadImage(mockSetUploadMessage, mockSetUploadVisible)
+    await selectAndUploadImage(mockSetUploadVisible)
 
     expect(Alert.alert).toHaveBeenCalledWith(
       expect.any(String),
@@ -568,7 +567,7 @@ describe('UploadRecipe', () => {
     ;(PDFDocument.load as jest.Mock).mockResolvedValue(mockPdfDoc)
     ;(FileSystem.readAsStringAsync as jest.Mock).mockResolvedValue('mockbase64')
 
-    await selectAndUploadImage(mockSetUploadMessage, mockSetUploadVisible)
+    await selectAndUploadImage(mockSetUploadVisible)
 
     expect(mockSetUploadVisible).toHaveBeenCalledWith(false)
     expect(UploadService.queueUpload).not.toHaveBeenCalled()

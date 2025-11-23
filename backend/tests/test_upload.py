@@ -1,14 +1,8 @@
+from upload import normalize_title, batch_to_s3_atomic
 import unittest
 from unittest.mock import MagicMock, patch, call
 import json
-import sys
-import os
 from botocore.exceptions import ClientError
-
-# Add parent directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from upload import normalize_title, batch_to_s3_atomic
 
 
 class TestUploadModule(unittest.TestCase):
@@ -16,6 +10,8 @@ class TestUploadModule(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
+        self.bucket_patcher = patch('upload.bucket_name', 'test-bucket')
+        self.bucket_patcher.start()
         self.bucket_name = 'test-bucket'
         self.test_recipes = [
             {
@@ -30,6 +26,9 @@ class TestUploadModule(unittest.TestCase):
         self.existing_data = {
             '1': {'Title': 'Existing Recipe', 'key': 1}
         }
+
+    def tearDown(self):
+        self.bucket_patcher.stop()
 
     def test_normalize_title(self):
         """Test title normalization (lowercase and trim)."""

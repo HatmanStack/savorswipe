@@ -145,7 +145,6 @@ class TestFetchImageFromUrl:
 class TestUploadImageToS3:
     """Tests for upload_image_to_s3 function."""
 
-    
     @pytest.fixture(autouse=True)
     def mock_pil_conversion(self, monkeypatch):
         """Mock PIL Image conversion to just return the input bytes."""
@@ -153,18 +152,18 @@ class TestUploadImageToS3:
         mock_image = MagicMock()
         mock_bytes_io = MagicMock()
         mock_bytes_io.getvalue.return_value = b'test image data'
-        
+
         def mock_save(self, file_obj, format=None, **params):
             # Simulate saving by writing test data
             file_obj.write(b'converted_jpeg_data')
             return None
-        
+
         mock_image.convert.return_value = mock_image
         mock_image.save = lambda *args, **kwargs: mock_save(mock_image, *args, **kwargs)
-        
+
         def mock_open(*args, **kwargs):
             return mock_image
-        
+
         monkeypatch.setattr('image_uploader.Image.open', mock_open)
 
     def test_successful_upload(self, s3_client, env_vars):
@@ -304,5 +303,3 @@ class TestUploadImageToS3:
 
         assert s3_path is None
         assert 'max retries exceeded' in error_msg.lower()
-
-

@@ -10,7 +10,7 @@ import json
 import logging
 import random
 import time
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Optional
 from botocore.exceptions import ClientError
 
 # Configure logging
@@ -79,7 +79,7 @@ def delete_recipe_atomic(
     bucket: str,
     combined_data_key: str = "jsondata/combined_data.json",
     embeddings_key: str = "jsondata/recipe_embeddings.json"
-) -> Tuple[bool, str]:
+) -> Tuple[bool, Optional[str]]:
     """
     Atomically delete recipe from both combined_data.json and recipe_embeddings.json.
 
@@ -110,7 +110,8 @@ def delete_recipe_atomic(
                 response = s3_client.get_object(Bucket=bucket, Key=combined_data_key)
                 combined_data = json.loads(response['Body'].read())
                 combined_data_etag = response['ETag'].strip('"')
-                logger.info(f"[DELETE] Loaded combined_data with {len(combined_data)} recipes, ETag: {combined_data_etag}")
+                logger.info(
+                    f"[DELETE] Loaded combined_data with {len(combined_data)} recipes, ETag: {combined_data_etag}")
             except ClientError as e:
                 if e.response['Error']['Code'] == 'NoSuchKey':
                     logger.warning(f"[DELETE] {combined_data_key} not found")
@@ -125,7 +126,8 @@ def delete_recipe_atomic(
                 response = s3_client.get_object(Bucket=bucket, Key=embeddings_key)
                 embeddings = json.loads(response['Body'].read())
                 embeddings_etag = response['ETag'].strip('"')
-                logger.info(f"[DELETE] Loaded embeddings with {len(embeddings)} entries, ETag: {embeddings_etag}")
+                logger.info(
+                    f"[DELETE] Loaded embeddings with {len(embeddings)} entries, ETag: {embeddings_etag}")
             except ClientError as e:
                 if e.response['Error']['Code'] == 'NoSuchKey':
                     logger.warning(f"[DELETE] {embeddings_key} not found")
@@ -154,11 +156,12 @@ def delete_recipe_atomic(
                 params_combined['IfMatch'] = combined_data_etag
 
             try:
-                s3_client.put_object(**params_combined)
-                logger.info(f"[DELETE] Successfully wrote combined_data")
+                s3_client.put_object(**params_combined)  # type: ignore
+                logger.info("[DELETE] Successfully wrote combined_data")
             except ClientError as e:
                 if e.response['Error']['Code'] == 'PreconditionFailed':
-                    logger.warning(f"[DELETE] Race condition on combined_data (attempt {attempt + 1})")
+                    logger.warning(
+                        f"[DELETE] Race condition on combined_data (attempt {attempt + 1})")
                     if attempt < MAX_RETRIES - 1:
                         delay = random.uniform(0.1, 0.5) * (2 ** attempt)
                         logger.info(f"[DELETE] Retrying after {delay:.2f}s...")
@@ -184,8 +187,8 @@ def delete_recipe_atomic(
                 params_embeddings['IfMatch'] = embeddings_etag
 
             try:
-                s3_client.put_object(**params_embeddings)
-                logger.info(f"[DELETE] Successfully wrote embeddings")
+                s3_client.put_object(**params_embeddings)  # type: ignore
+                logger.info("[DELETE] Successfully wrote embeddings")
             except ClientError as e:
                 if e.response['Error']['Code'] == 'PreconditionFailed':
                     logger.warning(f"[DELETE] Race condition on embeddings (attempt {attempt + 1})")

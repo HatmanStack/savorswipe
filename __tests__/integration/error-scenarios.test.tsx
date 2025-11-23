@@ -19,7 +19,7 @@ describe('Integration: Error Scenario Testing', () => {
   // Helper function to set up a test scenario
   const setupTest = () => {
     let mockData: S3JsonData = {
-      recipe1: { Title: 'Recipe 1', image_url: 'https://s3.../recipe1.jpg' },
+      recipe1: { key: 'recipe1', Title: 'Recipe 1', image_url: 'https://s3.../recipe1.jpg' } as Recipe,
     };
 
     (useRecipe as jest.Mock).mockReturnValue({
@@ -29,6 +29,8 @@ describe('Integration: Error Scenario Testing', () => {
       },
       setCurrentRecipe: mockSetCurrentRecipe,
       mealTypeFilters: ['main dish', 'dessert'],
+      pendingRecipeForPicker: null,
+      setPendingRecipeForPicker: jest.fn(),
     });
 
     (ImageQueueService.createRecipeKeyPool as jest.Mock).mockReturnValue(['recipe1']);
@@ -71,13 +73,15 @@ describe('Integration: Error Scenario Testing', () => {
         setJsonData: (data: S3JsonData) => setMockData(data),
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: pendingRecipe,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       (RecipeService.selectRecipeImage as jest.Mock).mockRejectedValue(
         new Error('Request timeout')
       );
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -120,13 +124,15 @@ describe('Integration: Error Scenario Testing', () => {
         setJsonData: (data: S3JsonData) => setMockData(data),
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: pendingRecipe,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       (RecipeService.deleteRecipe as jest.Mock).mockRejectedValue(
         new Error('Request timeout')
       );
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -170,13 +176,15 @@ describe('Integration: Error Scenario Testing', () => {
         setJsonData: (data: S3JsonData) => setMockData(data),
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: pendingRecipe,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       (RecipeService.selectRecipeImage as jest.Mock).mockRejectedValue(
         new Error('Recipe not found')
       );
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -218,13 +226,15 @@ describe('Integration: Error Scenario Testing', () => {
         setJsonData: (data: S3JsonData) => setMockData(data),
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: pendingRecipe,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       (RecipeService.selectRecipeImage as jest.Mock).mockRejectedValue(
         new Error('Invalid image URL')
       );
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -266,13 +276,15 @@ describe('Integration: Error Scenario Testing', () => {
         setJsonData: (data: S3JsonData) => setMockData(data),
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: pendingRecipe,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       (RecipeService.selectRecipeImage as jest.Mock).mockRejectedValue(
         new Error('Failed to select image. Status: 500')
       );
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -314,13 +326,15 @@ describe('Integration: Error Scenario Testing', () => {
         setJsonData: (data: S3JsonData) => setMockData(data),
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: pendingRecipe,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       (RecipeService.deleteRecipe as jest.Mock).mockRejectedValue(
         new Error('Recipe not found')
       );
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -364,13 +378,15 @@ describe('Integration: Error Scenario Testing', () => {
         setJsonData: (data: S3JsonData) => setMockData(data),
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: pendingRecipe,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       (RecipeService.selectRecipeImage as jest.Mock).mockRejectedValue(
         new Error('Failed to fetch image from Google')
       );
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -410,13 +426,15 @@ describe('Integration: Error Scenario Testing', () => {
         setJsonData: (data: S3JsonData) => setMockData(data),
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: pendingRecipe,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       (RecipeService.selectRecipeImage as jest.Mock).mockRejectedValue(
         new Error('Recipe not found')
       );
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -429,6 +447,8 @@ describe('Integration: Error Scenario Testing', () => {
         setJsonData: (data: S3JsonData) => setMockData(data),
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: pendingRecipe, // Still in state but gone from jsonData
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       await act(async () => {
@@ -465,13 +485,15 @@ describe('Integration: Error Scenario Testing', () => {
         setJsonData: (data: S3JsonData) => setMockData(data),
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: pendingRecipe,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       (RecipeService.selectRecipeImage as jest.Mock).mockRejectedValue(
         new Error('Network request failed')
       );
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -514,13 +536,15 @@ describe('Integration: Error Scenario Testing', () => {
         setJsonData: (data: S3JsonData) => setMockData(data),
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: pendingRecipe,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       (RecipeService.deleteRecipe as jest.Mock).mockRejectedValue(
         new Error('Network request failed')
       );
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);
@@ -564,13 +588,15 @@ describe('Integration: Error Scenario Testing', () => {
         setJsonData: (data: S3JsonData) => setMockData(data),
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
+        pendingRecipeForPicker: pendingRecipe,
+        setPendingRecipeForPicker: jest.fn(),
       });
 
       (RecipeService.selectRecipeImage as jest.Mock).mockRejectedValue(
         new Error('Test error')
       );
 
-      rerender();
+      rerender({});
 
       await waitFor(() => {
         expect(result.current.showImagePickerModal).toBe(true);

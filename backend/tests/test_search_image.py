@@ -4,14 +4,6 @@ Unit tests for search_image module.
 Tests image search, selection, and title simplification logic.
 """
 
-import pytest
-from unittest.mock import patch, Mock
-import sys
-import os
-
-# Add parent directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from search_image import (
     google_search_image,
     select_unique_image_url,
@@ -19,6 +11,13 @@ from search_image import (
     extract_used_image_urls,
     validate_image_urls,
 )
+import pytest
+from unittest.mock import patch, Mock
+import sys
+import os
+
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 class TestValidateImageUrls:

@@ -37,3 +37,4 @@ __pycache__/
 # SAM deployment config (contains secrets)
 backend/samconfig.toml
 .aws-sam/
+*lint_output*.txt

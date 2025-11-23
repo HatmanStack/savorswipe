@@ -14,7 +14,7 @@ describe('UploadService', () => {
     returnMessage: 'Success',
     successCount: 1,
     failCount: 0,
-    jsonData: { recipe1: {} },
+    jsonData: { recipe1: { key: 'recipe1', Title: 'Test Recipe' } },
     newRecipeKeys: ['recipe1'],
     errors: [],
     jobId: 'mock-job-id',
@@ -332,7 +332,7 @@ describe('UploadService', () => {
         returnMessage: 'Partial failure',
         successCount: 1,
         failCount: 2,
-        jsonData: { recipe1: {} },
+        jsonData: { recipe1: { key: 'recipe1', Title: 'Test Recipe' } },
         newRecipeKeys: ['recipe1'],
         errors: [
           { file: 1, title: 'Recipe 2', reason: 'OCR failed' },

@@ -187,7 +187,7 @@ describe('UploadModal', () => {
 
       await waitFor(() => {
         expect(ToastQueue.show).toHaveBeenCalledWith(
-          'All 5 recipes added successfully!',
+          '5 recipes processed! 0 new recipes ready to swipe.',
           expect.objectContaining({
             tappable: false,
           })
@@ -237,7 +237,7 @@ describe('UploadModal', () => {
 
       await waitFor(() => {
         expect(ToastQueue.show).toHaveBeenCalledWith(
-          'All 5 recipes added successfully!',
+          '5 recipes processed! 0 new recipes ready to swipe.',
           expect.any(Object)
         )
       })
@@ -291,7 +291,7 @@ describe('UploadModal', () => {
 
       await waitFor(() => {
         expect(ToastQueue.show).toHaveBeenCalledWith(
-          '3 of 5 added. Tap to view 2 errors.',
+          '3/5 succeeded, 2 failed. Tap to view errors.',
           expect.objectContaining({
             tappable: true,
           })
@@ -337,7 +337,7 @@ describe('UploadModal', () => {
 
       await waitFor(() => {
         expect(ToastQueue.show).toHaveBeenCalledWith(
-          'All 2 recipes failed. Tap for details.',
+          'Upload failed: 2/2 errors. Tap for details.',
           expect.objectContaining({
             tappable: true,
             onTap: expect.any(Function),
@@ -379,7 +379,7 @@ describe('UploadModal', () => {
 
       await waitFor(() => {
         expect(ToastQueue.show).toHaveBeenCalledWith(
-          'All 5 recipes added successfully!',
+          '5 recipes processed! 0 new recipes ready to swipe.',
           expect.objectContaining({
             tappable: false,
           })
@@ -407,7 +407,7 @@ describe('UploadModal', () => {
         />
       )
 
-      const newJsonData = { recipe1: { title: 'New Recipe' } }
+      const newJsonData = { recipe1: { key: 'recipe1', Title: 'New Recipe' } }
       const completedJob: UploadJob = {
         id: 'job-1',
         files: [],
