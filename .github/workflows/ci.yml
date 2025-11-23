@@ -46,7 +46,7 @@ jobs:
         run: npm ci
 
       - name: Run tests
-        run: npm test -- --passWithNoTests --no-watch --ci --forceExit
+        run: npm test -- --passWithNoTests --no-watch --ci --runInBand --forceExit
 
   backend-tests:
     name: Backend Tests
