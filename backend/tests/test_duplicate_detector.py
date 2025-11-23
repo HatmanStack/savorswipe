@@ -1,6 +1,6 @@
 import unittest
 
-from backend.duplicate_detector import DuplicateDetector
+from duplicate_detector import DuplicateDetector
 
 
 class TestDuplicateDetector(unittest.TestCase):

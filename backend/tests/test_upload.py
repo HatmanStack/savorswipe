@@ -1,4 +1,4 @@
-from backend.upload import normalize_title, batch_to_s3_atomic
+from upload import normalize_title, batch_to_s3_atomic
 import unittest
 from unittest.mock import MagicMock, patch, call
 import json
@@ -10,7 +10,7 @@ class TestUploadModule(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.bucket_patcher = patch('backend.upload.bucket_name', 'test-bucket')
+        self.bucket_patcher = patch('upload.bucket_name', 'test-bucket')
         self.bucket_patcher.start()
         self.bucket_name = 'test-bucket'
         self.test_recipes = [
@@ -44,8 +44,8 @@ class TestUploadModule(unittest.TestCase):
                 result = normalize_title(input_title)
                 self.assertEqual(result, expected)
 
-    @patch('backend.upload.s3_client')
-    @patch('backend.upload.upload_image')
+    @patch('upload.s3_client')
+    @patch('upload.upload_image')
     def test_batch_to_s3_empty_list(self, mock_upload_image, mock_s3):
         """Test batch upload with empty recipes list."""
         # Mock existing data
@@ -64,8 +64,8 @@ class TestUploadModule(unittest.TestCase):
         mock_upload_image.assert_not_called()
         mock_s3.put_object.assert_not_called()
 
-    @patch('backend.upload.s3_client')
-    @patch('backend.upload.upload_image')
+    @patch('upload.s3_client')
+    @patch('upload.upload_image')
     def test_batch_to_s3_all_success(self, mock_upload_image, mock_s3):
         """Test batch upload with all recipes succeeding."""
         # Mock existing data
@@ -98,8 +98,8 @@ class TestUploadModule(unittest.TestCase):
         self.assertEqual(mock_upload_image.call_count, 0)
         mock_s3.put_object.assert_called_once()
 
-    @patch('backend.upload.s3_client')
-    @patch('backend.upload.upload_image')
+    @patch('upload.s3_client')
+    @patch('upload.upload_image')
     def test_batch_to_s3_uses_conditional_write(self, mock_upload_image, mock_s3):
         """Test that batch upload uses S3 conditional write with ETag."""
         # Mock existing data with ETag
@@ -120,8 +120,8 @@ class TestUploadModule(unittest.TestCase):
         self.assertIn('IfMatch', put_call_kwargs)
         self.assertEqual(put_call_kwargs['IfMatch'], 'etag123')
 
-    @patch('backend.upload.s3_client')
-    @patch('backend.upload.upload_image')
+    @patch('upload.s3_client')
+    @patch('upload.upload_image')
     def test_batch_to_s3_duplicate_title(self, mock_upload_image, mock_s3):
         """Test that duplicate titles are rejected with error."""
         # Mock existing data with recipe that has same title as new one
@@ -148,8 +148,8 @@ class TestUploadModule(unittest.TestCase):
         self.assertIn('already exists', errors[0]['reason'])
         self.assertEqual(len(success_keys), 0)
 
-    @patch('backend.upload.s3_client')
-    @patch('backend.upload.upload_image')
+    @patch('upload.s3_client')
+    @patch('upload.upload_image')
     def test_batch_to_s3_image_upload_failure(self, mock_upload_image, mock_s3):
         """Test error handling when image upload fails."""
         # Mock existing data
@@ -175,9 +175,9 @@ class TestUploadModule(unittest.TestCase):
         self.assertEqual(len(errors), 0)
         self.assertEqual(len(success_keys), 1)
 
-    @patch('backend.upload.s3_client')
-    @patch('backend.upload.upload_image')
-    @patch('backend.upload.time.sleep')
+    @patch('upload.s3_client')
+    @patch('upload.upload_image')
+    @patch('upload.time.sleep')
     def test_batch_to_s3_race_condition_retry(self, mock_sleep, mock_upload_image, mock_s3):
         """Test retry logic when first put_object fails with conflict."""
         # Mock existing data
@@ -209,9 +209,9 @@ class TestUploadModule(unittest.TestCase):
         self.assertEqual(len(success_keys), 1)
         mock_sleep.assert_called_once()  # Backoff after first failure
 
-    @patch('backend.upload.s3_client')
-    @patch('backend.upload.upload_image')
-    @patch('backend.upload.time.sleep')
+    @patch('upload.s3_client')
+    @patch('upload.upload_image')
+    @patch('upload.time.sleep')
     def test_batch_to_s3_race_condition_rollback(self, mock_sleep, mock_upload_image, mock_s3):
         """Test that uploaded images are rolled back on write conflict."""
         # Mock existing data
@@ -239,9 +239,9 @@ class TestUploadModule(unittest.TestCase):
         delete_calls = mock_s3.delete_object.call_args_list
         self.assertEqual(len(delete_calls), 0)
 
-    @patch('backend.upload.s3_client')
-    @patch('backend.upload.upload_image')
-    @patch('backend.upload.time.sleep')
+    @patch('upload.s3_client')
+    @patch('upload.upload_image')
+    @patch('upload.time.sleep')
     def test_batch_to_s3_max_retries_exceeded(self, mock_sleep, mock_upload_image, mock_s3):
         """Test that exception is raised after max retries exhausted."""
         # Mock existing data
@@ -264,8 +264,8 @@ class TestUploadModule(unittest.TestCase):
 
         self.assertIn('max retries', str(context.exception).lower())
 
-    @patch('backend.upload.s3_client')
-    @patch('backend.upload.upload_image')
+    @patch('upload.s3_client')
+    @patch('upload.upload_image')
     def test_batch_to_s3_error_format(self, mock_upload_image, mock_s3):
         """Test that errors use 'file' key (not 'index') consistently."""
         # Mock existing data
@@ -292,8 +292,8 @@ class TestUploadModule(unittest.TestCase):
         # Verify success_keys format
         self.assertIsInstance(success_keys[0], str)
 
-    @patch('backend.upload.s3_client')
-    @patch('backend.upload.upload_image')
+    @patch('upload.s3_client')
+    @patch('upload.upload_image')
     def test_batch_to_s3_saves_image_url(self, mock_upload_image, mock_s3):
         """Test that image URL is saved to recipe data for deduplication."""
         # Mock existing data
