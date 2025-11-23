@@ -15,9 +15,7 @@ def get_client():
         if api_key:
             client = OpenAI(api_key=api_key)
         else:
-            # For testing environments where key might be missing but mocked
-            # This allows import without crashing
-            client = OpenAI(api_key="dummy-key-for-init")
+            raise ValueError("API_KEY environment variable not set. Mock get_client() in tests.")
     return client
 
 

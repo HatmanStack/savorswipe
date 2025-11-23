@@ -80,7 +80,7 @@ The deployment script uses `samconfig.toml` to persist deployment configuration.
 - Is generated automatically during deployment
 - Stores SAM deployment parameters (region, S3 bucket, etc.)
 - Ensures consistent deployments without re-entering parameters
-- **Is committed to Git** (safe to commit, no secrets)
+- **Is safe to commit to Git** (secrets are passed via CLI at deploy time, not stored in this file)
 
 ## CI/CD Strategy
 
@@ -218,7 +218,11 @@ The Lambda function has permissions to:
 
 ## Security
 
-- API keys are passed as CloudFormation parameters (encrypted in transit)
+- API keys are passed as CloudFormation parameters via CLI (encrypted in transit, never written to `samconfig.toml`)
 - Lambda environment variables are encrypted at rest
 - `.env.deploy` is in `.gitignore` (never committed)
+- `samconfig.toml` contains no secrets and is safe to commit
+- Secrets are only stored in `.env.deploy` (local) and passed at deploy time via `--parameter-overrides`
 - Function URL uses CORS to restrict frontend origins (configurable in `template.yaml`)
+
+**Important:** Never manually edit `samconfig.toml` to add `parameter_overrides` with secret values. The deployment script passes secrets securely via CLI.

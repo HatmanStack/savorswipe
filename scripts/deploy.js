@@ -112,7 +112,7 @@ GOOGLE_SEARCH_KEY=${config.GOOGLE_SEARCH_KEY}
   console.log('✓ Configuration saved to .env.deploy\n');
 }
 
-// Generate samconfig.toml
+// Generate samconfig.toml (without secrets - they're passed at deploy time)
 function generateSamConfig(config) {
   const deployBucket = `sam-deploy-savorswipe-${config.AWS_REGION}`;
 
@@ -133,11 +133,10 @@ s3_prefix = "savorswipe"
 region = "${config.AWS_REGION}"
 capabilities = "CAPABILITY_IAM"
 confirm_changeset = false
-parameter_overrides = "OpenAIApiKey=\\"${config.OPENAI_KEY}\\" GoogleSearchId=\\"${config.GOOGLE_SEARCH_ID}\\" GoogleSearchKey=\\"${config.GOOGLE_SEARCH_KEY}\\" S3BucketName=\\"savorswipe-recipe\\""
 `;
 
   fs.writeFileSync(SAMCONFIG_PATH, samconfig);
-  console.log('✓ Generated samconfig.toml\n');
+  console.log('✓ Generated samconfig.toml (secrets passed separately at deploy time)\n');
 }
 
 // Update .env file with function URL
@@ -270,9 +269,10 @@ async function deploy() {
   console.log('Building Lambda function with Docker...\n');
   execCommand('sam build --use-container');
 
-  // Deploy to AWS
+  // Deploy to AWS (pass secrets via CLI, not samconfig.toml)
   console.log('\nDeploying to AWS...\n');
-  execCommand('sam deploy');
+  const paramOverrides = `OpenAIApiKey="${config.OPENAI_KEY}" GoogleSearchId="${config.GOOGLE_SEARCH_ID}" GoogleSearchKey="${config.GOOGLE_SEARCH_KEY}" S3BucketName="savorswipe-recipe"`;
+  execCommand(`sam deploy --parameter-overrides ${paramOverrides}`);
 
   // Get Function URL from stack outputs
   console.log('\nRetrieving stack outputs...\n');

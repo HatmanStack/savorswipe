@@ -157,7 +157,7 @@ def delete_recipe_atomic(
 
             try:
                 s3_client.put_object(**params_combined)  # type: ignore
-                logger.info(f"[DELETE] Successfully wrote combined_data")
+                logger.info("[DELETE] Successfully wrote combined_data")
             except ClientError as e:
                 if e.response['Error']['Code'] == 'PreconditionFailed':
                     logger.warning(
@@ -188,7 +188,7 @@ def delete_recipe_atomic(
 
             try:
                 s3_client.put_object(**params_embeddings)  # type: ignore
-                logger.info(f"[DELETE] Successfully wrote embeddings")
+                logger.info("[DELETE] Successfully wrote embeddings")
             except ClientError as e:
                 if e.response['Error']['Code'] == 'PreconditionFailed':
                     logger.warning(f"[DELETE] Race condition on embeddings (attempt {attempt + 1})")

@@ -169,7 +169,7 @@ def test_post_image_selection():
     print(f"  Recipe 1 exists: {('1' in data)}")
     print(f"  Image URL set: {bool(recipe.get('image_url'))}")
     print(f"  Image URL value: {recipe.get('image_url')}")
-    print(f"  ✓ POST image test passed" if response['statusCode']
+    print("  ✓ POST image test passed" if response['statusCode']
           == 200 else "  ✗ POST image test failed")
 
     return response['statusCode'] == 200

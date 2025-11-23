@@ -1,13 +1,8 @@
-from upload import batch_to_s3_atomic
+from backend.upload import batch_to_s3_atomic
 import unittest
 from unittest.mock import patch, MagicMock
 from datetime import datetime, timezone
 import json
-import sys
-import os
-
-# Add parent directory to path to import upload module
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 
 class TestUploadTimestamp(unittest.TestCase):
@@ -15,7 +10,7 @@ class TestUploadTimestamp(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.bucket_patcher = patch('upload.bucket_name', 'test-bucket')
+        self.bucket_patcher = patch('backend.upload.bucket_name', 'test-bucket')
         self.bucket_patcher.start()
         self.mock_recipe = {
             'Title': 'Test Recipe',
@@ -55,8 +50,8 @@ class TestUploadTimestamp(unittest.TestCase):
         # Mock successful image upload
         mock_upload_image.return_value = 'http://example.com/image.jpg'
 
-    @patch('upload.s3_client')
-    @patch('upload.upload_image')
+    @patch('backend.upload.s3_client')
+    @patch('backend.upload.upload_image')
     def test_uploaded_at_field_added(self, mock_upload_image, mock_s3):
         """Test that uploadedAt field is added to recipe."""
         self._setup_mocks(mock_s3, mock_upload_image)
@@ -74,8 +69,8 @@ class TestUploadTimestamp(unittest.TestCase):
         self.assertIn('uploadedAt', uploaded_recipe)
         self.assertIsInstance(uploaded_recipe['uploadedAt'], str)
 
-    @patch('upload.s3_client')
-    @patch('upload.upload_image')
+    @patch('backend.upload.s3_client')
+    @patch('backend.upload.upload_image')
     def test_uploaded_at_is_iso8601_format(self, mock_upload_image, mock_s3):
         """Test that uploadedAt timestamp uses ISO 8601 format."""
         self._setup_mocks(mock_s3, mock_upload_image)
@@ -97,8 +92,8 @@ class TestUploadTimestamp(unittest.TestCase):
         except ValueError as e:
             self.fail(f"uploadedAt is not valid ISO 8601 format: {e}")
 
-    @patch('upload.s3_client')
-    @patch('upload.upload_image')
+    @patch('backend.upload.s3_client')
+    @patch('backend.upload.upload_image')
     def test_uploaded_at_is_recent(self, mock_upload_image, mock_s3):
         """Test that uploadedAt timestamp is recent (within seconds of test execution)."""
         self._setup_mocks(mock_s3, mock_upload_image)
@@ -126,8 +121,8 @@ class TestUploadTimestamp(unittest.TestCase):
         self.assertGreaterEqual(parsed_timestamp, before_time,
                                 "Timestamp should not be in the past")
 
-    @patch('upload.s3_client')
-    @patch('upload.upload_image')
+    @patch('backend.upload.s3_client')
+    @patch('backend.upload.upload_image')
     def test_uploaded_at_uses_utc_timezone(self, mock_upload_image, mock_s3):
         """Test that uploadedAt timestamp uses UTC timezone."""
         self._setup_mocks(mock_s3, mock_upload_image)
@@ -148,8 +143,8 @@ class TestUploadTimestamp(unittest.TestCase):
         utc_offset = parsed_timestamp.utcoffset()
         self.assertEqual(utc_offset.total_seconds(), 0, "Timezone offset should be 0 (UTC)")
 
-    @patch('upload.s3_client')
-    @patch('upload.upload_image')
+    @patch('backend.upload.s3_client')
+    @patch('backend.upload.upload_image')
     def test_multiple_recipes_all_have_timestamp(self, mock_upload_image, mock_s3):
         """Test that all recipes in batch receive uploadedAt timestamp."""
         self._setup_mocks(mock_s3, mock_upload_image)

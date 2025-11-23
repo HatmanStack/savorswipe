@@ -32,7 +32,7 @@ class TestSearchImageModule(unittest.TestCase):
         mock_get.return_value = mock_response
 
         # Mock validate_image_urls to return all URLs as valid
-        mock_validate.side_effect = lambda urls, timeout=5: urls
+        mock_validate.side_effect = lambda urls, _timeout=5: urls
 
         # Test
         results = google_search_image('chocolate cookies', count=10)
@@ -57,7 +57,7 @@ class TestSearchImageModule(unittest.TestCase):
         mock_get.return_value = mock_response
 
         # Mock validate to return all URLs as valid
-        mock_validate.side_effect = lambda urls, timeout=5: urls
+        mock_validate.side_effect = lambda urls, _timeout=5: urls
 
         # Test with count=5
         results = google_search_image('test query', count=5)
@@ -217,7 +217,7 @@ class TestSearchImageModule(unittest.TestCase):
         mock_get.return_value = mock_response
 
         # Mock validate to return all URLs as valid
-        mock_validate.side_effect = lambda urls, timeout=5: urls
+        mock_validate.side_effect = lambda urls, _timeout=5: urls
 
         # Existing recipes using images 1-3
         json_data = {
