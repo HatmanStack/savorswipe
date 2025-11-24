@@ -456,7 +456,28 @@ Ensure tests pass with mocked AWS services (moto)
    * Update the replacement string
    * Update console.log messages to reference API Gateway
 
-3. **Test Script Locally (Dry Run)**
+3. **Add IncludeDevOrigins Parameter Support**
+   * Both scripts already support `--parameter-overrides` (lines 81-85 in deploy.sh)
+   * Add `INCLUDE_DEV_ORIGINS` to `.env.deploy` loading logic (optional variable)
+   * Add parameter to sam deploy command:
+     ```bash
+     # In backend/deploy.sh (add to existing parameter-overrides):
+     IncludeDevOrigins="${INCLUDE_DEV_ORIGINS:-false}"
+
+     # In scripts/deploy.js (add to parameterOverrides array):
+     IncludeDevOrigins: process.env.INCLUDE_DEV_ORIGINS || 'false'
+     ```
+   * Display the parameter value in console output for visibility:
+     ```bash
+     echo "  Include Dev Origins: ${INCLUDE_DEV_ORIGINS:-false}"
+     ```
+   * Document in `.env.deploy.example` (create if needed):
+     ```bash
+     # For local development, uncomment to allow localhost CORS origins:
+     # INCLUDE_DEV_ORIGINS=true
+     ```
+
+4. **Test Script Locally (Dry Run)**
    * Read through both scripts to identify all references
    * Use grep to find any missed occurrences:
      ```bash
@@ -466,7 +487,7 @@ Ensure tests pass with mocked AWS services (moto)
      ```
    * Ensure no old references remain
 
-4. **Update Script Comments**
+5. **Update Script Comments**
    * Update any comments referencing Function URLs
    * Update script description headers if they mention Function URLs
 
@@ -475,11 +496,16 @@ Ensure tests pass with mocked AWS services (moto)
 * [ ] `backend/deploy.sh` uses variable name `API_URL` or `API_GATEWAY_URL`
 * [ ] `backend/deploy.sh` echo message references API Gateway
 * [ ] `backend/deploy.sh` no references to "Function URL" or "FunctionUrl"
+* [ ] `backend/deploy.sh` passes `IncludeDevOrigins` parameter to sam deploy
+* [ ] `backend/deploy.sh` reads `INCLUDE_DEV_ORIGINS` from .env.deploy with default 'false'
+* [ ] `backend/deploy.sh` displays the IncludeDevOrigins value in console output
 * [ ] `scripts/deploy.js` queries for `ApiGatewayUrl` output
 * [ ] `scripts/deploy.js` uses variable name `apiGatewayUrl`
 * [ ] `scripts/deploy.js` updates `.env` with `EXPO_PUBLIC_API_GATEWAY_URL`
 * [ ] `scripts/deploy.js` console messages reference API Gateway
+* [ ] `scripts/deploy.js` passes `IncludeDevOrigins` parameter to sam deploy
 * [ ] `scripts/deploy.js` no references to "LAMBDA_FUNCTION_URL"
+* [ ] `.env.deploy.example` documents INCLUDE_DEV_ORIGINS with comment
 * [ ] Grep confirms no missed references in either script
 
 **Testing Instructions:**
@@ -504,11 +530,14 @@ Ensure tests pass with mocked AWS services (moto)
 Author & Commiter: HatmanStack
 Email: 82614182+HatmanStack@users.noreply.github.com
 
-chore(deploy): update deployment scripts for API Gateway URL
+chore(deploy): update deployment scripts for API Gateway URL and CORS parameter
 
 Update backend/deploy.sh to query ApiGatewayUrl output
 Update scripts/deploy.js to extract API Gateway URL
 Change .env variable from EXPO_PUBLIC_LAMBDA_FUNCTION_URL to EXPO_PUBLIC_API_GATEWAY_URL
+Add IncludeDevOrigins parameter support (read from INCLUDE_DEV_ORIGINS in .env.deploy)
+Display parameter value in console output for visibility
+Create .env.deploy.example documenting INCLUDE_DEV_ORIGINS option
 Update console messages to reference API Gateway
 Remove all references to Function URLs
 ```
@@ -890,10 +919,15 @@ Ensure CI tests run with correct env var from jest.setup.js
    * Check git status: all changes committed
 
 2. **Deploy to AWS**
+   * For production deployment:
+     * Ensure `INCLUDE_DEV_ORIGINS` is NOT set in `.env.deploy` (defaults to 'false')
+     * Or explicitly set: `INCLUDE_DEV_ORIGINS=false` in `.env.deploy`
+   * For local development deployment:
+     * Set `INCLUDE_DEV_ORIGINS=true` in `.env.deploy` to enable localhost CORS
    * Run deployment script: `cd backend && ./deploy.sh`
    * Or: `npm run deploy` (if configured)
    * Provide configuration when prompted (or use .env.deploy)
-   * Important: Set `IncludeDevOrigins=false` for production
+   * Verify script displays: "Include Dev Origins: false" (or true for dev)
    * Monitor deployment progress
    * Note the API Gateway URL from output
 

@@ -69,14 +69,16 @@ Use `$default` stage to produce cleaner URLs without stage prefix:
 Production only allows `https://savorswipe.hatstack.fun`. Local development requires localhost origins.
 
 **Decision:**
-Use CloudFormation parameter `IncludeDevOrigins` (default: true) to control CORS origins:
+Use CloudFormation parameter `IncludeDevOrigins` (default: false) to control CORS origins:
 * When true: Allow production + localhost:8081 + localhost:19006
 * When false: Allow only production origin
 
+Engineers set this parameter via `.env.deploy` file (`INCLUDE_DEV_ORIGINS=true` for local dev) which deployment scripts pass to SAM via `--parameter-overrides`.
+
 **Consequences:**
-* Positive: Easy local testing, one-line change to remove dev origins
-* Negative: Risk of accidentally deploying with dev origins enabled
-* Mitigation: Clear documentation, parameter default should be `false` for production
+* Positive: Easy local testing, explicit opt-in for dev origins, safe production default
+* Negative: Requires updating .env.deploy for local development
+* Mitigation: Clear documentation in deployment scripts and DEPLOYMENT.md
 
 ### ADR-005: Basic Rate Limiting Strategy
 
@@ -86,7 +88,7 @@ Use CloudFormation parameter `IncludeDevOrigins` (default: true) to control CORS
 API Gateway v2 supports throttling at the stage and route level. Need to balance abuse protection with legitimate usage.
 
 **Decision:**
-Conservative rate limits per IP/client:
+Conservative rate limits for the entire API stage (applies to ALL traffic, not per-IP):
 * Burst: 10 requests/second
 * Quota: 1,000 requests/day
 
@@ -480,8 +482,9 @@ DefaultRouteSettings:
 **Limitation:** If `IncludeDevOrigins: true` is accidentally deployed to production, localhost origins will be allowed (security risk).
 
 **Mitigation:**
-* Parameter default should be `false`
-* Deployment script should warn if true
+* Parameter defaults to `false` (safe by default)
+* Engineers must explicitly set `INCLUDE_DEV_ORIGINS=true` in `.env.deploy` for local development
+* Deployment scripts display the parameter value before deploying (visibility)
 * Document clearly in DEPLOYMENT.md
 
 ## Token Estimates
