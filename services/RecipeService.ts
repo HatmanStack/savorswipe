@@ -160,8 +160,9 @@ export class RecipeService {
 
     const endpoint = `${apiUrl}/recipe/${recipeKey}/image`;
 
-    try {
+    let timeoutId: NodeJS.Timeout | undefined;
 
+    try {
       const response = await Promise.race([
         fetch(endpoint, {
           method: 'POST',
@@ -170,9 +171,9 @@ export class RecipeService {
           },
           body: JSON.stringify({ imageUrl }),
         }),
-        new Promise<Response>((_, reject) =>
-          setTimeout(() => reject(new Error('Request timeout')), 30000)
-        ),
+        new Promise<Response>((_, reject) => {
+          timeoutId = setTimeout(() => reject(new Error('Request timeout')), 30000);
+        }),
       ]);
 
       if (!response.ok) {
@@ -197,9 +198,11 @@ export class RecipeService {
 
       // Return recipe with key attached
       return { ...result.recipe, key: recipeKey };
-    } catch (error) {
-
-      throw error;
+    } finally {
+      // Always clear timeout to prevent handle leaks
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
     }
   }
 
@@ -219,15 +222,16 @@ export class RecipeService {
 
     const endpoint = `${apiUrl}/recipe/${recipeKey}`;
 
-    try {
+    let timeoutId: NodeJS.Timeout | undefined;
 
+    try {
       const response = await Promise.race([
         fetch(endpoint, {
           method: 'DELETE',
         }),
-        new Promise<Response>((_, reject) =>
-          setTimeout(() => reject(new Error('Request timeout')), 30000)
-        ),
+        new Promise<Response>((_, reject) => {
+          timeoutId = setTimeout(() => reject(new Error('Request timeout')), 30000);
+        }),
       ]);
 
       if (!response.ok) {
@@ -248,9 +252,11 @@ export class RecipeService {
       }
 
       return true;
-    } catch (error) {
-
-      throw error;
+    } finally {
+      // Always clear timeout to prevent handle leaks
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
     }
   }
 }
