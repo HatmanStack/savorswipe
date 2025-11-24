@@ -9,6 +9,7 @@ Provides mocking infrastructure for:
 """
 
 import os
+import json
 import pytest
 from unittest.mock import MagicMock, patch
 from moto import mock_aws
@@ -122,6 +123,37 @@ def sample_recipes_with_images():
             "image_url": "https://example.com/image3.jpg",
         },
     }
+
+@pytest.fixture
+def build_apigw_event():
+    """
+    Factory fixture to build API Gateway v2 HTTP API events.
+    """
+    def _builder(method, path, path_params=None, headers=None, body=None):
+        if headers is None:
+            headers = {}
+
+        event = {
+            "requestContext": {
+                "http": {
+                    "method": method,
+                    "path": path,
+                }
+            },
+            "pathParameters": path_params or {},
+            "headers": headers
+        }
+
+        if body is not None:
+            # If body is a dict, serialize it to JSON string as APIGW does
+            if isinstance(body, (dict, list)):
+                event["body"] = json.dumps(body)
+            else:
+                event["body"] = body
+
+        return event
+
+    return _builder
 
 
 # Pytest configuration

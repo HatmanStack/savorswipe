@@ -3,7 +3,7 @@
 import '@testing-library/jest-native/extend-expect';
 
 // Set environment variables for tests - MUST be before any module imports in tests
-process.env.EXPO_PUBLIC_LAMBDA_FUNCTION_URL = 'https://placeholder-lambda-url.execute-api.us-east-1.amazonaws.com';
+process.env.EXPO_PUBLIC_API_GATEWAY_URL = 'https://placeholder-api-gateway-url.execute-api.us-east-1.amazonaws.com';
 process.env.EXPO_PUBLIC_CLOUDFRONT_BASE_URL = 'https://test-cloudfront.cloudfront.net';
 
 jest.mock('aws-sdk');
@@ -100,6 +100,7 @@ jest.mock('@expo/vector-icons', () => {
     SimpleLineIcons: Text,
     Zocial: Text,
     FontAwesome5: Text,
+    Frequencies: Text,
   };
 });
 

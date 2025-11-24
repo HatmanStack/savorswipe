@@ -23,6 +23,15 @@ Parameters:
     Description: S3 Bucket name for recipe storage
     Default: savorswipe-recipe
 
+  IncludeDevOrigins:
+    Type: String
+    Description: Whether to include localhost origins in CORS
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+
+Conditions:
+  IsDevMode: !Equals [!Ref IncludeDevOrigins, 'true']
+
 Resources:
   # Lambda Function
   RecipeProcessorFunction:
@@ -48,38 +57,84 @@ Resources:
                 - s3:GetObject
                 - s3:PutObject
               Resource: !Sub 'arn:aws:s3:::${S3BucketName}/*'
-      Events:
-        ApiEvent:
-          Type: HttpApi
-          Properties:
-            Path: /{proxy+}
-            Method: ANY
 
-  # Function URL (for direct HTTP access)
-  RecipeProcessorFunctionUrl:
-    Type: AWS::Lambda::Url
+  # API Gateway v2 HTTP API
+  HttpApi:
+    Type: AWS::ApiGatewayV2::Api
     Properties:
-      TargetFunctionArn: !GetAtt RecipeProcessorFunction.Arn
-      AuthType: NONE
-      Cors:
+      Name: savorswipe-api
+      ProtocolType: HTTP
+      CorsConfiguration:
         AllowOrigins:
-          - "*"
+          - 'https://savorswipe.hatstack.fun'
+          - !If [IsDevMode, 'http://localhost:8081', !Ref 'AWS::NoValue']
+          - !If [IsDevMode, 'http://localhost:19006', !Ref 'AWS::NoValue']
         AllowMethods:
           - GET
           - POST
           - DELETE
+          - OPTIONS
         AllowHeaders:
-          - "*"
+          - Content-Type
         MaxAge: 300
 
-  # Permission for Function URL
-  RecipeProcessorFunctionUrlPermission:
+  # API Gateway Stage
+  HttpApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref HttpApi
+      StageName: $default
+      AutoDeploy: true
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 10
+        ThrottlingRateLimit: 1000
+
+  # Lambda Integration
+  LambdaIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt RecipeProcessorFunction.Arn
+      PayloadFormatVersion: '2.0'
+
+  # Routes
+  GetRecipesRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'GET /recipes'
+      Target: !Sub 'integrations/${LambdaIntegration}'
+
+  PostRecipeUploadRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'POST /recipe/upload'
+      Target: !Sub 'integrations/${LambdaIntegration}'
+
+  DeleteRecipeRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'DELETE /recipe/{recipe_key}'
+      Target: !Sub 'integrations/${LambdaIntegration}'
+
+  PostRecipeImageRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'POST /recipe/{recipe_key}/image'
+      Target: !Sub 'integrations/${LambdaIntegration}'
+
+  # Lambda Permission for API Gateway
+  ApiGatewayInvokePermission:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !Ref RecipeProcessorFunction
-      Action: lambda:InvokeFunctionUrl
-      Principal: "*"
-      FunctionUrlAuthType: NONE
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*'
 
 Outputs:
   FunctionName:
@@ -94,8 +149,8 @@ Outputs:
     Export:
       Name: !Sub "${AWS::StackName}-FunctionArn"
 
-  FunctionUrl:
-    Description: Lambda Function URL
-    Value: !GetAtt RecipeProcessorFunctionUrl.FunctionUrl
+  ApiGatewayUrl:
+    Description: API Gateway URL
+    Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
     Export:
-      Name: !Sub "${AWS::StackName}-FunctionUrl"
+      Name: !Sub "${AWS::StackName}-ApiGatewayUrl"

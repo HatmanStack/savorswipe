@@ -5,7 +5,7 @@
 1. **Environment Variables**: Ensure `.env` file exists with:
    ```
    EXPO_PUBLIC_CLOUDFRONT_BASE_URL=your-cloudfront-url
-   EXPO_PUBLIC_LAMBDA_FUNCTION_URL=your-lambda-url
+   EXPO_PUBLIC_API_GATEWAY_URL=your-api-gateway-url
    ```
 
 2. **Lambda Deployment**: Backend Lambda must be deployed and accessible
@@ -55,15 +55,15 @@
 ### Images Don't Load in Grid
 - Check: Are URLs in `image_search_results` accessible?
 - Check: Network connectivity
-- Check: CORS configuration on Lambda Function URL
+- Check: CORS configuration on API Gateway
 
 ### Selection Fails
-- Check: Lambda endpoint `/recipe/{key}/image` is accessible
+- Check: API endpoint `/recipe/{key}/image` is accessible
 - Check: S3 bucket permissions allow image upload
 - Check: Check browser/app console for errors
 
 ### Delete Fails
-- Check: Lambda endpoint `/recipe/{key}` with DELETE method works
+- Check: API endpoint `/recipe/{key}` with DELETE method works
 - Check: S3 permissions allow file modification
 - Check: ETag-based atomic operations aren't being blocked
 

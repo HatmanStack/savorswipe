@@ -54,7 +54,7 @@ Image queue and preloading are now handled by the `useImageQueue` hook (see Swip
 ### Service Layer
 
 **RecipeService** (`services/RecipeService.ts`):
-- Fetches recipe data from S3 via CloudFront
+- Fetches recipe data from S3 via API Gateway/CloudFront
 - Filters recipes by meal type
 - Handles recipe randomization and shuffling
 - Manages recipe uploads for OCR processing
@@ -182,6 +182,7 @@ Located in `backend/` directory (Python):
 - Searches for recipe images via Google Custom Search
 - Uploads processed data and images to S3
 - Returns processed recipe JSON and search image
+- Deployed via SAM with API Gateway v2
 
 **OCR Processing** (`ocr.py`):
 - Extracts recipe data from images using OpenAI Vision
@@ -193,7 +194,7 @@ Located in `backend/` directory (Python):
 - Validates image URLs with HTTP HEAD requests before returning
 - Returns variable number of images (1-9) depending on availability after validation
 
-### Lambda API Endpoints
+### Lambda API Endpoints (API Gateway v2)
 
 **POST /recipe/upload** (Upload & Process Recipes):
 - Accepts: base64-encoded images (JPG, PNG) or PDFs in request body
@@ -239,7 +240,7 @@ Located in `backend/` directory (Python):
 
 **Upload Flow**:
 1. **Frontend**: User selects multiple files → UploadService creates job → returns immediately (non-blocking)
-2. **Background Processing**: Job queue processes sequentially → batch uploads to Lambda → per-job notifications
+2. **Background Processing**: Job queue processes sequentially → batch uploads to API Gateway → per-job notifications
 3. **Backend**: Parallel OCR (3 workers) → embedding generation → duplicate check (0.85 threshold) → atomic S3 write with retry
 4. **Queue Injection**: Auto-detect new recipes in RecipeContext → fetch images → inject at position 2 → retry logic for S3 eventual consistency
 
@@ -247,7 +248,7 @@ Located in `backend/` directory (Python):
 
 **UploadService** (`services/UploadService.ts`):
 - Job queue manager with sequential processing
-- Batch management (10 files per Lambda call)
+- Batch management (10 files per API call)
 - Progress tracking per job (completed, failed counts)
 - Subscriber pattern for status notifications
 - Per-job chunk tracking for large PDFs
@@ -297,7 +298,7 @@ Located in `backend/` directory (Python):
 
 **Job Queue System**:
 - Multiple uploads queue with pending status
-- Sequential processing (one Lambda invocation at a time)
+- Sequential processing (one API invocation at a time)
 - Per-job start notification: "Upload 1 of 3 started..."
 - Per-job completion: "Upload 2 complete: 5 recipes added, 2 failed"
 - State persists to AsyncStorage (survives app closure)
@@ -311,7 +312,7 @@ Located in `backend/` directory (Python):
 
 **Configuration**:
 - **Lambda**: 600s timeout, 1024 MB memory, 3 parallel workers (ThreadPoolExecutor)
-- **Batch Size**: 10 files per Lambda call (20 recipes max with 3 workers)
+- **Batch Size**: 10 files per API call (20 recipes max with 3 workers)
 - **Queue Size**: Max 30 images (prevents memory leaks)
 - **OpenAI Timeout**: 30s per OCR request
 - **Duplicate Threshold**: 0.85 cosine similarity
@@ -364,7 +365,7 @@ Located in `backend/` directory (Python):
 Frontend requires `.env` with:
 ```
 EXPO_PUBLIC_CLOUDFRONT_BASE_URL=<cloudfront distribution URL>
-EXPO_PUBLIC_LAMBDA_FUNCTION_URL=<lambda function URL>
+EXPO_PUBLIC_API_GATEWAY_URL=<api gateway URL>
 ```
 
 Backend Lambda requires:

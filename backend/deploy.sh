@@ -4,7 +4,7 @@ set -e
 cd "$(dirname "$0")"
 
 echo "==================================="
-echo "SavorSwipe Lambda Deployment"
+echo "SavorSwipe API Gateway Deployment"
 echo "==================================="
 echo ""
 
@@ -50,12 +50,16 @@ if [ -z "$GOOGLE_SEARCH_KEY" ]; then
     exit 1
 fi
 
+# Include Dev Origins parameter
+IncludeDevOrigins="${INCLUDE_DEV_ORIGINS:-false}"
+
 echo ""
 echo "Using configuration:"
 echo "  Region: $AWS_REGION"
 echo "  OpenAI Key: ${OPENAI_KEY:0:8}..."
 echo "  Google Search ID: ${GOOGLE_SEARCH_ID:0:8}..."
 echo "  Google Search Key: ${GOOGLE_SEARCH_KEY:0:8}..."
+echo "  Include Dev Origins: $IncludeDevOrigins"
 echo ""
 
 echo ""
@@ -83,6 +87,7 @@ sam deploy \
         GoogleSearchId="$GOOGLE_SEARCH_ID" \
         GoogleSearchKey="$GOOGLE_SEARCH_KEY" \
         S3BucketName="savorswipe-recipe" \
+        IncludeDevOrigins="$IncludeDevOrigins" \
     --no-confirm-changeset
 
 echo ""
@@ -91,15 +96,15 @@ echo "Deployment Complete!"
 echo "==================================="
 echo ""
 
-# Get Function URL
-FUNCTION_URL=$(aws cloudformation describe-stacks \
+# Get API Gateway URL
+API_URL=$(aws cloudformation describe-stacks \
     --stack-name savorswipe-lambda \
     --region "$AWS_REGION" \
-    --query 'Stacks[0].Outputs[?OutputKey==`FunctionUrl`].OutputValue' \
+    --query 'Stacks[0].Outputs[?OutputKey==`ApiGatewayUrl`].OutputValue' \
     --output text)
 
-echo "Lambda Function URL:"
-echo "$FUNCTION_URL"
+echo "API Gateway URL:"
+echo "$API_URL"
 echo ""
 echo "Add this to your .env file:"
-echo "EXPO_PUBLIC_LAMBDA_FUNCTION_URL=$FUNCTION_URL"
+echo "EXPO_PUBLIC_API_GATEWAY_URL=$API_URL"

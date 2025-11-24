@@ -24,14 +24,14 @@ export class RecipeService {
    * This bypasses CloudFront cache to ensure fresh data
    */
   static async getRecipesFromS3(): Promise<S3JsonData> {
-    const lambdaUrl = process.env.EXPO_PUBLIC_LAMBDA_FUNCTION_URL;
+    const apiUrl = process.env.EXPO_PUBLIC_API_GATEWAY_URL;
 
-    if (!lambdaUrl) {
-      throw new Error('EXPO_PUBLIC_LAMBDA_FUNCTION_URL environment variable not set');
+    if (!apiUrl) {
+      throw new Error('EXPO_PUBLIC_API_GATEWAY_URL environment variable not set');
     }
 
     try {
-      const response = await fetch(lambdaUrl, {
+      const response = await fetch(`${apiUrl}/recipes`, {
         method: 'GET',
       });
 
@@ -39,7 +39,7 @@ export class RecipeService {
 
         const errorText = await response.text();
 
-        throw new Error(`Failed to fetch JSON from Lambda. Status: ${response.status}`);
+        throw new Error(`Failed to fetch JSON from API. Status: ${response.status}`);
       }
 
       const data = await response.json();
@@ -152,13 +152,13 @@ export class RecipeService {
    * @throws Error if network request fails or recipe not found
    */
   static async selectRecipeImage(recipeKey: string, imageUrl: string): Promise<Recipe> {
-    const lambdaUrl = process.env.EXPO_PUBLIC_LAMBDA_FUNCTION_URL;
+    const apiUrl = process.env.EXPO_PUBLIC_API_GATEWAY_URL;
 
-    if (!lambdaUrl) {
-      throw new Error('EXPO_PUBLIC_LAMBDA_FUNCTION_URL environment variable not set');
+    if (!apiUrl) {
+      throw new Error('EXPO_PUBLIC_API_GATEWAY_URL environment variable not set');
     }
 
-    const endpoint = `${lambdaUrl}/recipe/${recipeKey}/image`;
+    const endpoint = `${apiUrl}/recipe/${recipeKey}/image`;
 
     try {
 
@@ -211,13 +211,13 @@ export class RecipeService {
    * @throws Error if network request fails or recipe not found
    */
   static async deleteRecipe(recipeKey: string): Promise<boolean> {
-    const lambdaUrl = process.env.EXPO_PUBLIC_LAMBDA_FUNCTION_URL;
+    const apiUrl = process.env.EXPO_PUBLIC_API_GATEWAY_URL;
 
-    if (!lambdaUrl) {
-      throw new Error('EXPO_PUBLIC_LAMBDA_FUNCTION_URL environment variable not set');
+    if (!apiUrl) {
+      throw new Error('EXPO_PUBLIC_API_GATEWAY_URL environment variable not set');
     }
 
-    const endpoint = `${lambdaUrl}/recipe/${recipeKey}`;
+    const endpoint = `${apiUrl}/recipe/${recipeKey}`;
 
     try {
 

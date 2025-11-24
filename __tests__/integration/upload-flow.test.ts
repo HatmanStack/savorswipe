@@ -43,7 +43,7 @@ describe('Upload Flow Integration', () => {
     UploadService['currentJobId'] = null
     UploadService['isProcessing'] = false
     UploadService['subscribers'] = new Set()
-    UploadService._setTestLambdaUrl('https://mock-lambda-url.com')
+    UploadService._setTestApiUrl('https://mock-api-url.com')
 
     // Mock useRecipe hook
     ;(useRecipe as jest.Mock).mockReturnValue({
@@ -90,7 +90,7 @@ describe('Upload Flow Integration', () => {
   })
 
   afterEach(() => {
-    UploadService._setTestLambdaUrl(null)
+    UploadService._setTestApiUrl(null)
   })
 
   describe('test_complete_upload_flow_single_file', () => {
@@ -150,7 +150,7 @@ describe('Upload Flow Integration', () => {
       // Verify fetch was called correctly
       expect(global.fetch).toHaveBeenCalledTimes(1)
       expect(global.fetch).toHaveBeenCalledWith(
-        'https://mock-lambda-url.com',
+        'https://mock-api-url.com/recipe/upload',
         expect.objectContaining({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
