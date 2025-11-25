@@ -1,6 +1,6 @@
 # SavorSwipe Deployment Guide
 
-This guide explains how to deploy the SavorSwipe backend Lambda function to AWS.
+This guide explains how to deploy the SavorSwipe backend Lambda function and API Gateway to AWS.
 
 ## Prerequisites
 
@@ -22,8 +22,8 @@ The script will:
 2. Save your configuration to `backend/.env.deploy` for future deployments
 3. Generate `backend/samconfig.toml` with deployment parameters
 4. Build the Lambda function using Docker
-5. Deploy to AWS using SAM
-6. Update your `.env` file with the Lambda Function URL
+5. Deploy to AWS using SAM (creating/updating API Gateway)
+6. Update your `.env` file with the API Gateway URL
 
 ## Configuration
 
@@ -56,7 +56,7 @@ The project uses two environment files:
 
 2. **`.env`** (project root)
    - Contains frontend environment variables
-   - Automatically updated by deployment script with Lambda Function URL
+   - Automatically updated by deployment script with API Gateway URL
    - **Not committed to Git** (in `.gitignore`)
 
 Example `.env.deploy`:
@@ -65,13 +65,25 @@ AWS_REGION=us-west-2
 OPENAI_KEY=sk-...
 GOOGLE_SEARCH_ID=...
 GOOGLE_SEARCH_KEY=...
+# Optional: Include dev origins for local testing
+INCLUDE_DEV_ORIGINS=true
 ```
 
 Example `.env` (auto-updated):
 ```bash
 EXPO_PUBLIC_CLOUDFRONT_BASE_URL=https://your-cloudfront-url.cloudfront.net
-EXPO_PUBLIC_LAMBDA_FUNCTION_URL=https://your-lambda-url.lambda-url.us-west-2.on.aws/
+EXPO_PUBLIC_API_GATEWAY_URL=https://your-api-url.execute-api.us-west-2.amazonaws.com
 ```
+
+### Local Development CORS
+
+By default, the API only allows requests from the production domain. For local development, you can enable localhost CORS origins:
+
+1. Edit `backend/.env.deploy`
+2. Set `INCLUDE_DEV_ORIGINS=true`
+3. Run `npm run deploy` to update the stack
+
+**Warning**: Remember to set this back to `false` (or remove it) for production deployments.
 
 ## Deployment Persistence
 
@@ -109,8 +121,8 @@ This ensures:
 
 After deployment, the script automatically:
 
-1. Retrieves the Lambda Function URL from CloudFormation outputs
-2. Updates your `.env` file with `EXPO_PUBLIC_LAMBDA_FUNCTION_URL`
+1. Retrieves the API Gateway URL from CloudFormation outputs
+2. Updates your `.env` file with `EXPO_PUBLIC_API_GATEWAY_URL`
 3. Displays the URL in the terminal
 
 You can manually retrieve outputs with:
@@ -190,7 +202,7 @@ This script:
 - Loads from `.env.deploy`
 - Prompts for missing values
 - Runs `sam build` and `sam deploy`
-- Prints the Function URL (manual `.env` update required)
+- Prints the API Gateway URL (manual `.env` update required)
 
 **Note**: The Node.js script (`npm run deploy`) is recommended as it provides automatic `.env` updates and better integration with the npm workflow.
 
@@ -198,16 +210,20 @@ This script:
 
 After successful deployment:
 
-1. ✅ `.env` file is updated with Lambda Function URL
+1. ✅ `.env` file is updated with API Gateway URL
 2. ✅ Run `npm start` to start the Expo development server
-3. ✅ The app will automatically use the deployed Lambda function
+3. ✅ The app will automatically use the deployed API Gateway
 
 ## Architecture
 
 The deployment creates:
 
 - **Lambda Function**: Python-based recipe processing (OCR, image search)
-- **Function URL**: HTTPS endpoint for frontend API calls
+- **API Gateway v2**: HTTP API with explicit routes:
+  - `GET /recipes`
+  - `POST /recipe/upload`
+  - `DELETE /recipe/{recipe_key}`
+  - `POST /recipe/{recipe_key}/image`
 - **CloudWatch Logs**: Automatic logging for debugging
 - **S3 Bucket**: Stores recipe images and metadata (`savorswipe-recipe`)
 
@@ -223,6 +239,6 @@ The Lambda function has permissions to:
 - `.env.deploy` is in `.gitignore` (never committed)
 - `samconfig.toml` contains no secrets and is safe to commit
 - Secrets are only stored in `.env.deploy` (local) and passed at deploy time via `--parameter-overrides`
-- Function URL uses CORS to restrict frontend origins (configurable in `template.yaml`)
+- API Gateway uses CORS to restrict frontend origins (configurable in `template.yaml`)
 
 **Important:** Never manually edit `samconfig.toml` to add `parameter_overrides` with secret values. The deployment script passes secrets securely via CLI.

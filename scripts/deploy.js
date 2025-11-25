@@ -7,7 +7,7 @@
  * 1. Prompts for AWS region and API keys (or loads from .env.deploy)
  * 2. Saves configuration to samconfig.toml for persistence
  * 3. Runs sam build and sam deploy
- * 4. Captures stack outputs (Function URL)
+ * 4. Captures stack outputs (API Gateway URL)
  * 5. Updates .env file automatically
  */
 
@@ -97,7 +97,7 @@ function loadEnvDeploy() {
 
 // Save configuration to .env.deploy
 function saveEnvDeploy(config) {
-  const content = `# AWS Region
+  let content = `# AWS Region
 AWS_REGION=${config.AWS_REGION}
 
 # OpenAI API Key
@@ -107,6 +107,10 @@ OPENAI_KEY=${config.OPENAI_KEY}
 GOOGLE_SEARCH_ID=${config.GOOGLE_SEARCH_ID}
 GOOGLE_SEARCH_KEY=${config.GOOGLE_SEARCH_KEY}
 `;
+
+  if (config.INCLUDE_DEV_ORIGINS) {
+      content += `\n# Include Dev Origins\nINCLUDE_DEV_ORIGINS=${config.INCLUDE_DEV_ORIGINS}\n`;
+  }
 
   fs.writeFileSync(ENV_DEPLOY_PATH, content);
   console.log('✓ Configuration saved to .env.deploy\n');
@@ -139,8 +143,8 @@ confirm_changeset = false
   console.log('✓ Generated samconfig.toml (secrets passed separately at deploy time)\n');
 }
 
-// Update .env file with function URL
-function updateEnvFile(functionUrl) {
+// Update .env file with API Gateway URL
+function updateEnvFile(apiGatewayUrl) {
   let envContent = '';
 
   // Read existing .env if it exists
@@ -148,22 +152,29 @@ function updateEnvFile(functionUrl) {
     envContent = fs.readFileSync(ENV_PATH, 'utf8');
   }
 
-  // Check if EXPO_PUBLIC_LAMBDA_FUNCTION_URL exists
-  const lambdaUrlPattern = /^EXPO_PUBLIC_LAMBDA_FUNCTION_URL=.*/m;
+  // Check if EXPO_PUBLIC_API_GATEWAY_URL exists
+  const apiUrlPattern = /^EXPO_PUBLIC_API_GATEWAY_URL=.*/m;
+  const oldLambdaUrlPattern = /^EXPO_PUBLIC_LAMBDA_FUNCTION_URL=.*/m;
 
-  if (lambdaUrlPattern.test(envContent)) {
+  if (apiUrlPattern.test(envContent)) {
     // Update existing entry
     envContent = envContent.replace(
-      lambdaUrlPattern,
-      `EXPO_PUBLIC_LAMBDA_FUNCTION_URL=${functionUrl}`
+      apiUrlPattern,
+      `EXPO_PUBLIC_API_GATEWAY_URL=${apiGatewayUrl}`
     );
+  } else if (oldLambdaUrlPattern.test(envContent)) {
+      // Replace old lambda url with new api url key
+      envContent = envContent.replace(
+        oldLambdaUrlPattern,
+        `EXPO_PUBLIC_API_GATEWAY_URL=${apiGatewayUrl}`
+      );
   } else {
     // Add new entry
-    envContent += `\nEXPO_PUBLIC_LAMBDA_FUNCTION_URL=${functionUrl}\n`;
+    envContent += `\nEXPO_PUBLIC_API_GATEWAY_URL=${apiGatewayUrl}\n`;
   }
 
   fs.writeFileSync(ENV_PATH, envContent);
-  console.log(`✓ Updated .env with Function URL: ${functionUrl}\n`);
+  console.log(`✓ Updated .env with API Gateway URL: ${apiGatewayUrl}\n`);
 }
 
 // Execute shell command and stream output
@@ -197,7 +208,7 @@ function getStackOutputs(stackName, region) {
 // Main deployment flow
 async function deploy() {
   console.log('===================================');
-  console.log('SavorSwipe Lambda Deployment');
+  console.log('SavorSwipe API Gateway Deployment');
   console.log('===================================\n');
 
   // Load existing configuration
@@ -240,6 +251,11 @@ async function deploy() {
     process.exit(1);
   }
 
+  // Dev Origins config (optional)
+  if (!config.INCLUDE_DEV_ORIGINS) {
+      config.INCLUDE_DEV_ORIGINS = 'false';
+  }
+
   rl.close();
 
   // Display configuration
@@ -247,7 +263,8 @@ async function deploy() {
   console.log(`  Region: ${config.AWS_REGION}`);
   console.log(`  OpenAI Key: ${config.OPENAI_KEY.substring(0, 8)}...`);
   console.log(`  Google Search ID: ${config.GOOGLE_SEARCH_ID.substring(0, 8)}...`);
-  console.log(`  Google Search Key: ${config.GOOGLE_SEARCH_KEY.substring(0, 8)}...\n`);
+  console.log(`  Google Search Key: ${config.GOOGLE_SEARCH_KEY.substring(0, 8)}...`);
+  console.log(`  Include Dev Origins: ${config.INCLUDE_DEV_ORIGINS}\n`);
 
   // Save configuration
   saveEnvDeploy(config);
@@ -271,31 +288,31 @@ async function deploy() {
 
   // Deploy to AWS (pass secrets via CLI, not samconfig.toml)
   console.log('\nDeploying to AWS...\n');
-  const paramOverrides = `OpenAIApiKey="${config.OPENAI_KEY}" GoogleSearchId="${config.GOOGLE_SEARCH_ID}" GoogleSearchKey="${config.GOOGLE_SEARCH_KEY}" S3BucketName="savorswipe-recipe"`;
+  const paramOverrides = `OpenAIApiKey="${config.OPENAI_KEY}" GoogleSearchId="${config.GOOGLE_SEARCH_ID}" GoogleSearchKey="${config.GOOGLE_SEARCH_KEY}" S3BucketName="savorswipe-recipe" IncludeDevOrigins="${config.INCLUDE_DEV_ORIGINS}"`;
   execCommand(`sam deploy --parameter-overrides ${paramOverrides}`);
 
-  // Get Function URL from stack outputs
+  // Get API Gateway URL from stack outputs
   console.log('\nRetrieving stack outputs...\n');
   const outputs = getStackOutputs('savorswipe-lambda', config.AWS_REGION);
 
-  const functionUrlOutput = outputs.find(o => o.OutputKey === 'FunctionUrl');
-  if (!functionUrlOutput) {
-    console.error('✗ Could not find FunctionUrl in stack outputs');
+  const apiGatewayUrlOutput = outputs.find(o => o.OutputKey === 'ApiGatewayUrl');
+  if (!apiGatewayUrlOutput) {
+    console.error('✗ Could not find ApiGatewayUrl in stack outputs');
     process.exit(1);
   }
 
-  const functionUrl = functionUrlOutput.OutputValue;
+  const apiGatewayUrl = apiGatewayUrlOutput.OutputValue;
 
   // Update .env file
-  updateEnvFile(functionUrl);
+  updateEnvFile(apiGatewayUrl);
 
   console.log('===================================');
   console.log('Deployment Complete!');
   console.log('===================================\n');
-  console.log(`Lambda Function URL: ${functionUrl}\n`);
+  console.log(`API Gateway URL: ${apiGatewayUrl}\n`);
   console.log('Next steps:');
   console.log('  1. Run "npm start" to start the development server');
-  console.log('  2. The app will use the updated Lambda URL\n');
+  console.log('  2. The app will use the updated API Gateway URL\n');
 }
 
 // Run deployment

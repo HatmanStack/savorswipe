@@ -2,7 +2,7 @@ import { RecipeService, isNewRecipe } from '../RecipeService';
 import type { S3JsonData, Recipe } from '@/types';
 
 // Mock environment variables
-const MOCK_LAMBDA_URL = 'https://test-lambda.execute-api.us-east-1.amazonaws.com';
+const MOCK_API_URL = 'https://test-api.execute-api.us-east-1.amazonaws.com';
 
 describe('RecipeService', () => {
   beforeEach(() => {
@@ -10,19 +10,19 @@ describe('RecipeService', () => {
     global.fetch = jest.fn();
 
     // Use Object.defineProperty for env vars to ensure it persists
-    Object.defineProperty(process.env, 'EXPO_PUBLIC_LAMBDA_FUNCTION_URL', {
-      value: MOCK_LAMBDA_URL,
+    Object.defineProperty(process.env, 'EXPO_PUBLIC_API_GATEWAY_URL', {
+      value: MOCK_API_URL,
       configurable: true,
     });
   });
 
   afterEach(() => {
     jest.resetAllMocks();
-    delete process.env.EXPO_PUBLIC_LAMBDA_FUNCTION_URL;
+    delete process.env.EXPO_PUBLIC_API_GATEWAY_URL;
   });
 
   describe('getRecipesFromS3', () => {
-    it('should fetch recipes from Lambda URL', async () => {
+    it('should fetch recipes from API URL', async () => {
       // Arrange
       const mockRecipes: S3JsonData = {
         'recipe-1': {
@@ -42,7 +42,7 @@ describe('RecipeService', () => {
 
       // Assert
       expect(global.fetch).toHaveBeenCalledWith(
-        MOCK_LAMBDA_URL,
+        `${MOCK_API_URL}/recipes`,
         {
           method: 'GET',
         }
@@ -50,13 +50,13 @@ describe('RecipeService', () => {
       expect(result).toEqual(mockRecipes);
     });
 
-    it('should throw error when LAMBDA_FUNCTION_URL not set', async () => {
+    it('should throw error when API_GATEWAY_URL not set', async () => {
       // Arrange
-      delete process.env.EXPO_PUBLIC_LAMBDA_FUNCTION_URL;
+      delete process.env.EXPO_PUBLIC_API_GATEWAY_URL;
 
       // Act & Assert
       await expect(RecipeService.getRecipesFromS3()).rejects.toThrow(
-        'EXPO_PUBLIC_LAMBDA_FUNCTION_URL environment variable not set'
+        'EXPO_PUBLIC_API_GATEWAY_URL environment variable not set'
       );
 
       expect(global.fetch).not.toHaveBeenCalled();
@@ -73,7 +73,7 @@ describe('RecipeService', () => {
 
       // Act & Assert
       await expect(RecipeService.getRecipesFromS3()).rejects.toThrow(
-        'Failed to fetch JSON from Lambda. Status: 500'
+        'Failed to fetch JSON from API. Status: 500'
       );
     });
 
@@ -381,7 +381,7 @@ describe('RecipeService', () => {
 
       // Assert
       expect(global.fetch).toHaveBeenCalledWith(
-        `${MOCK_LAMBDA_URL}/recipe/${recipeKey}/image`,
+        `${MOCK_API_URL}/recipe/${recipeKey}/image`,
         expect.objectContaining({
           method: 'POST',
           headers: {
@@ -440,14 +440,14 @@ describe('RecipeService', () => {
       );
     });
 
-    it('should throw error when LAMBDA_FUNCTION_URL not set', async () => {
+    it('should throw error when API_GATEWAY_URL not set', async () => {
       // Arrange
-      delete process.env.EXPO_PUBLIC_LAMBDA_FUNCTION_URL;
+      delete process.env.EXPO_PUBLIC_API_GATEWAY_URL;
 
       // Act & Assert
       await expect(
         RecipeService.selectRecipeImage('test-recipe', 'https://example.com/image.jpg')
-      ).rejects.toThrow('EXPO_PUBLIC_LAMBDA_FUNCTION_URL environment variable not set');
+      ).rejects.toThrow('EXPO_PUBLIC_API_GATEWAY_URL environment variable not set');
 
       expect(global.fetch).not.toHaveBeenCalled();
     });
@@ -509,7 +509,7 @@ describe('RecipeService', () => {
 
       // Assert
       expect(global.fetch).toHaveBeenCalledWith(
-        `${MOCK_LAMBDA_URL}/recipe/${recipeKey}`,
+        `${MOCK_API_URL}/recipe/${recipeKey}`,
         expect.objectContaining({
           method: 'DELETE',
         })
@@ -541,13 +541,13 @@ describe('RecipeService', () => {
       await expect(RecipeService.deleteRecipe(recipeKey)).rejects.toThrow('Network error');
     });
 
-    it('should throw error when LAMBDA_FUNCTION_URL not set', async () => {
+    it('should throw error when API_GATEWAY_URL not set', async () => {
       // Arrange
-      delete process.env.EXPO_PUBLIC_LAMBDA_FUNCTION_URL;
+      delete process.env.EXPO_PUBLIC_API_GATEWAY_URL;
 
       // Act & Assert
       await expect(RecipeService.deleteRecipe('test-recipe')).rejects.toThrow(
-        'EXPO_PUBLIC_LAMBDA_FUNCTION_URL environment variable not set'
+        'EXPO_PUBLIC_API_GATEWAY_URL environment variable not set'
       );
 
       expect(global.fetch).not.toHaveBeenCalled();

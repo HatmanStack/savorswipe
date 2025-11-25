@@ -17,7 +17,7 @@ import { UploadPersistence } from './UploadPersistence'
 
 export class UploadService {
   private static BATCH_SIZE: number = 10
-  private static _testLambdaUrl: string | null = null // For testing purposes
+  private static _testApiUrl: string | null = null // For testing purposes
 
   // Job queue state
   private static jobQueue: UploadJob[] = []
@@ -26,11 +26,11 @@ export class UploadService {
   private static isProcessing: boolean = false
 
   /**
-   * Test-only method to set Lambda URL
+   * Test-only method to set API URL
    * @internal
    */
-  static _setTestLambdaUrl(url: string | null): void {
-    this._testLambdaUrl = url
+  static _setTestApiUrl(url: string | null): void {
+    this._testApiUrl = url
   }
 
   /**
@@ -171,7 +171,7 @@ export class UploadService {
 
   /**
    * Process a single job
-   * Splits files into batches and calls Lambda for each batch
+   * Splits files into batches and calls API for each batch
    */
   private static async processJob(job: UploadJob): Promise<void> {
     const totalBatches = Math.ceil(job.files.length / this.BATCH_SIZE)
@@ -192,8 +192,8 @@ export class UploadService {
       const batch = job.files.slice(batchStart, batchEnd)
 
       try {
-        // Call Lambda for this batch
-        const result = await this.callLambda(job, batch)
+        // Call API for this batch
+        const result = await this.callApi(job, batch)
 
         // Merge result into aggregated result
         aggregatedResult.successCount += result.successCount
@@ -244,13 +244,19 @@ export class UploadService {
   }
 
   /**
-   * Call Lambda function with batch of files
+   * Call API with batch of files
    */
-  private static async callLambda(job: UploadJob, files: UploadFile[]): Promise<UploadResult> {
-    const LAMBDA_URL = this._testLambdaUrl || process.env.EXPO_PUBLIC_LAMBDA_FUNCTION_URL
-    if (!LAMBDA_URL) {
-      throw new Error('EXPO_PUBLIC_LAMBDA_FUNCTION_URL is not configured')
+  private static async callApi(job: UploadJob, files: UploadFile[]): Promise<UploadResult> {
+    const rawApiUrl = this._testApiUrl || process.env.EXPO_PUBLIC_API_GATEWAY_URL
+    if (!rawApiUrl) {
+      throw new Error('EXPO_PUBLIC_API_GATEWAY_URL is not configured')
     }
+
+    // Normalize URL to prevent double-slash issues
+    const API_URL = rawApiUrl.replace(/\/+$/, '')
+
+    // Use the upload route
+    const endpoint = `${API_URL}/recipe/upload`
 
     const payload = {
       files: files.map((f) => ({
@@ -260,7 +266,7 @@ export class UploadService {
       jobId: job.id,
     }
 
-    const response = await fetch(LAMBDA_URL, {
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -269,7 +275,7 @@ export class UploadService {
     })
 
     if (!response.ok) {
-      throw new Error(`Lambda function returned status ${response.status}`)
+      throw new Error(`API returned status ${response.status}`)
     }
 
     const result = await response.json()

@@ -515,7 +515,7 @@ class TestLambdaGetRequest(unittest.TestCase):
             }
 
             # Act
-            result = handle_get_request(event, None, origin='https://savorswipe.hatstack.fun')
+            result = handle_get_request(event, None)
 
             # Assert
             self.assertEqual(result['statusCode'], 200)
@@ -524,7 +524,7 @@ class TestLambdaGetRequest(unittest.TestCase):
                              'no-cache, no-store, must-revalidate')
             self.assertEqual(result['headers']['Pragma'], 'no-cache')
             self.assertEqual(result['headers']['Expires'], '0')
-            self.assertIn('Access-Control-Allow-Origin', result['headers'])
+            # CORS headers now handled by API Gateway, not Lambda
 
             body = result['body']
             self.assertIn('recipe-1', body)
@@ -560,7 +560,7 @@ class TestLambdaGetRequest(unittest.TestCase):
             }
 
             # Act
-            result = handle_get_request(event, None, origin=None)
+            result = handle_get_request(event, None)
 
             # Assert
             self.assertEqual(result['statusCode'], 404)
@@ -588,7 +588,7 @@ class TestLambdaGetRequest(unittest.TestCase):
             }
 
             # Act
-            result = handle_get_request(event, None, origin=None)
+            result = handle_get_request(event, None)
 
             # Assert
             self.assertEqual(result['statusCode'], 500)
@@ -610,7 +610,7 @@ class TestLambdaGetRequest(unittest.TestCase):
             }
 
             # Act
-            result = handle_get_request(event, None, origin=None)
+            result = handle_get_request(event, None)
 
             # Assert
             self.assertEqual(result['statusCode'], 500)
@@ -639,7 +639,7 @@ class TestLambdaRouting(unittest.TestCase):
         result = lambda_handler(event, None)
 
         # Assert
-        mock_get_handler.assert_called_once_with(event, None, None)
+        mock_get_handler.assert_called_once_with(event, None)
         self.assertEqual(result['statusCode'], 200)
 
     @patch('lambda_function.handle_post_request')
@@ -661,7 +661,7 @@ class TestLambdaRouting(unittest.TestCase):
         result = lambda_handler(event, None)
 
         # Assert
-        mock_post_handler.assert_called_once_with(event, None, None)
+        mock_post_handler.assert_called_once_with(event, None)
         self.assertEqual(result['statusCode'], 200)
 
     @patch('lambda_function.handle_post_request')
@@ -678,7 +678,7 @@ class TestLambdaRouting(unittest.TestCase):
         result = lambda_handler(event, None)
 
         # Assert
-        mock_post_handler.assert_called_once_with(event, None, None)
+        mock_post_handler.assert_called_once_with(event, None)
         self.assertEqual(result['statusCode'], 400)
 
 

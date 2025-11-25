@@ -2,6 +2,14 @@ import { Recipe, S3JsonData, UploadResponse, MealType } from '@/types';
 
 const CLOUDFRONT_BASE_URL = process.env.EXPO_PUBLIC_CLOUDFRONT_BASE_URL;
 
+/**
+ * Normalizes a URL by removing trailing slashes
+ * Prevents double-slash issues when constructing endpoints
+ */
+function normalizeUrl(url: string): string {
+  return url.replace(/\/+$/, '');
+}
+
 export class RecipeService {
   /**
    * Loads the bundled local recipe data from assets
@@ -24,14 +32,16 @@ export class RecipeService {
    * This bypasses CloudFront cache to ensure fresh data
    */
   static async getRecipesFromS3(): Promise<S3JsonData> {
-    const lambdaUrl = process.env.EXPO_PUBLIC_LAMBDA_FUNCTION_URL;
+    const rawApiUrl = process.env.EXPO_PUBLIC_API_GATEWAY_URL;
 
-    if (!lambdaUrl) {
-      throw new Error('EXPO_PUBLIC_LAMBDA_FUNCTION_URL environment variable not set');
+    if (!rawApiUrl) {
+      throw new Error('EXPO_PUBLIC_API_GATEWAY_URL environment variable not set');
     }
 
+    const apiUrl = normalizeUrl(rawApiUrl);
+
     try {
-      const response = await fetch(lambdaUrl, {
+      const response = await fetch(`${apiUrl}/recipes`, {
         method: 'GET',
       });
 
@@ -39,7 +49,7 @@ export class RecipeService {
 
         const errorText = await response.text();
 
-        throw new Error(`Failed to fetch JSON from Lambda. Status: ${response.status}`);
+        throw new Error(`Failed to fetch JSON from API. Status: ${response.status}`);
       }
 
       const data = await response.json();
@@ -152,16 +162,18 @@ export class RecipeService {
    * @throws Error if network request fails or recipe not found
    */
   static async selectRecipeImage(recipeKey: string, imageUrl: string): Promise<Recipe> {
-    const lambdaUrl = process.env.EXPO_PUBLIC_LAMBDA_FUNCTION_URL;
+    const rawApiUrl = process.env.EXPO_PUBLIC_API_GATEWAY_URL;
 
-    if (!lambdaUrl) {
-      throw new Error('EXPO_PUBLIC_LAMBDA_FUNCTION_URL environment variable not set');
+    if (!rawApiUrl) {
+      throw new Error('EXPO_PUBLIC_API_GATEWAY_URL environment variable not set');
     }
 
-    const endpoint = `${lambdaUrl}/recipe/${recipeKey}/image`;
+    const apiUrl = normalizeUrl(rawApiUrl);
+    const endpoint = `${apiUrl}/recipe/${recipeKey}/image`;
+
+    let timeoutId: NodeJS.Timeout | undefined;
 
     try {
-
       const response = await Promise.race([
         fetch(endpoint, {
           method: 'POST',
@@ -170,9 +182,9 @@ export class RecipeService {
           },
           body: JSON.stringify({ imageUrl }),
         }),
-        new Promise<Response>((_, reject) =>
-          setTimeout(() => reject(new Error('Request timeout')), 30000)
-        ),
+        new Promise<Response>((_, reject) => {
+          timeoutId = setTimeout(() => reject(new Error('Request timeout')), 30000);
+        }),
       ]);
 
       if (!response.ok) {
@@ -197,9 +209,11 @@ export class RecipeService {
 
       // Return recipe with key attached
       return { ...result.recipe, key: recipeKey };
-    } catch (error) {
-
-      throw error;
+    } finally {
+      // Always clear timeout to prevent handle leaks
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
     }
   }
 
@@ -211,23 +225,25 @@ export class RecipeService {
    * @throws Error if network request fails or recipe not found
    */
   static async deleteRecipe(recipeKey: string): Promise<boolean> {
-    const lambdaUrl = process.env.EXPO_PUBLIC_LAMBDA_FUNCTION_URL;
+    const rawApiUrl = process.env.EXPO_PUBLIC_API_GATEWAY_URL;
 
-    if (!lambdaUrl) {
-      throw new Error('EXPO_PUBLIC_LAMBDA_FUNCTION_URL environment variable not set');
+    if (!rawApiUrl) {
+      throw new Error('EXPO_PUBLIC_API_GATEWAY_URL environment variable not set');
     }
 
-    const endpoint = `${lambdaUrl}/recipe/${recipeKey}`;
+    const apiUrl = normalizeUrl(rawApiUrl);
+    const endpoint = `${apiUrl}/recipe/${recipeKey}`;
+
+    let timeoutId: NodeJS.Timeout | undefined;
 
     try {
-
       const response = await Promise.race([
         fetch(endpoint, {
           method: 'DELETE',
         }),
-        new Promise<Response>((_, reject) =>
-          setTimeout(() => reject(new Error('Request timeout')), 30000)
-        ),
+        new Promise<Response>((_, reject) => {
+          timeoutId = setTimeout(() => reject(new Error('Request timeout')), 30000);
+        }),
       ]);
 
       if (!response.ok) {
@@ -248,9 +264,11 @@ export class RecipeService {
       }
 
       return true;
-    } catch (error) {
-
-      throw error;
+    } finally {
+      // Always clear timeout to prevent handle leaks
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
     }
   }
 }

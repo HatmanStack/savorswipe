@@ -27,7 +27,7 @@ describe('UploadService', () => {
     UploadService['currentJobId'] = null
     UploadService['isProcessing'] = false
     UploadService['subscribers'] = new Set()
-    UploadService._setTestLambdaUrl('https://mock-lambda-url.com')
+    UploadService._setTestApiUrl('https://mock-api-url.com')
 
     // Default fetch mock to prevent unhandled rejections
     ;(global.fetch as jest.Mock).mockResolvedValue({
@@ -38,7 +38,7 @@ describe('UploadService', () => {
 
   afterEach(() => {
     // Clean up test URL
-    UploadService._setTestLambdaUrl(null)
+    UploadService._setTestApiUrl(null)
   })
 
   describe('queueUpload', () => {
@@ -213,7 +213,7 @@ describe('UploadService', () => {
   })
 
   describe('batch processing', () => {
-    it('test_batch_processing_within_job: should make multiple Lambda calls with same jobId', async () => {
+    it('test_batch_processing_within_job: should make multiple API calls with same jobId', async () => {
       // Override mock for batch response
       const batchMockResponse: UploadResult = {
         returnMessage: 'Success',

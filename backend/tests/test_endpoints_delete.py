@@ -49,7 +49,7 @@ class TestDeleteEndpoint:
         }
 
         # Act
-        response = handle_delete_request(event, None, origin=None)
+        response = handle_delete_request(event, None, recipe_key='1')
 
         # Assert
         assert response['statusCode'] == 200
@@ -93,7 +93,7 @@ class TestDeleteEndpoint:
         }
 
         # Act
-        response = handle_delete_request(event, None, origin=None)
+        response = handle_delete_request(event, None, recipe_key='999')
 
         # Assert: Should return 200 (idempotent)
         assert response['statusCode'] == 200
@@ -101,7 +101,7 @@ class TestDeleteEndpoint:
         assert body['success'] is True
 
     def test_delete_invalid_path_format(self, s3_client, env_vars):
-        """Test that invalid path format returns 400."""
+        """Test that missing recipe_key returns 400."""
         event = {
             "requestContext": {
                 "http": {
@@ -111,12 +111,12 @@ class TestDeleteEndpoint:
             }
         }
 
-        response = handle_delete_request(event, None, origin=None)
+        response = handle_delete_request(event, None, recipe_key=None)
 
         assert response['statusCode'] == 400
         body = json.loads(response['body'])
         assert body['success'] is False
-        assert 'Invalid path format' in body['error']
+        assert 'Missing recipe_key' in body['error']
 
     def test_delete_invalid_recipe_key_format(self, s3_client, env_vars):
         """Test that invalid recipe_key characters return 400."""
@@ -129,13 +129,12 @@ class TestDeleteEndpoint:
             }
         }
 
-        response = handle_delete_request(event, None, origin=None)
+        response = handle_delete_request(event, None, recipe_key='recipe@key')
 
         assert response['statusCode'] == 400
         body = json.loads(response['body'])
         assert body['success'] is False
-        # @ character fails at path parsing level
-        assert 'Invalid' in body['error']
+        assert 'Invalid recipe_key format' in body['error']
 
     def test_delete_alphanumeric_recipe_key(self, s3_client, env_vars):
         """Test that alphanumeric recipe keys work."""
@@ -162,7 +161,7 @@ class TestDeleteEndpoint:
             }
         }
 
-        response = handle_delete_request(event, None, origin=None)
+        response = handle_delete_request(event, None, recipe_key='recipe123')
 
         assert response['statusCode'] == 200
         body = json.loads(response['body'])
@@ -193,7 +192,7 @@ class TestDeleteEndpoint:
             }
         }
 
-        response = handle_delete_request(event, None, origin=None)
+        response = handle_delete_request(event, None, recipe_key='my-recipe_1')
 
         assert response['statusCode'] == 200
         body = json.loads(response['body'])
@@ -218,7 +217,7 @@ class TestDeleteEndpoint:
             }
         }
 
-        response = handle_delete_request(event, None, origin=None)
+        response = handle_delete_request(event, None, recipe_key='1')
 
         # Should still succeed
         assert response['statusCode'] == 200
@@ -244,42 +243,12 @@ class TestDeleteEndpoint:
             }
         }
 
-        response = handle_delete_request(event, None, origin=None)
+        response = handle_delete_request(event, None, recipe_key='1')
 
         # Should still succeed
         assert response['statusCode'] == 200
         body = json.loads(response['body'])
         assert body['success'] is True
-
-    def test_delete_includes_cors_headers(self, s3_client, env_vars):
-        """Test that response includes CORS headers."""
-        combined_data = {"1": {"Title": "Recipe 1"}}
-        embeddings = {"1": [0.1] * 1536}
-
-        s3_client.put_object(
-            Bucket="test-bucket",
-            Key="jsondata/combined_data.json",
-            Body=json.dumps(combined_data)
-        )
-        s3_client.put_object(
-            Bucket="test-bucket",
-            Key="jsondata/recipe_embeddings.json",
-            Body=json.dumps(embeddings)
-        )
-
-        event = {
-            "requestContext": {
-                "http": {
-                    "method": "DELETE",
-                    "path": "/recipe/1"
-                }
-            }
-        }
-
-        response = handle_delete_request(event, None, origin='https://savorswipe.hatstack.fun')
-
-        assert 'Access-Control-Allow-Origin' in response['headers']
-        assert response['headers']['Access-Control-Allow-Origin'] == 'https://savorswipe.hatstack.fun'
 
     def test_delete_missing_s3_bucket_env_var(self):
         """Test that missing S3_BUCKET env var returns 500."""
@@ -294,7 +263,7 @@ class TestDeleteEndpoint:
 
         # Unset S3_BUCKET
         with patch.dict('os.environ', {}, clear=True):
-            response = handle_delete_request(event, None, origin=None)
+            response = handle_delete_request(event, None, recipe_key='1')
 
         assert response['statusCode'] == 500
         body = json.loads(response['body'])
@@ -334,7 +303,7 @@ class TestDeleteEndpoint:
                 }
             }
         }
-        response1 = handle_delete_request(event1, None)
+        response1 = handle_delete_request(event1, None, recipe_key='1')
         assert response1['statusCode'] == 200
 
         # Delete recipe 2
@@ -346,7 +315,7 @@ class TestDeleteEndpoint:
                 }
             }
         }
-        response2 = handle_delete_request(event2, None)
+        response2 = handle_delete_request(event2, None, recipe_key='2')
         assert response2['statusCode'] == 200
 
         # Verify final state
@@ -358,40 +327,6 @@ class TestDeleteEndpoint:
         assert "1" not in final_data
         assert "2" not in final_data
         assert "3" in final_data
-
-    def test_delete_path_without_leading_slash(self, s3_client, env_vars):
-        """Test that paths without leading slash are rejected."""
-        event = {
-            "requestContext": {
-                "http": {
-                    "method": "DELETE",
-                    "path": "recipe/1"  # Missing leading slash
-                }
-            }
-        }
-
-        response = handle_delete_request(event, None, origin=None)
-
-        assert response['statusCode'] == 400
-        body = json.loads(response['body'])
-        assert body['success'] is False
-
-    def test_delete_path_with_extra_segments(self, s3_client, env_vars):
-        """Test that paths with extra segments are rejected."""
-        event = {
-            "requestContext": {
-                "http": {
-                    "method": "DELETE",
-                    "path": "/recipe/1/extra/path"  # Extra segments
-                }
-            }
-        }
-
-        response = handle_delete_request(event, None, origin=None)
-
-        assert response['statusCode'] == 400
-        body = json.loads(response['body'])
-        assert body['success'] is False
 
     def test_delete_response_content_type(self, s3_client, env_vars):
         """Test that response has correct Content-Type."""
@@ -418,6 +353,6 @@ class TestDeleteEndpoint:
             }
         }
 
-        response = handle_delete_request(event, None, origin=None)
+        response = handle_delete_request(event, None, recipe_key='1')
 
         assert response['headers']['Content-Type'] == 'application/json'

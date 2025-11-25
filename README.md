@@ -28,7 +28,7 @@ Upload a picture of your own directions, ingredients or recipe to join it to the
 ## Technologies Used
 
 - **Expo**: A framework and platform for universal React applications.
-- **AWS**: Lambda for Dynamic Processing, S3 for Storage
+- **AWS**: Lambda for Dynamic Processing, S3 for Storage, API Gateway v2 for REST API
 - **GPC**: Custom Search JSON API - Web image search for food 
 - **OPENAI**: OCR for adding new recipes
 
@@ -50,19 +50,14 @@ To get started with the SavorSwipe, follow these steps:
 3. **Create the backend Services**
    - s3 bucket to hold recipes
       - Two folders /images and /jsondata
-   - Lambda Function
-      - With the Environmental Variables
-      ```bash
-      API_KEY=<openai key for image ocr>
-      SEARCH_ID=<custom search engine ID for Google Custom Search JSON API>
-      SEARCH_KEY=<GPC API key to access Search Engine>
-      AWS_S3_BUCKET=<to store images and recipes>
-      ```
+   - Lambda Function via SAM
+      - See `backend/README.md` for deployment instructions
+      - Deployed with API Gateway v2
 
 5. **Add .env File**
    ```bash
    EXPO_PUBLIC_CLOUDFRONT_BASE_URL=<cloudfront distro fronting s3 image bucket>
-   EXPO_PUBLIC_LAMBDA_FUNCTION_URL=<lambda url for backend>
+   EXPO_PUBLIC_API_GATEWAY_URL=<api gateway url for backend>
    ```
 
 5. **Start the development server**:
@@ -111,7 +106,7 @@ The selected image will represent your recipe in the swipe interface.
 - Background upload processing with job queue
 - AsyncStorage for persistence
 
-**Backend**: AWS Lambda (Python 3.12)
+**Backend**: AWS Lambda (Python 3.12) with API Gateway v2
 - OpenAI Vision API for OCR
 - Google Custom Search for recipe images
 - Semantic duplicate detection using embeddings
@@ -139,4 +134,3 @@ pytest
 ## License
 
 This project is licensed under the Apache License 2.0 - see the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) for details.
-
