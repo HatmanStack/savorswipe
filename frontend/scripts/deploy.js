@@ -16,7 +16,7 @@ const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 
-const PROJECT_ROOT = path.join(__dirname, '..');
+const PROJECT_ROOT = path.join(__dirname, '..', '..');
 const BACKEND_DIR = path.join(PROJECT_ROOT, 'backend');
 const ENV_DEPLOY_PATH = path.join(BACKEND_DIR, '.env.deploy');
 const ENV_PATH = path.join(PROJECT_ROOT, '.env');
@@ -118,11 +118,14 @@ OPENAI_KEY=${config.OPENAI_KEY}
 # Google Custom Search Configuration
 GOOGLE_SEARCH_ID=${config.GOOGLE_SEARCH_ID}
 GOOGLE_SEARCH_KEY=${config.GOOGLE_SEARCH_KEY}
-`;
 
-  if (config.INCLUDE_DEV_ORIGINS) {
-      content += `\n# Include Dev Origins\nINCLUDE_DEV_ORIGINS=${config.INCLUDE_DEV_ORIGINS}\n`;
-  }
+# Include Dev Origins (allows all origins for local development)
+INCLUDE_DEV_ORIGINS=${config.INCLUDE_DEV_ORIGINS || 'false'}
+
+# Production Origins (comma-separated list of allowed origins for CORS)
+# Example: https://myapp.example.com,https://www.myapp.example.com
+PRODUCTION_ORIGINS=${config.PRODUCTION_ORIGINS || ''}
+`;
 
   fs.writeFileSync(ENV_DEPLOY_PATH, content);
   console.log('✓ Configuration saved to .env.deploy\n');
@@ -154,6 +157,79 @@ confirm_changeset = false
 
   fs.writeFileSync(SAMCONFIG_PATH, samconfig);
   console.log('✓ Generated samconfig.toml (secrets passed separately at deploy time)\n');
+}
+
+// Upload starter data to S3 (images and combined_data.json)
+function uploadStarterData(s3BucketName, region) {
+  const starterDataDir = path.join(PROJECT_ROOT, 'assets', 'starter_data');
+
+  // Check if starter data directory exists
+  if (!fs.existsSync(starterDataDir)) {
+    console.log('No starter data found, skipping initial data upload\n');
+    return;
+  }
+
+  console.log('Uploading starter data to S3...\n');
+
+  // Upload combined_data.json to jsondata/
+  const jsonFile = path.join(starterDataDir, 'combined_data.json');
+  if (fs.existsSync(jsonFile)) {
+    try {
+      execSync(
+        `aws s3 cp "${jsonFile}" s3://${s3BucketName}/jsondata/combined_data.json --region ${region}`,
+        { stdio: 'inherit' }
+      );
+      console.log('✓ Uploaded combined_data.json to jsondata/\n');
+    } catch (error) {
+      console.error('✗ Failed to upload combined_data.json:', error.message);
+    }
+  }
+
+  // Upload image files to images/
+  const imageFiles = fs.readdirSync(starterDataDir).filter(f => f.endsWith('.jpg'));
+  if (imageFiles.length > 0) {
+    console.log(`Uploading ${imageFiles.length} starter images...\n`);
+    imageFiles.forEach(imageFile => {
+      const imagePath = path.join(starterDataDir, imageFile);
+      try {
+        execSync(
+          `aws s3 cp "${imagePath}" s3://${s3BucketName}/images/${imageFile} --region ${region}`,
+          { stdio: 'inherit' }
+        );
+      } catch (error) {
+        console.error(`✗ Failed to upload ${imageFile}:`, error.message);
+      }
+    });
+    console.log(`✓ Uploaded ${imageFiles.length} images to images/\n`);
+  }
+
+  // Upload recipe_embeddings.json to jsondata/
+  const embeddingsFile = path.join(starterDataDir, 'recipe_embeddings.json');
+  if (fs.existsSync(embeddingsFile)) {
+    try {
+      execSync(
+        `aws s3 cp "${embeddingsFile}" s3://${s3BucketName}/jsondata/recipe_embeddings.json --region ${region}`,
+        { stdio: 'inherit' }
+      );
+      console.log('✓ Uploaded recipe_embeddings.json to jsondata/\n');
+    } catch (error) {
+      console.error('✗ Failed to upload recipe_embeddings.json:', error.message);
+    }
+  } else {
+    // Create empty one if starter file doesn't exist
+    console.log('No recipe_embeddings.json in starter_data, creating empty file...');
+    const emptyEmbeddings = path.join(PROJECT_ROOT, '.tmp_embeddings.json');
+    fs.writeFileSync(emptyEmbeddings, '{}');
+    try {
+      execSync(
+        `aws s3 cp "${emptyEmbeddings}" s3://${s3BucketName}/jsondata/recipe_embeddings.json --region ${region}`,
+        { stdio: 'inherit' }
+      );
+      console.log('✓ Created empty recipe_embeddings.json\n');
+    } finally {
+      fs.unlinkSync(emptyEmbeddings);
+    }
+  }
 }
 
 // Update .env file with API Gateway URL and CloudFront URL
@@ -228,11 +304,24 @@ async function deploy() {
   // Load existing configuration
   const config = loadEnvDeploy();
 
+  // Set defaults for missing values
+  const defaults = {
+    STACK_NAME: config.STACK_NAME || 'savorswipe',
+    AWS_REGION: config.AWS_REGION || 'us-west-2',
+    OPENAI_KEY: config.OPENAI_KEY || '',
+    GOOGLE_SEARCH_ID: config.GOOGLE_SEARCH_ID || '',
+    GOOGLE_SEARCH_KEY: config.GOOGLE_SEARCH_KEY || '',
+    INCLUDE_DEV_ORIGINS: config.INCLUDE_DEV_ORIGINS || 'false',
+    PRODUCTION_ORIGINS: config.PRODUCTION_ORIGINS || '',
+  };
+
+  // Helper to mask sensitive values for display
+  const maskValue = (val) => val ? `${val.substring(0, 8)}...` : '(not set)';
+
   // Prompt for stack name
-  if (!config.STACK_NAME) {
-    const input = await ask('Stack Name (default: savorswipe): ');
-    config.STACK_NAME = input.trim() || 'savorswipe';
-  }
+  const stackNameInput = await ask(`Stack Name [${defaults.STACK_NAME}]: `);
+  config.STACK_NAME = stackNameInput.trim() || defaults.STACK_NAME;
+
   // Validate stack name format
   if (!/^[a-z][a-z0-9-]*$/.test(config.STACK_NAME)) {
     console.error('✗ Stack name must start with lowercase letter and contain only lowercase letters, numbers, and hyphens');
@@ -240,47 +329,61 @@ async function deploy() {
     process.exit(1);
   }
 
-  // Prompt for missing values
-  if (!config.AWS_REGION) {
-    config.AWS_REGION = await ask('AWS Region (e.g., us-west-2): ');
-  }
+  // Prompt for AWS region
+  const regionInput = await ask(`AWS Region [${defaults.AWS_REGION}]: `);
+  config.AWS_REGION = regionInput.trim() || defaults.AWS_REGION;
   if (!config.AWS_REGION) {
     console.error('✗ AWS Region is required');
     rl.close();
     process.exit(1);
   }
 
-  if (!config.OPENAI_KEY) {
-    config.OPENAI_KEY = await readHiddenInput('OpenAI API Key: ');
-  }
+  // Prompt for OpenAI API Key
+  const openaiPrompt = defaults.OPENAI_KEY
+    ? `OpenAI API Key [${maskValue(defaults.OPENAI_KEY)}]: `
+    : 'OpenAI API Key: ';
+  const openaiInput = await readHiddenInput(openaiPrompt);
+  config.OPENAI_KEY = openaiInput.trim() || defaults.OPENAI_KEY;
   if (!config.OPENAI_KEY) {
     console.error('✗ OpenAI API Key is required');
     rl.close();
     process.exit(1);
   }
 
-  if (!config.GOOGLE_SEARCH_ID) {
-    config.GOOGLE_SEARCH_ID = await ask('Google Search Engine ID: ');
-  }
+  // Prompt for Google Search Engine ID
+  const searchIdPrompt = defaults.GOOGLE_SEARCH_ID
+    ? `Google Search Engine ID [${maskValue(defaults.GOOGLE_SEARCH_ID)}]: `
+    : 'Google Search Engine ID: ';
+  const searchIdInput = await ask(searchIdPrompt);
+  config.GOOGLE_SEARCH_ID = searchIdInput.trim() || defaults.GOOGLE_SEARCH_ID;
   if (!config.GOOGLE_SEARCH_ID) {
     console.error('✗ Google Search Engine ID is required');
     rl.close();
     process.exit(1);
   }
 
-  if (!config.GOOGLE_SEARCH_KEY) {
-    config.GOOGLE_SEARCH_KEY = await readHiddenInput('Google Search API Key: ');
-  }
+  // Prompt for Google Search API Key
+  const searchKeyPrompt = defaults.GOOGLE_SEARCH_KEY
+    ? `Google Search API Key [${maskValue(defaults.GOOGLE_SEARCH_KEY)}]: `
+    : 'Google Search API Key: ';
+  const searchKeyInput = await readHiddenInput(searchKeyPrompt);
+  config.GOOGLE_SEARCH_KEY = searchKeyInput.trim() || defaults.GOOGLE_SEARCH_KEY;
   if (!config.GOOGLE_SEARCH_KEY) {
     console.error('✗ Google Search API Key is required');
     rl.close();
     process.exit(1);
   }
 
-  // Dev Origins config (optional)
-  if (!config.INCLUDE_DEV_ORIGINS) {
-      config.INCLUDE_DEV_ORIGINS = 'false';
-  }
+  // Prompt for dev origins (optional)
+  const devOriginsInput = await ask(`Include Dev Origins (allows all origins) [${defaults.INCLUDE_DEV_ORIGINS}]: `);
+  config.INCLUDE_DEV_ORIGINS = devOriginsInput.trim() || defaults.INCLUDE_DEV_ORIGINS;
+
+  // Prompt for production origins
+  const prodOriginsDisplay = defaults.PRODUCTION_ORIGINS || '(none)';
+  console.log('\nProduction Origins: Comma-separated list of allowed origins for CORS');
+  console.log('Example: https://myapp.example.com,https://www.myapp.example.com');
+  const prodOriginsInput = await ask(`Production Origins [${prodOriginsDisplay}]: `);
+  config.PRODUCTION_ORIGINS = prodOriginsInput.trim() || defaults.PRODUCTION_ORIGINS;
 
   rl.close();
 
@@ -291,7 +394,8 @@ async function deploy() {
   console.log(`  OpenAI Key: ${config.OPENAI_KEY.substring(0, 8)}...`);
   console.log(`  Google Search ID: ${config.GOOGLE_SEARCH_ID.substring(0, 8)}...`);
   console.log(`  Google Search Key: ${config.GOOGLE_SEARCH_KEY.substring(0, 8)}...`);
-  console.log(`  Include Dev Origins: ${config.INCLUDE_DEV_ORIGINS}\n`);
+  console.log(`  Include Dev Origins: ${config.INCLUDE_DEV_ORIGINS}`);
+  console.log(`  Production Origins: ${config.PRODUCTION_ORIGINS || '(none)'}\n`);
 
   // Save configuration
   saveEnvDeploy(config);
@@ -315,7 +419,8 @@ async function deploy() {
 
   // Deploy to AWS (pass secrets and stack name via CLI)
   console.log('\nDeploying to AWS...\n');
-  const paramOverrides = `StackName="${config.STACK_NAME}" OpenAIApiKey="${config.OPENAI_KEY}" GoogleSearchId="${config.GOOGLE_SEARCH_ID}" GoogleSearchKey="${config.GOOGLE_SEARCH_KEY}" IncludeDevOrigins="${config.INCLUDE_DEV_ORIGINS}"`;
+  const productionOrigins = config.PRODUCTION_ORIGINS || '';
+  const paramOverrides = `StackName="${config.STACK_NAME}" OpenAIApiKey="${config.OPENAI_KEY}" GoogleSearchId="${config.GOOGLE_SEARCH_ID}" GoogleSearchKey="${config.GOOGLE_SEARCH_KEY}" IncludeDevOrigins="${config.INCLUDE_DEV_ORIGINS}" ProductionOrigins="${productionOrigins}"`;
   execCommand(`sam deploy --parameter-overrides ${paramOverrides}`);
 
   // Get stack outputs
@@ -344,6 +449,9 @@ async function deploy() {
   // Update .env file with both URLs
   updateEnvFile(apiGatewayUrl, cloudFrontUrl);
 
+  // Upload starter data to S3
+  uploadStarterData(s3BucketName, config.AWS_REGION);
+
   console.log('============================================');
   console.log('Deployment Complete!');
   console.log('============================================\n');
@@ -353,7 +461,7 @@ async function deploy() {
   console.log(`  API Gateway URL: ${apiGatewayUrl}\n`);
   console.log('Next steps:');
   console.log('1. Your .env file has been updated automatically');
-  console.log('2. Initialize S3 bucket with empty JSON files');
+  console.log('2. Starter recipes and images have been uploaded to S3');
   console.log('3. Run "npm start" to start your app\n');
 }
 

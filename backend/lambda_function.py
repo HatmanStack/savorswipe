@@ -10,7 +10,6 @@ Processes multiple images and PDFs containing recipes with:
 - S3 completion flags for offline detection
 """
 
-import base64
 import ipaddress
 import json
 import os
@@ -21,20 +20,21 @@ import time
 import urllib.parse
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List, Dict, Tuple, Optional
+from typing import Dict, List, Optional, Tuple
 
 import boto3
 from botocore.exceptions import ClientError
+
 import handlepdf
 import ocr
-import upload
 import search_image as si
-from embeddings import EmbeddingStore
-from embedding_generator import EmbeddingGenerator
+import upload
 from duplicate_detector import DuplicateDetector
-from upload import batch_to_s3_atomic
-from recipe_deletion import delete_recipe_atomic
+from embedding_generator import EmbeddingGenerator
+from embeddings import EmbeddingStore
 from image_uploader import fetch_image_from_url, upload_image_to_s3
+from recipe_deletion import delete_recipe_atomic
+from upload import batch_to_s3_atomic
 
 
 def process_single_recipe(
@@ -552,7 +552,7 @@ def handle_post_image_request(event, context, recipe_key=None):
 
         # Check if imageUrl is in the recipe's search results
         if image_url not in recipe.get('image_search_results', []):
-            print(f"[POST-IMAGE] Image URL not in recipe's search results")
+            print("[POST-IMAGE] Image URL not in recipe's search results")
             return {
                 'statusCode': 400,
                 'headers': {
@@ -585,7 +585,7 @@ def handle_post_image_request(event, context, recipe_key=None):
         image_bytes, content_type = fetch_image_from_url(image_url)
 
         if image_bytes is None:
-            print(f"[POST-IMAGE] Failed to fetch image from URL")
+            print("[POST-IMAGE] Failed to fetch image from URL")
             return {
                 'statusCode': 500,
                 'headers': {
@@ -640,7 +640,7 @@ def handle_post_image_request(event, context, recipe_key=None):
                         f"[POST-IMAGE] Loaded combined_data with {len(json_data)} recipes, ETag: {etag}")
                 except ClientError as e:
                     if e.response['Error']['Code'] == 'NoSuchKey':
-                        print(f"[POST-IMAGE] combined_data.json not found")
+                        print("[POST-IMAGE] combined_data.json not found")
                         return {
                             'statusCode': 404,
                             'headers': {
@@ -698,7 +698,7 @@ def handle_post_image_request(event, context, recipe_key=None):
                         params['IfMatch'] = etag
 
                     s3_client.put_object(**params)
-                    print(f"[POST-IMAGE] Successfully updated combined_data.json")
+                    print("[POST-IMAGE] Successfully updated combined_data.json")
 
                     # Success!
                     return {
@@ -911,7 +911,7 @@ def handle_post_request(event, context):
             # Upload user file for records
             try:
                 app_time = upload.upload_user_data('user_images', 'image/jpeg', 'jpg', file_content)
-            except Exception as upload_err:
+            except Exception:
                 app_time = int(time.time())
 
             # Detect if PDF from MIME type
@@ -926,7 +926,7 @@ def handle_post_request(event, context):
                     file_errors.append({
                         'file': file_idx,
                         'title': 'unknown',
-                        'reason': f'PDF too large (exceeds page limit)'
+                        'reason': 'PDF too large (exceeds page limit)'
                     })
                     continue
 
@@ -968,7 +968,7 @@ def handle_post_request(event, context):
                         # Single recipe OR multi-recipe dict format (parseJSON will handle)
                         all_recipes.append((parsed_data, file_idx))
 
-                except json.JSONDecodeError as e:
+                except json.JSONDecodeError:
                     pass
 
         except Exception as e:
@@ -1011,7 +1011,7 @@ def handle_post_request(event, context):
             all_recipes = final_recipes
         else:
             all_recipes = []
-    except Exception as e:
+    except Exception:
         pass
 
     # Process recipes in parallel
@@ -1127,7 +1127,7 @@ def handle_post_request(event, context):
                     unique_search_results.append(search_results[:5])
 
             # Batch upload
-            print(f"[LAMBDA] Starting batch upload to S3...")
+            print("[LAMBDA] Starting batch upload to S3...")
             json_data, success_keys, position_to_key, upload_errors = batch_to_s3_atomic(
                 unique_recipes,
                 unique_search_results
@@ -1209,7 +1209,7 @@ def handle_post_request(event, context):
                 }
             ]
         )
-    except Exception as e:
+    except Exception:
         pass
 
     # Write S3 completion flag
@@ -1231,12 +1231,12 @@ def handle_post_request(event, context):
             Body=json.dumps(completion_data),
             ContentType='application/json'
         )
-    except Exception as e:
+    except Exception:
         pass
 
     # Return response with CORS headers
     print(f"[LAMBDA] Request complete: {success_count} successful, {fail_count} failed")
-    print(f"[LAMBDA] Returning response with status 200")
+    print("[LAMBDA] Returning response with status 200")
     return {
         'statusCode': 200,
         'headers': {

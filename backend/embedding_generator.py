@@ -5,8 +5,9 @@ Generates text embeddings using OpenAI API with timeout handling.
 """
 
 import os
+from typing import Dict, List, Optional
+
 import requests
-from typing import List, Dict, Optional
 
 
 class EmbeddingGenerator:

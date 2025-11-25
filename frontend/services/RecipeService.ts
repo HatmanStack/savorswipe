@@ -18,7 +18,7 @@ export class RecipeService {
   static getLocalRecipes(): S3JsonData {
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const localData = require('@/assets/data/combined_data.json');
+      const localData = require('@/assets/starter_data/combined_data.json');
       return localData as S3JsonData;
     } catch (error) {
 

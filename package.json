@@ -2,33 +2,42 @@
   "name": "savorswipe",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "workspaces": ["frontend"],
   "scripts": {
-    "start": "expo start",
-    "reset-project": "node ./scripts/reset-project.js",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web",
+    "start": "cd frontend && expo start",
+    "reset-project": "node ./frontend/scripts/reset-project.js",
+    "android": "cd frontend && expo start --android",
+    "ios": "cd frontend && expo start --ios",
+    "web": "cd frontend && expo start --web",
     "test": "jest --watchAll",
-    "lint": "expo lint",
-    "deploy": "node ./scripts/deploy.js"
+    "test:backend": "PYTHONPATH=backend pytest tests/backend -v --tb=short",
+    "lint": "cd frontend && expo lint && npx tsc --noEmit",
+    "lint:backend": "cd backend && uvx ruff check .",
+    "check": "npm run lint && npm run lint:backend && jest --passWithNoTests --no-watch --ci --runInBand --forceExit && npm run test:backend",
+    "deploy": "node ./frontend/scripts/deploy.js"
   },
   "jest": {
     "preset": "jest-expo",
+    "roots": [
+      "<rootDir>/frontend",
+      "<rootDir>/tests"
+    ],
     "transformIgnorePatterns": [
       "node_modules/(?!(?:jest-)?react-native|@react-native(?:-community)?|expo(?:nent)?|@expo(?:nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg)"
     ],
     "testPathIgnorePatterns": [
-      "/node_modules/"
+      "/node_modules/",
+      "/tests/backend/"
     ],
     "setupFiles": [
-      "<rootDir>/jest.mocks.js"
+      "<rootDir>/frontend/jest.mocks.js"
     ],
     "setupFilesAfterEnv": [
       "@testing-library/jest-native/extend-expect",
-      "<rootDir>/jest.setup.js"
+      "<rootDir>/frontend/jest.setup.js"
     ],
     "moduleNameMapper": {
-      "^@/(.*)$": "<rootDir>/$1"
+      "^@/(.*)$": "<rootDir>/frontend/$1"
     }
   },
   "dependencies": {

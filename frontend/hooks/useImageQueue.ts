@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRecipe } from '@/context/RecipeContext';
 import { ImageQueueService } from '@/services/ImageQueueService';
 import { ImageService } from '@/services/ImageService';
@@ -103,8 +103,8 @@ export function useImageQueue(): ImageQueueHook {
   } = useRecipe();
 
   // Derive modal visibility from context state
-  const showImagePickerModal = pendingRecipeForPicker !== null;
-  const pendingRecipe = pendingRecipeForPicker;
+  const showImagePickerModal = useMemo(() => pendingRecipeForPicker !== null, [pendingRecipeForPicker]);
+  const pendingRecipe = useMemo(() => pendingRecipeForPicker, [pendingRecipeForPicker]);
 
   // Keep queueRef and nextImageRef in sync with state
   useEffect(() => {
@@ -580,6 +580,7 @@ export function useImageQueue(): ImageQueueHook {
 
   // Effect: Auto-detect new recipes in jsonData and inject them
   useEffect(() => {
+
     if (!jsonData) return;
 
     // Get current keys
@@ -602,17 +603,21 @@ export function useImageQueue(): ImageQueueHook {
     // Prioritize pending recipes over injecting all new recipes
     for (const key of newKeys) {
       const recipe = jsonData[key];
+
       if (isPendingImageSelection(recipe)) {
 
         // Only set pending recipe if not already set to this recipe
         // This prevents infinite loops from creating new object references
         if (!pendingRecipe || pendingRecipe.key !== key) {
-          setPendingRecipeForPicker({ ...recipe, key });
+          const recipeWithKey = { ...recipe, key };
+          setPendingRecipeForPicker(recipeWithKey);
+        } else {
         }
 
         // Don't inject pending recipe into queue yet - pause until selection is complete
         prevJsonDataKeysRef.current = currentKeys;
         return;
+      } else {
       }
     }
 

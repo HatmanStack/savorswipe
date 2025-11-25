@@ -84,6 +84,7 @@ const ImagePickerModalComponent: React.FC<ImagePickerModalProps> = ({
   onDelete,
   onCancel,
 }) => {
+
   // Track selected image URL (null = grid view, set = preview view)
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null)
 
@@ -120,9 +121,11 @@ const ImagePickerModalComponent: React.FC<ImagePickerModalProps> = ({
     onDelete()
   }, [onDelete])
 
+
   if (!recipe || !recipe.image_search_results || recipe.image_search_results.length === 0) {
     return null
   }
+
 
   return (
     <Modal
@@ -157,7 +160,7 @@ const ImagePickerModalComponent: React.FC<ImagePickerModalProps> = ({
 /**
  * Memoized ImagePickerModal component to prevent unnecessary re-renders
  */
-export const ImagePickerModal = React.memo(ImagePickerModalComponent)
+export const ImagePickerModal = ImagePickerModalComponent
 
 const styles = StyleSheet.create({
   container: {

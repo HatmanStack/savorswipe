@@ -35,6 +35,7 @@ export default function HomeScreen() {
     resetPendingRecipe,
   } = useImageQueue();
 
+
   // Animation value for simple translateX
   const currentImageTranslateX = useRef(new Animated.Value(0)).current;
 
@@ -136,9 +137,22 @@ export default function HomeScreen() {
           source={holderImg}
           style={{ width: 200, height: 200 }}
         />
+        {/* Render modal even during loading */}
+        {(() => {
+          return (
+            <ImagePickerModal
+              isVisible={showImagePickerModal}
+              recipe={pendingRecipe}
+              onConfirm={onConfirmImage}
+              onDelete={onDeleteRecipe}
+              onCancel={resetPendingRecipe}
+            />
+          );
+        })()}
       </View>
     );
   }
+
 
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
@@ -168,13 +182,17 @@ export default function HomeScreen() {
       <NewRecipeBanner visible={showBanner} />
 
       {/* Image Picker Modal for recipes pending image selection */}
-      <ImagePickerModal
-        isVisible={showImagePickerModal}
-        recipe={pendingRecipe}
-        onConfirm={onConfirmImage}
-        onDelete={onDeleteRecipe}
-        onCancel={resetPendingRecipe}
-      />
+      {(() => {
+        return (
+          <ImagePickerModal
+            isVisible={showImagePickerModal}
+            recipe={pendingRecipe}
+            onConfirm={onConfirmImage}
+            onDelete={onDeleteRecipe}
+            onCancel={resetPendingRecipe}
+          />
+        );
+      })()}
     </View>
   );
 }

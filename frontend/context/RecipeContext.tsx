@@ -42,6 +42,7 @@ export const RecipeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
       // Merge strategy: append new recipes only (preserve existing in-memory data)
       setJsonData(prevData => {
+
         if (!prevData || Object.keys(prevData).length === 0) {
           // If no local data was loaded, use fresh data entirely
           return freshRecipes;
@@ -49,16 +50,19 @@ export const RecipeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
         // Merge: keep existing recipes, add only new ones
         const merged = { ...prevData };
+        let newCount = 0;
         Object.keys(freshRecipes).forEach(key => {
           if (!(key in prevData)) {
             // Only add recipes that don't exist locally
             merged[key] = freshRecipes[key];
+            newCount++;
           }
         });
 
         return merged;
       });
     } catch (error) {
+      console.error('[RecipeContext] Error fetching recipes:', error);
       // Silent fallback: continue using existing data
     }
   }, []);

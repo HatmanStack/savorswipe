@@ -1,8 +1,9 @@
-import os
-import requests
-import re
-from typing import List, Set, Dict, Optional
 import logging
+import os
+import re
+from typing import Dict, List, Optional, Set
+
+import requests
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -138,7 +139,7 @@ def google_search_image(title: str, count: int = 10, recipe_type: Optional[str] 
     # Determine search suffix based on recipe type
     if recipe_type and 'beverage' in recipe_type.lower():
         suffix1 = "beverage photo"
-        print(f"[SEARCH] Detected beverage type - using beverage-specific search terms")
+        print("[SEARCH] Detected beverage type - using beverage-specific search terms")
     else:
         suffix1 = "food photo"
 
@@ -203,14 +204,14 @@ def _search_google_images(query: str, count: int = 10) -> List[str]:
     }
 
     try:
-        print(f"[SEARCH] Sending request to Google Custom Search API...")
+        print("[SEARCH] Sending request to Google Custom Search API...")
         response = requests.get(url, params=params, timeout=10)  # 10 second timeout
         print(f"[SEARCH] Response status code: {response.status_code}")
 
         if response.status_code == 200:
             try:
                 search_results = response.json()
-                print(f"[SEARCH] Response parsed successfully")
+                print("[SEARCH] Response parsed successfully")
             except ValueError as json_err:
                 print(f"[SEARCH ERROR] Error parsing JSON response: {json_err}")
                 return []
@@ -221,14 +222,14 @@ def _search_google_images(query: str, count: int = 10) -> List[str]:
                 print(f"[SEARCH] Found {len(image_urls)} image URLs")
                 return image_urls
             else:
-                print(f"[SEARCH] No image results found")
+                print("[SEARCH] No image results found")
                 return []
         else:
             print(f"[SEARCH ERROR] Error: {response.status_code} - {response.text[:200]}")
             return []
 
     except requests.exceptions.Timeout:
-        print(f"[SEARCH ERROR] Request timed out after 10 seconds")
+        print("[SEARCH ERROR] Request timed out after 10 seconds")
         return []
     except requests.exceptions.RequestException as e:
         print(f"[SEARCH ERROR] Error making request: {e}")
@@ -291,7 +292,7 @@ def select_unique_image_url(search_results: List[str], used_urls: Set[str]) -> s
     print(
         f"[SEARCH] Selecting unique URL from {len(search_results)} results, {len(used_urls)} URLs already used")
     if not search_results:
-        print(f"[SEARCH] No search results provided")
+        print("[SEARCH] No search results provided")
         return ''
 
     # Find first unused URL
@@ -301,7 +302,7 @@ def select_unique_image_url(search_results: List[str], used_urls: Set[str]) -> s
             return url
 
     # All URLs are used - return first as fallback
-    print(f"[SEARCH WARNING] All URLs already used, using first as fallback")
+    print("[SEARCH WARNING] All URLs already used, using first as fallback")
     return search_results[0]
 
 

@@ -17,15 +17,20 @@ export function UploadListener() {
 
   useEffect(() => {
     const unsubscribe = UploadService.subscribe((job: UploadJob) => {
+
       // Only handle completion events
       if (job.status !== 'completed' && job.status !== 'error') {
         return;
       }
 
+
       // Refetch recipes from S3 to get the latest data
       // This triggers useImageQueue's auto-detection for pending recipes
-      if (job.status === 'completed') {
-        refetchRecipes();
+      // Refetch even on error in case some recipes succeeded
+      if (job.result && job.result.successCount > 0) {
+        refetchRecipes().catch((error) => {
+          console.error('[UploadListener] Refetch failed:', error);
+        });
       }
     });
 

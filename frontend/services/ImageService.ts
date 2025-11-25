@@ -2,15 +2,60 @@ import { ImageFile } from '@/types';
 
 const CLOUDFRONT_BASE_URL = process.env.EXPO_PUBLIC_CLOUDFRONT_BASE_URL;
 
+// Map of bundled starter images (keys 1-5)
+// These are served locally for instant loading before S3 is available
+const STARTER_IMAGES: Record<string, number> = {
+  '1': require('@/assets/starter_data/1.jpg'),
+  '2': require('@/assets/starter_data/2.jpg'),
+  '3': require('@/assets/starter_data/3.jpg'),
+  '4': require('@/assets/starter_data/4.jpg'),
+  '5': require('@/assets/starter_data/5.jpg'),
+};
+
 export class ImageService {
   /**
-   * Fetches an image file from S3/CloudFront
+   * Checks if a recipe key has a bundled local image
+   */
+  static hasLocalImage(recipeKey: string): boolean {
+    return recipeKey in STARTER_IMAGES;
+  }
+
+  /**
+   * Gets the local image source for a recipe key
+   * Returns the require() result which can be used directly in Image source
+   */
+  static getLocalImage(recipeKey: string): number | null {
+    return STARTER_IMAGES[recipeKey] || null;
+  }
+
+  /**
+   * Fetches an image file from S3/CloudFront or returns local bundled image
+   * Local images are returned as data URIs for consistency with blob URLs
    */
   static async getImageFromS3(fileName: string): Promise<string> {
+    // Extract recipe key from filename (e.g., "images/1.jpg" -> "1")
+    const recipeKey = this.getRecipeKeyFromFileName(fileName);
+
+    // Check if this is a starter image that's bundled locally
+    if (this.hasLocalImage(recipeKey)) {
+      // For bundled images, we need to resolve the asset URI
+      // The require() returns a number (asset ID) in React Native
+      // We'll use Asset.fromModule to get the actual URI
+      try {
+        const { Asset } = await import('expo-asset');
+        const asset = Asset.fromModule(STARTER_IMAGES[recipeKey]);
+        await asset.downloadAsync();
+        return asset.localUri || asset.uri;
+      } catch {
+        // Fallback: try fetching from S3 if local asset loading fails
+      }
+    }
+
+    // Fetch from CloudFront/S3
     const url = `${CLOUDFRONT_BASE_URL}/${fileName}`;
 
     try {
-      
+
       const response = await fetch(url);
 
       if (!response.ok) {

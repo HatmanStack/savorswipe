@@ -1,6 +1,7 @@
-from pdf2image import convert_from_path
 import base64
 import os
+
+from pdf2image import convert_from_path
 
 
 def encode_image(image_path):

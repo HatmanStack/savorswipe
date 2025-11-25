@@ -27,12 +27,18 @@ Parameters:
 
   IncludeDevOrigins:
     Type: String
-    Description: Whether to include localhost origins in CORS
+    Description: Whether to include wildcard (*) origins in CORS for local development
     Default: 'false'
     AllowedValues: ['true', 'false']
 
+  ProductionOrigins:
+    Type: CommaDelimitedList
+    Description: Comma-separated list of production origins for CORS (e.g., https://myapp.example.com,https://www.myapp.example.com)
+    Default: ''
+
 Conditions:
   IsDevMode: !Equals [!Ref IncludeDevOrigins, 'true']
+  HasProductionOrigins: !Not [!Equals [!Select [0, !Ref ProductionOrigins], '']]
 
 Resources:
   # S3 Bucket for Recipe Storage
@@ -106,10 +112,13 @@ Resources:
         Application: SavorSwipe
         StackName: !Ref StackName
       CorsConfiguration:
-        AllowOrigins:
-          - 'https://savorswipe.hatstack.fun'
-          - !If [IsDevMode, 'http://localhost:8081', !Ref 'AWS::NoValue']
-          - !If [IsDevMode, 'http://localhost:19006', !Ref 'AWS::NoValue']
+        AllowOrigins: !If
+          - IsDevMode
+          - ['*']
+          - !If
+            - HasProductionOrigins
+            - !Ref ProductionOrigins
+            - ['https://localhost']  # Placeholder - configure ProductionOrigins for your domain
         AllowMethods:
           - GET
           - POST
