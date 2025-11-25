@@ -106,7 +106,10 @@ function loadEnvDeploy() {
 
 // Save configuration to .env.deploy
 function saveEnvDeploy(config) {
-  let content = `# AWS Region
+  let content = `# Stack Name
+STACK_NAME=${config.STACK_NAME}
+
+# AWS Region
 AWS_REGION=${config.AWS_REGION}
 
 # OpenAI API Key
@@ -127,7 +130,8 @@ GOOGLE_SEARCH_KEY=${config.GOOGLE_SEARCH_KEY}
 
 // Generate samconfig.toml (without secrets - they're passed at deploy time)
 function generateSamConfig(config) {
-  const deployBucket = `sam-deploy-savorswipe-${config.AWS_REGION}`;
+  const deployBucket = `sam-deploy-${config.STACK_NAME}-${config.AWS_REGION}`;
+  const stackName = `${config.STACK_NAME}-stack`;
 
   const samconfig = `version = 0.1
 
@@ -140,9 +144,9 @@ use_container = true
 
 [default.deploy]
 [default.deploy.parameters]
-stack_name = "savorswipe-lambda"
+stack_name = "${stackName}"
 s3_bucket = "${deployBucket}"
-s3_prefix = "savorswipe"
+s3_prefix = "${config.STACK_NAME}"
 region = "${config.AWS_REGION}"
 capabilities = "CAPABILITY_IAM"
 confirm_changeset = false
@@ -152,8 +156,8 @@ confirm_changeset = false
   console.log('✓ Generated samconfig.toml (secrets passed separately at deploy time)\n');
 }
 
-// Update .env file with API Gateway URL
-function updateEnvFile(apiGatewayUrl) {
+// Update .env file with API Gateway URL and CloudFront URL
+function updateEnvFile(apiGatewayUrl, cloudFrontUrl) {
   let envContent = '';
 
   // Read existing .env if it exists
@@ -161,29 +165,30 @@ function updateEnvFile(apiGatewayUrl) {
     envContent = fs.readFileSync(ENV_PATH, 'utf8');
   }
 
-  // Check if EXPO_PUBLIC_API_GATEWAY_URL exists
+  // Update or add API Gateway URL
   const apiUrlPattern = /^EXPO_PUBLIC_API_GATEWAY_URL=.*/m;
   const oldLambdaUrlPattern = /^EXPO_PUBLIC_LAMBDA_FUNCTION_URL=.*/m;
 
   if (apiUrlPattern.test(envContent)) {
-    // Update existing entry
-    envContent = envContent.replace(
-      apiUrlPattern,
-      `EXPO_PUBLIC_API_GATEWAY_URL=${apiGatewayUrl}`
-    );
+    envContent = envContent.replace(apiUrlPattern, `EXPO_PUBLIC_API_GATEWAY_URL=${apiGatewayUrl}`);
   } else if (oldLambdaUrlPattern.test(envContent)) {
-      // Replace old lambda url with new api url key
-      envContent = envContent.replace(
-        oldLambdaUrlPattern,
-        `EXPO_PUBLIC_API_GATEWAY_URL=${apiGatewayUrl}`
-      );
+    envContent = envContent.replace(oldLambdaUrlPattern, `EXPO_PUBLIC_API_GATEWAY_URL=${apiGatewayUrl}`);
   } else {
-    // Add new entry
     envContent += `\nEXPO_PUBLIC_API_GATEWAY_URL=${apiGatewayUrl}\n`;
   }
 
+  // Update or add CloudFront URL
+  const cloudFrontPattern = /^EXPO_PUBLIC_CLOUDFRONT_BASE_URL=.*/m;
+
+  if (cloudFrontPattern.test(envContent)) {
+    envContent = envContent.replace(cloudFrontPattern, `EXPO_PUBLIC_CLOUDFRONT_BASE_URL=${cloudFrontUrl}`);
+  } else {
+    envContent += `EXPO_PUBLIC_CLOUDFRONT_BASE_URL=${cloudFrontUrl}\n`;
+  }
+
   fs.writeFileSync(ENV_PATH, envContent);
-  console.log(`✓ Updated .env with API Gateway URL: ${apiGatewayUrl}\n`);
+  console.log(`✓ Updated .env with API Gateway URL: ${apiGatewayUrl}`);
+  console.log(`✓ Updated .env with CloudFront URL: ${cloudFrontUrl}\n`);
 }
 
 // Execute shell command and stream output
@@ -216,12 +221,24 @@ function getStackOutputs(stackName, region) {
 
 // Main deployment flow
 async function deploy() {
-  console.log('===================================');
-  console.log('SavorSwipe API Gateway Deployment');
-  console.log('===================================\n');
+  console.log('=======================================');
+  console.log('SavorSwipe Complete Stack Deployment');
+  console.log('=======================================\n');
 
   // Load existing configuration
   const config = loadEnvDeploy();
+
+  // Prompt for stack name
+  if (!config.STACK_NAME) {
+    const input = await ask('Stack Name (default: savorswipe): ');
+    config.STACK_NAME = input.trim() || 'savorswipe';
+  }
+  // Validate stack name format
+  if (!/^[a-z][a-z0-9-]*$/.test(config.STACK_NAME)) {
+    console.error('✗ Stack name must start with lowercase letter and contain only lowercase letters, numbers, and hyphens');
+    rl.close();
+    process.exit(1);
+  }
 
   // Prompt for missing values
   if (!config.AWS_REGION) {
@@ -269,6 +286,7 @@ async function deploy() {
 
   // Display configuration
   console.log('\nUsing configuration:');
+  console.log(`  Stack Name: ${config.STACK_NAME}`);
   console.log(`  Region: ${config.AWS_REGION}`);
   console.log(`  OpenAI Key: ${config.OPENAI_KEY.substring(0, 8)}...`);
   console.log(`  Google Search ID: ${config.GOOGLE_SEARCH_ID.substring(0, 8)}...`);
@@ -280,7 +298,7 @@ async function deploy() {
   generateSamConfig(config);
 
   // Create S3 deployment bucket if needed
-  const deployBucket = `sam-deploy-savorswipe-${config.AWS_REGION}`;
+  const deployBucket = `sam-deploy-${config.STACK_NAME}-${config.AWS_REGION}`;
   console.log(`Checking deployment bucket: ${deployBucket}...`);
 
   try {
@@ -295,33 +313,48 @@ async function deploy() {
   console.log('Building Lambda function with Docker...\n');
   execCommand('sam build --use-container');
 
-  // Deploy to AWS (pass secrets via CLI, not samconfig.toml)
+  // Deploy to AWS (pass secrets and stack name via CLI)
   console.log('\nDeploying to AWS...\n');
-  const paramOverrides = `OpenAIApiKey="${config.OPENAI_KEY}" GoogleSearchId="${config.GOOGLE_SEARCH_ID}" GoogleSearchKey="${config.GOOGLE_SEARCH_KEY}" S3BucketName="savorswipe-recipe" IncludeDevOrigins="${config.INCLUDE_DEV_ORIGINS}"`;
+  const paramOverrides = `StackName="${config.STACK_NAME}" OpenAIApiKey="${config.OPENAI_KEY}" GoogleSearchId="${config.GOOGLE_SEARCH_ID}" GoogleSearchKey="${config.GOOGLE_SEARCH_KEY}" IncludeDevOrigins="${config.INCLUDE_DEV_ORIGINS}"`;
   execCommand(`sam deploy --parameter-overrides ${paramOverrides}`);
 
-  // Get API Gateway URL from stack outputs
+  // Get stack outputs
   console.log('\nRetrieving stack outputs...\n');
-  const outputs = getStackOutputs('savorswipe-lambda', config.AWS_REGION);
+  const stackName = `${config.STACK_NAME}-stack`;
+  const outputs = getStackOutputs(stackName, config.AWS_REGION);
 
   const apiGatewayUrlOutput = outputs.find(o => o.OutputKey === 'ApiGatewayUrl');
-  if (!apiGatewayUrlOutput) {
-    console.error('✗ Could not find ApiGatewayUrl in stack outputs');
+  const cloudFrontUrlOutput = outputs.find(o => o.OutputKey === 'CloudFrontUrl');
+  const s3BucketOutput = outputs.find(o => o.OutputKey === 'S3BucketName');
+
+  if (!apiGatewayUrlOutput || !cloudFrontUrlOutput || !s3BucketOutput) {
+    console.error('✗ Required outputs not found in stack');
+    console.error('Missing:', {
+      apiGateway: !apiGatewayUrlOutput,
+      cloudFront: !cloudFrontUrlOutput,
+      s3Bucket: !s3BucketOutput
+    });
     process.exit(1);
   }
 
   const apiGatewayUrl = apiGatewayUrlOutput.OutputValue;
+  const cloudFrontUrl = cloudFrontUrlOutput.OutputValue;
+  const s3BucketName = s3BucketOutput.OutputValue;
 
-  // Update .env file
-  updateEnvFile(apiGatewayUrl);
+  // Update .env file with both URLs
+  updateEnvFile(apiGatewayUrl, cloudFrontUrl);
 
-  console.log('===================================');
+  console.log('============================================');
   console.log('Deployment Complete!');
-  console.log('===================================\n');
-  console.log(`API Gateway URL: ${apiGatewayUrl}\n`);
+  console.log('============================================\n');
+  console.log('Stack Resources:');
+  console.log(`  S3 Bucket:       ${s3BucketName}`);
+  console.log(`  CloudFront URL:  ${cloudFrontUrl}`);
+  console.log(`  API Gateway URL: ${apiGatewayUrl}\n`);
   console.log('Next steps:');
-  console.log('  1. Run "npm start" to start the development server');
-  console.log('  2. The app will use the updated API Gateway URL\n');
+  console.log('1. Your .env file has been updated automatically');
+  console.log('2. Initialize S3 bucket with empty JSON files');
+  console.log('3. Run "npm start" to start your app\n');
 }
 
 // Run deployment
