@@ -5,7 +5,7 @@ Detects duplicate recipes using cosine similarity of embeddings.
 """
 
 import math
-from typing import List, Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 
 class DuplicateDetector:

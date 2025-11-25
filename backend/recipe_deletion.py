@@ -10,7 +10,8 @@ import json
 import logging
 import random
 import time
-from typing import Dict, Tuple, Optional
+from typing import Dict, Optional, Tuple
+
 from botocore.exceptions import ClientError
 
 # Configure logging
@@ -142,7 +143,7 @@ def delete_recipe_atomic(
             updated_embeddings = delete_embedding_from_store(recipe_key, embeddings)
 
             # Step 4: Perform atomic writes
-            logger.info(f"[DELETE] Writing updated combined_data to S3...")
+            logger.info("[DELETE] Writing updated combined_data to S3...")
             combined_data_body = json.dumps(updated_combined_data)
 
             params_combined = {
@@ -173,7 +174,7 @@ def delete_recipe_atomic(
                     return False, f"Error writing {combined_data_key}: {str(e)}"
 
             # Step 5: Write embeddings
-            logger.info(f"[DELETE] Writing updated embeddings to S3...")
+            logger.info("[DELETE] Writing updated embeddings to S3...")
             embeddings_body = json.dumps(updated_embeddings)
 
             params_embeddings = {

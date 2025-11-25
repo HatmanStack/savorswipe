@@ -10,15 +10,15 @@ Provides functions to:
 import io
 import ipaddress
 import logging
-import os
 import random
 import socket
 import time
 import urllib.parse
 from typing import Optional, Tuple
+
+import requests
 from botocore.exceptions import ClientError
 from PIL import Image
-import requests
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -173,7 +173,7 @@ def upload_image_to_s3(
         - On failure: (None, error_message)
     """
     if not image_bytes:
-        logger.error(f"[IMAGE] No image bytes provided")
+        logger.error("[IMAGE] No image bytes provided")
         return None, "No image bytes provided"
 
     # Always save as .jpg

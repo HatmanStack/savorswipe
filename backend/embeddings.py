@@ -5,12 +5,13 @@ Manages recipe embeddings in S3 with race condition protection using S3 ETags
 for optimistic locking.
 """
 
-import boto3
 import json
-import time
 import random
-from botocore.exceptions import ClientError
+import time
 from typing import Dict, List, Optional, Tuple
+
+import boto3
+from botocore.exceptions import ClientError
 
 
 class EmbeddingStore:

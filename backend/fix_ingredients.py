@@ -205,7 +205,7 @@ def main():
         json.dump(data, f, indent=2, ensure_ascii=False)
 
     print(f"✓ Done! Fixed data written to {output_file}")
-    print(f"\nTo replace the original file:")
+    print("\nTo replace the original file:")
     print(f"  mv {output_file} {input_file}")
 
 

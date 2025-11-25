@@ -1,6 +1,8 @@
-from openai import OpenAI
-import os
 import json
+import os
+
+from openai import OpenAI
+
 from fix_ingredients import normalize_recipe
 
 # Lazy initialization will happen in functions

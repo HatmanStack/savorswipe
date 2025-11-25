@@ -1,16 +1,17 @@
+import base64
+import io
 import json
 import os
+import random
+import time
+from datetime import datetime, timezone
+from typing import Dict, List, Tuple
+from urllib.parse import urlparse
+
 import boto3
 import requests
-import time
-import io
-import base64
-import random
-from datetime import datetime, timezone
-from urllib.parse import urlparse
-from PIL import Image
 from botocore.exceptions import ClientError
-from typing import List, Dict, Tuple
+from PIL import Image
 
 s3_client = boto3.client('s3')
 bucket_name = os.getenv('S3_BUCKET')
@@ -163,7 +164,7 @@ def upload_image(search_results, bucket_name, highest_key):
             print(f"[UPLOAD] Image size: {len(image_data)} bytes")
             image_key = images_prefix + str(highest_key) + '.jpg'
 
-            tmp_image_path = f'/tmp/searchImage.jpg'
+            tmp_image_path = '/tmp/searchImage.jpg'
             with open(tmp_image_path, 'wb') as image_file:
                 image_file.write(image_data)
             print(f"[UPLOAD] Wrote temporary file to {tmp_image_path}")
@@ -199,7 +200,7 @@ def upload_user_data(prefix, content, file_type, data, app_time=None):
         app_time = int(time.time())
     if file_type == 'jpg':
         try:
-            print(f"[UPLOAD] Converting image to JPEG...")
+            print("[UPLOAD] Converting image to JPEG...")
             data = base64.b64decode(data)
             image = Image.open(io.BytesIO(data))
             jpeg_image_io = io.BytesIO()
@@ -276,14 +277,14 @@ def batch_to_s3_atomic(
         print(f"[UPLOAD] Attempt {attempt + 1}/{MAX_RETRIES}")
         # Load existing data with ETag
         try:
-            print(f"[UPLOAD] Loading existing combined_data.json...")
+            print("[UPLOAD] Loading existing combined_data.json...")
             response = s3_client.get_object(Bucket=bucket_name, Key=combined_data_key)
             existing_data = json.loads(response['Body'].read())
             etag = response['ETag'].strip('"')
             print(f"[UPLOAD] Loaded {len(existing_data)} existing recipes, ETag: {etag}")
         except ClientError as e:
             if e.response['Error']['Code'] == 'NoSuchKey':
-                print(f"[UPLOAD] No existing combined_data.json found (first upload)")
+                print("[UPLOAD] No existing combined_data.json found (first upload)")
                 existing_data = {}
                 etag = None
             else:
