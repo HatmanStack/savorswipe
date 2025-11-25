@@ -2,6 +2,14 @@ import { Recipe, S3JsonData, UploadResponse, MealType } from '@/types';
 
 const CLOUDFRONT_BASE_URL = process.env.EXPO_PUBLIC_CLOUDFRONT_BASE_URL;
 
+/**
+ * Normalizes a URL by removing trailing slashes
+ * Prevents double-slash issues when constructing endpoints
+ */
+function normalizeUrl(url: string): string {
+  return url.replace(/\/+$/, '');
+}
+
 export class RecipeService {
   /**
    * Loads the bundled local recipe data from assets
@@ -24,11 +32,13 @@ export class RecipeService {
    * This bypasses CloudFront cache to ensure fresh data
    */
   static async getRecipesFromS3(): Promise<S3JsonData> {
-    const apiUrl = process.env.EXPO_PUBLIC_API_GATEWAY_URL;
+    const rawApiUrl = process.env.EXPO_PUBLIC_API_GATEWAY_URL;
 
-    if (!apiUrl) {
+    if (!rawApiUrl) {
       throw new Error('EXPO_PUBLIC_API_GATEWAY_URL environment variable not set');
     }
+
+    const apiUrl = normalizeUrl(rawApiUrl);
 
     try {
       const response = await fetch(`${apiUrl}/recipes`, {
@@ -152,12 +162,13 @@ export class RecipeService {
    * @throws Error if network request fails or recipe not found
    */
   static async selectRecipeImage(recipeKey: string, imageUrl: string): Promise<Recipe> {
-    const apiUrl = process.env.EXPO_PUBLIC_API_GATEWAY_URL;
+    const rawApiUrl = process.env.EXPO_PUBLIC_API_GATEWAY_URL;
 
-    if (!apiUrl) {
+    if (!rawApiUrl) {
       throw new Error('EXPO_PUBLIC_API_GATEWAY_URL environment variable not set');
     }
 
+    const apiUrl = normalizeUrl(rawApiUrl);
     const endpoint = `${apiUrl}/recipe/${recipeKey}/image`;
 
     let timeoutId: NodeJS.Timeout | undefined;
@@ -214,12 +225,13 @@ export class RecipeService {
    * @throws Error if network request fails or recipe not found
    */
   static async deleteRecipe(recipeKey: string): Promise<boolean> {
-    const apiUrl = process.env.EXPO_PUBLIC_API_GATEWAY_URL;
+    const rawApiUrl = process.env.EXPO_PUBLIC_API_GATEWAY_URL;
 
-    if (!apiUrl) {
+    if (!rawApiUrl) {
       throw new Error('EXPO_PUBLIC_API_GATEWAY_URL environment variable not set');
     }
 
+    const apiUrl = normalizeUrl(rawApiUrl);
     const endpoint = `${apiUrl}/recipe/${recipeKey}`;
 
     let timeoutId: NodeJS.Timeout | undefined;

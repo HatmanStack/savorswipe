@@ -247,10 +247,13 @@ export class UploadService {
    * Call API with batch of files
    */
   private static async callApi(job: UploadJob, files: UploadFile[]): Promise<UploadResult> {
-    const API_URL = this._testApiUrl || process.env.EXPO_PUBLIC_API_GATEWAY_URL
-    if (!API_URL) {
+    const rawApiUrl = this._testApiUrl || process.env.EXPO_PUBLIC_API_GATEWAY_URL
+    if (!rawApiUrl) {
       throw new Error('EXPO_PUBLIC_API_GATEWAY_URL is not configured')
     }
+
+    // Normalize URL to prevent double-slash issues
+    const API_URL = rawApiUrl.replace(/\/+$/, '')
 
     // Use the upload route
     const endpoint = `${API_URL}/recipe/upload`

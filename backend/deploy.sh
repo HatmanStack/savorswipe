@@ -103,6 +103,13 @@ API_URL=$(aws cloudformation describe-stacks \
     --query 'Stacks[0].Outputs[?OutputKey==`ApiGatewayUrl`].OutputValue' \
     --output text)
 
+# Verify we got a valid URL
+if [ -z "$API_URL" ] || [ "$API_URL" = "None" ]; then
+  echo "Error: ApiGatewayUrl output not found on stack savorswipe-lambda"
+  echo "This usually means the deployment failed or the template is missing the ApiGatewayUrl output"
+  exit 1
+fi
+
 echo "API Gateway URL:"
 echo "$API_URL"
 echo ""
