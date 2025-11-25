@@ -235,6 +235,28 @@ After successful backend deployment:
 2. ✅ Run `npm start` to start the Expo development server
 3. ✅ The app will automatically use the deployed API Gateway
 
+## Migrating Data from Another Stack
+
+Starter data uses keys 10000+ to avoid conflicts with user data. New uploads use `len(recipes) + 1` for key generation, so you can migrate data from an old deployment:
+
+1. **Export from old stack**:
+   ```bash
+   aws s3 cp s3://old-bucket/jsondata/combined_data.json ./old_data.json
+   aws s3 cp s3://old-bucket/jsondata/recipe_embeddings.json ./old_embeddings.json
+   aws s3 sync s3://old-bucket/images/ ./old_images/
+   ```
+
+2. **Merge with new stack**: Append your old recipes to the new `combined_data.json` and `recipe_embeddings.json`. Your old keys (1-N) won't conflict with starter keys (10000+).
+
+3. **Upload to new stack**:
+   ```bash
+   aws s3 cp ./merged_data.json s3://new-bucket/jsondata/combined_data.json
+   aws s3 cp ./merged_embeddings.json s3://new-bucket/jsondata/recipe_embeddings.json
+   aws s3 sync ./old_images/ s3://new-bucket/images/
+   ```
+
+New uploads will start at `total_recipe_count + 1`.
+
 ## Architecture
 
 The deployment creates:
