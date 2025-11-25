@@ -18,12 +18,13 @@ npm run deploy
 ```
 
 The script will:
-1. Prompt for AWS region and API keys (if not already configured)
-2. Save your configuration to `backend/.env.deploy` for future deployments
+1. Prompt for stack name, AWS region, environment, and API keys
+2. Save your configuration to `.env.deploy` for future deployments
 3. Generate `backend/samconfig.toml` with deployment parameters
 4. Build the Lambda function using Docker
-5. Deploy to AWS using SAM (creating/updating API Gateway)
-6. Update your `.env` file with the API Gateway URL
+5. Deploy to AWS using SAM (creating S3, CloudFront, Lambda, API Gateway)
+6. Upload starter data (images and recipes) to S3
+7. Update your `.env` file with the API Gateway and CloudFront URLs
 
 ## Configuration
 
@@ -31,42 +32,47 @@ The script will:
 
 On your first deployment, you'll be prompted for:
 
-- **AWS Region**: e.g., `us-west-2`
+- **Stack Name**: CloudFormation stack name (default: savorswipe)
+- **AWS Region**: e.g., `us-east-1`
+- **Environment**: `dev` (CORS wildcard) or `prod` (restricted origins)
+- **Production Origins**: Comma-separated allowed origins for prod
 - **OpenAI API Key**: Your OpenAI API key for OCR functionality
 - **Google Search Engine ID**: Your Google Custom Search engine ID
 - **Google Search API Key**: Your Google Custom Search API key
 
-These values are saved to `backend/.env.deploy` for subsequent deployments.
+These values are saved to `.env.deploy` for subsequent deployments.
 
 ### Subsequent Deployments
 
-After the first deployment, the script will automatically load your saved configuration. You can:
+After the first deployment, the script will load your saved configuration and show current values in brackets. Press Enter to accept defaults or type a new value.
 
-- Edit `backend/.env.deploy` to update your configuration
-- Delete `backend/.env.deploy` to be prompted again
+You can:
+- Edit `.env.deploy` to update your configuration
+- Delete `.env.deploy` to start fresh
 
 ### Environment Files
 
 The project uses two environment files:
 
-1. **`.env.deploy`** (backend directory)
+1. **`.env.deploy`** (project root)
    - Contains AWS deployment configuration
    - Used by the deployment script
    - **Not committed to Git** (in `.gitignore`)
 
 2. **`.env`** (project root)
    - Contains frontend environment variables
-   - Automatically updated by deployment script with API Gateway URL
+   - Automatically updated by deployment script
    - **Not committed to Git** (in `.gitignore`)
 
 Example `.env.deploy`:
 ```bash
-AWS_REGION=us-west-2
+STACK_NAME=savorswipe
+AWS_REGION=us-east-1
+ENVIRONMENT=dev
+PRODUCTION_ORIGINS=https://myapp.example.com
 OPENAI_KEY=sk-...
 GOOGLE_SEARCH_ID=...
 GOOGLE_SEARCH_KEY=...
-# Optional: Include dev origins for local testing
-INCLUDE_DEV_ORIGINS=true
 ```
 
 Example `.env` (auto-updated):
@@ -77,13 +83,7 @@ EXPO_PUBLIC_API_GATEWAY_URL=https://your-api-url.execute-api.us-west-2.amazonaws
 
 ### Local Development CORS
 
-By default, the API only allows requests from the production domain. For local development, you can enable localhost CORS origins:
-
-1. Edit `backend/.env.deploy`
-2. Set `INCLUDE_DEV_ORIGINS=true`
-3. Run `npm run deploy` to update the stack
-
-**Warning**: Remember to set this back to `false` (or remove it) for production deployments.
+For local development, deploy with `Environment=dev` which enables CORS wildcard (`*`). For production, use `Environment=prod` and specify your allowed origins in `PRODUCTION_ORIGINS`.
 
 ## Deployment Persistence
 
@@ -99,9 +99,10 @@ The deployment script uses `samconfig.toml` to persist deployment configuration.
 ### GitHub Actions (CI Only)
 
 The `.github/workflows` configuration runs:
-- ✅ Linting (`npm run lint`)
-- ✅ Unit Tests (`npm test`)
-- ✅ Mocked Integration Tests (no live AWS resources)
+- ✅ Frontend linting and type-check (`npm run lint`)
+- ✅ Frontend tests (`npm test`)
+- ✅ Backend linting (`ruff check`)
+- ✅ Backend tests (`pytest`)
 - ❌ **No deployment** (CI is isolated from production)
 
 ### Local Deployment (Manual)
@@ -167,7 +168,7 @@ The deployment script automatically creates an S3 bucket for SAM artifacts:
 
 If this bucket already exists in a different account, you may need to:
 1. Choose a different region
-2. Modify the bucket name in `scripts/deploy.js`
+2. Modify the bucket name in `frontend/scripts/deploy.js`
 
 ### Deployment Fails Mid-Way
 
@@ -206,9 +207,29 @@ This script:
 
 **Note**: The Node.js script (`npm run deploy`) is recommended as it provides automatic `.env` updates and better integration with the npm workflow.
 
+## Frontend Deployment
+
+To deploy the frontend as a web app:
+
+1. **Build the web export**:
+   ```bash
+   cd frontend && npx expo export --platform web
+   ```
+
+2. **Upload to S3**: Upload the `frontend/dist` folder to an S3 bucket
+
+3. **Deploy with AWS Amplify**: Create an Amplify app with the S3 bucket as source
+
+4. **Update CORS**: Redeploy the backend with the Amplify CloudFront URL as a production origin:
+   ```bash
+   npm run deploy
+   # When prompted for Production Origins, enter your Amplify URL
+   # e.g., https://main.d1234abcd.amplifyapp.com
+   ```
+
 ## Next Steps
 
-After successful deployment:
+After successful backend deployment:
 
 1. ✅ `.env` file is updated with API Gateway URL
 2. ✅ Run `npm start` to start the Expo development server
@@ -218,14 +239,18 @@ After successful deployment:
 
 The deployment creates:
 
+- **S3 Bucket**: Stores recipe images and metadata
+  - `/images/*.jpg` - Recipe photos
+  - `/jsondata/combined_data.json` - Recipe metadata
+  - `/jsondata/recipe_embeddings.json` - Similarity vectors
+- **CloudFront Distribution**: CDN for serving images
 - **Lambda Function**: Python-based recipe processing (OCR, image search)
-- **API Gateway v2**: HTTP API with explicit routes:
+- **API Gateway v2**: HTTP API with routes:
   - `GET /recipes`
   - `POST /recipe/upload`
   - `DELETE /recipe/{recipe_key}`
   - `POST /recipe/{recipe_key}/image`
 - **CloudWatch Logs**: Automatic logging for debugging
-- **S3 Bucket**: Stores recipe images and metadata (`savorswipe-recipe`)
 
 The Lambda function has permissions to:
 - Read/write to S3 bucket
