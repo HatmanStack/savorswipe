@@ -42,3 +42,4 @@ backend/samconfig.toml
 frontend/dist/
 backend/.aws-sam/
 tests/__pycache__/
+frontend/.env
