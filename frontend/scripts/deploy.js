@@ -161,7 +161,7 @@ confirm_changeset = false
 
 // Upload starter data to S3 (images and combined_data.json)
 function uploadStarterData(s3BucketName, region) {
-  const starterDataDir = path.join(PROJECT_ROOT, 'assets', 'starter_data');
+  const starterDataDir = path.join(PROJECT_ROOT, 'frontend', 'assets', 'starter_data');
 
   // Check if starter data directory exists
   if (!fs.existsSync(starterDataDir)) {
