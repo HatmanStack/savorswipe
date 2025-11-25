@@ -102,7 +102,7 @@ export default function SearchScreen() {
       <ThemedView style={styles.content}>
         {/* Header with close button */}
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.closeButton}>
+          <Pressable onPress={() => router.push('/')} style={styles.closeButton}>
             <Ionicons name="close" size={28} color={iconColor} />
           </Pressable>
         </View>

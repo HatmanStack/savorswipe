@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useMemo, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect, useCallback, ReactNode } from 'react';
 import { Recipe, S3JsonData, MealType } from '@/types';
 import { RecipeService } from '@/services/RecipeService';
 
@@ -12,6 +12,7 @@ interface RecipeContextType {
   setMealTypeFilters: (filters: MealType[]) => void;
   pendingRecipeForPicker: Recipe | null;
   setPendingRecipeForPicker: (recipe: Recipe | null) => void;
+  refetchRecipes: () => Promise<void>;
 }
 
 // Create the context
@@ -34,6 +35,34 @@ export const RecipeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   ]);
   const [pendingRecipeForPicker, setPendingRecipeForPicker] = useState<Recipe | null>(null);
 
+  // Fetch fresh data from Lambda and merge with existing data
+  const refetchRecipes = useCallback(async () => {
+    try {
+      const freshRecipes = await RecipeService.getRecipesFromS3();
+
+      // Merge strategy: append new recipes only (preserve existing in-memory data)
+      setJsonData(prevData => {
+        if (!prevData || Object.keys(prevData).length === 0) {
+          // If no local data was loaded, use fresh data entirely
+          return freshRecipes;
+        }
+
+        // Merge: keep existing recipes, add only new ones
+        const merged = { ...prevData };
+        Object.keys(freshRecipes).forEach(key => {
+          if (!(key in prevData)) {
+            // Only add recipes that don't exist locally
+            merged[key] = freshRecipes[key];
+          }
+        });
+
+        return merged;
+      });
+    } catch (error) {
+      // Silent fallback: continue using existing data
+    }
+  }, []);
+
   // Load recipe JSON data with stale-while-revalidate pattern
   useEffect(() => {
     // Step 1: Load local cached recipes immediately (fast)
@@ -43,34 +72,7 @@ export const RecipeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
 
     // Step 2: Fetch fresh data from Lambda in background (slow but fresh)
-    const fetchFreshData = async () => {
-      try {
-        const freshRecipes = await RecipeService.getRecipesFromS3();
-
-        // Merge strategy: append new recipes only (preserve existing in-memory data)
-        setJsonData(prevData => {
-          if (!prevData || Object.keys(prevData).length === 0) {
-            // If no local data was loaded, use fresh data entirely
-            return freshRecipes;
-          }
-
-          // Merge: keep existing recipes, add only new ones
-          const merged = { ...prevData };
-          Object.keys(freshRecipes).forEach(key => {
-            if (!(key in prevData)) {
-              // Only add recipes that don't exist locally
-              merged[key] = freshRecipes[key];
-            }
-          });
-
-          return merged;
-        });
-      } catch (error) {
-        // Silent fallback: continue using local cached data
-      }
-    };
-
-    fetchFreshData();
+    refetchRecipes();
   }, []);
 
   // Memoize provider value to prevent unnecessary re-renders
@@ -82,8 +84,9 @@ export const RecipeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     mealTypeFilters,
     setMealTypeFilters,
     pendingRecipeForPicker,
-    setPendingRecipeForPicker
-  }), [currentRecipe, jsonData, mealTypeFilters, pendingRecipeForPicker]);
+    setPendingRecipeForPicker,
+    refetchRecipes
+  }), [currentRecipe, jsonData, mealTypeFilters, pendingRecipeForPicker, refetchRecipes]);
 
   return (
     <RecipeContext.Provider value={value}>
