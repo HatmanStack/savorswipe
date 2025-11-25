@@ -40,7 +40,9 @@ function readHiddenInput(prompt) {
     stdin.setEncoding('utf8');
 
     let password = '';
-    stdin.on('data', function(char) {
+
+    // Create a named function so we can remove it later
+    function onData(char) {
       char = char.toString('utf8');
 
       switch(char) {
@@ -49,6 +51,7 @@ function readHiddenInput(prompt) {
         case '\u0004':
           stdin.setRawMode(false);
           stdin.pause();
+          stdin.removeListener('data', onData); // Clean up listener
           stdout.write('\n');
           resolve(password);
           break;
@@ -63,13 +66,19 @@ function readHiddenInput(prompt) {
           password += char;
           break;
       }
-    });
+    }
+
+    stdin.on('data', onData);
   });
 }
 
 // Utility to ask a question
 function ask(question) {
   return new Promise((resolve) => {
+    // Ensure stdin is resumed for readline (in case it was paused by readHiddenInput)
+    if (process.stdin.isPaused()) {
+      process.stdin.resume();
+    }
     rl.question(question, resolve);
   });
 }
