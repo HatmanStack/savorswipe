@@ -2,14 +2,14 @@ import { ImageFile } from '@/types';
 
 const CLOUDFRONT_BASE_URL = process.env.EXPO_PUBLIC_CLOUDFRONT_BASE_URL;
 
-// Map of bundled starter images (keys 1-5)
+// Map of bundled starter images (keys 10000-10004)
 // These are served locally for instant loading before S3 is available
 const STARTER_IMAGES: Record<string, number> = {
-  '1': require('@/assets/starter_data/1.jpg'),
-  '2': require('@/assets/starter_data/2.jpg'),
-  '3': require('@/assets/starter_data/3.jpg'),
-  '4': require('@/assets/starter_data/4.jpg'),
-  '5': require('@/assets/starter_data/5.jpg'),
+  '10000': require('@/assets/starter_data/10000.jpg'),
+  '10001': require('@/assets/starter_data/10001.jpg'),
+  '10002': require('@/assets/starter_data/10002.jpg'),
+  '10003': require('@/assets/starter_data/10003.jpg'),
+  '10004': require('@/assets/starter_data/10004.jpg'),
 };
 
 export class ImageService {
