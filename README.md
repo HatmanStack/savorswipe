@@ -2,7 +2,7 @@
 <h1>Savor Swipe</h1>
 
 <h4 align="center">
-<a href="https://www.apache.org/licenses/LICENSE-2.0.html"><img src="https://img.shields.io/badge/license-Apache2.0-blue" alt="savorswipe is under the Apache 2.0 liscense" /></a><a hre>
+<a href="https://www.apache.org/licenses/LICENSE-2.0.html"><img src="https://img.shields.io/badge/license-Apache2.0-blue" alt="savorswipe is under the Apache 2.0 license" /></a><a href="https://expo.dev"><img src="https://img.shields.io/badge/Expo-54+-orange" alt="Expo Version" /></a><a href="https://programmablesearchengine.google.com/about/"><img src="https://img.shields.io/badge/Google%20Custom%20Search-violet" alt="Google Custom Search" /></a><a href="https://platform.openai.com/docs/guides/vision"><img src="https://img.shields.io/badge/OpenAI-Vision-yellow" alt="OpenAI OCR" /></a><a href="https://docs.aws.amazon.com/lambda/"><img src="https://img.shields.io/badge/AWS-Lambda-green" alt="AWS Lambda Documentation" /></a>
 </h4>
 <p align="center">
   <p align="center"><b>From Cravings to Cooking - Swipe, Discover, Repeat!<br> <a href="https://savorswipe.hatstack.fun"> SavorSwipe » </a> </b> </p>
@@ -53,7 +53,6 @@ The deploy script prompts for configuration on each run:
 |--------|-------------|
 | Stack Name | CloudFormation stack name (default: savorswipe) |
 | AWS Region | Deployment region (default: us-east-1) |
-| Environment | `dev` (CORS wildcard) or `prod` (restricted origins) |
 | Production Origins | Comma-separated allowed origins for prod (e.g., `https://myapp.com`) |
 
 Defaults are saved to `.env.deploy` and shown in brackets. Press Enter to accept.
