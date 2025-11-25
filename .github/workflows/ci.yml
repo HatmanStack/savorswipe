@@ -43,7 +43,8 @@ jobs:
         run: npm ci
 
       - name: Run tests
-        run: npm test -- --passWithNoTests --no-watch --ci --runInBand --forceExit
+        run: npm test -- --passWithNoTests --no-watch --ci --runInBand --forceExit --detectOpenHandles
+        timeout-minutes: 3
 
   backend-tests:
     name: Backend Tests

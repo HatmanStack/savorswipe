@@ -18,7 +18,7 @@ Upload a picture of your own directions, ingredients or recipe to join it to the
 
 ## Structure
 
-```
+```text
 ├── frontend/   # Expo/React Native client
 ├── backend/    # AWS Lambda serverless API
 ├── docs/       # Documentation

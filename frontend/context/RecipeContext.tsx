@@ -50,12 +50,9 @@ export const RecipeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
         // Merge: keep existing recipes, add only new ones
         const merged = { ...prevData };
-        let newCount = 0;
         Object.keys(freshRecipes).forEach(key => {
           if (!(key in prevData)) {
-            // Only add recipes that don't exist locally
             merged[key] = freshRecipes[key];
-            newCount++;
           }
         });
 

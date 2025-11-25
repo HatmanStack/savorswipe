@@ -35,7 +35,7 @@
  * - Cancel: Clicking overlay or onCancel closes modal without action
  */
 
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useEffect, memo } from 'react'
 import { Modal, View, StyleSheet } from 'react-native'
 import { Recipe } from '@/types/index'
 import { ImageGrid } from './ImageGrid'
@@ -160,7 +160,7 @@ const ImagePickerModalComponent: React.FC<ImagePickerModalProps> = ({
 /**
  * Memoized ImagePickerModal component to prevent unnecessary re-renders
  */
-export const ImagePickerModal = ImagePickerModalComponent
+export const ImagePickerModal = memo(ImagePickerModalComponent)
 
 const styles = StyleSheet.create({
   container: {
