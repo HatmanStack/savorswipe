@@ -211,16 +211,26 @@ This script:
 
 To deploy the frontend as a web app:
 
-1. **Build the web export**:
+1. **Copy environment variables**: The `.env` file must be in `frontend/` for the build:
+   ```bash
+   cp .env frontend/.env
+   ```
+
+2. **Build the web export** (must run from `frontend/` directory):
    ```bash
    cd frontend && npx expo export --platform web
    ```
 
-2. **Upload to S3**: Upload the `frontend/dist` folder to an S3 bucket
+   If you get env variable errors, clear the cache first:
+   ```bash
+   cd frontend && rm -rf .expo dist node_modules/.cache && npx expo export --platform web
+   ```
 
-3. **Deploy with AWS Amplify**: Create an Amplify app with the S3 bucket as source
+3. **Upload to S3**: Upload the `frontend/dist` folder to an S3 bucket
 
-4. **Update CORS**: Redeploy the backend with the Amplify CloudFront URL as a production origin:
+4. **Deploy with AWS Amplify**: Create an Amplify app with the S3 bucket as source
+
+5. **Update CORS**: Redeploy the backend with the Amplify CloudFront URL as a production origin:
    ```bash
    npm run deploy
    # When prompted for Production Origins, enter your Amplify URL
