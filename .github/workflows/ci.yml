@@ -43,13 +43,7 @@ jobs:
         run: npm ci
 
       - name: Run tests
-        run: |
-          timeout 120 npm test -- --passWithNoTests --no-watch --ci --runInBand --forceExit
-          EXIT_CODE=$?
-          # Exit 124 = timeout (tests passed but Jest hung), treat as success
-          # Exit 0 = normal success
-          # Any other exit = actual test failure
-          if [ $EXIT_CODE -eq 0 ] || [ $EXIT_CODE -eq 124 ]; then exit 0; else exit $EXIT_CODE; fi
+        run: npm test -- --ci --forceExit
 
   backend-tests:
     name: Backend Tests

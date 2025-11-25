@@ -9,7 +9,7 @@
     "android": "cd frontend && expo start --android",
     "ios": "cd frontend && expo start --ios",
     "web": "cd frontend && expo start --web",
-    "test": "jest --watchAll",
+    "test": "jest",
     "test:backend": "PYTHONPATH=backend pytest tests/backend -v --tb=short",
     "lint": "cd frontend && expo lint && npx tsc --noEmit",
     "lint:backend": "cd backend && uvx ruff check .",
