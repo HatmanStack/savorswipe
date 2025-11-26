@@ -34,8 +34,8 @@ On your first deployment, you'll be prompted for:
 
 - **Stack Name**: CloudFormation stack name (default: savorswipe)
 - **AWS Region**: e.g., `us-east-1`
-- **Environment**: `dev` (CORS wildcard) or `prod` (restricted origins)
-- **Production Origins**: Comma-separated allowed origins for prod
+- **Include Dev Origins**: `true` (CORS wildcard) or `false` (restricted origins)
+- **Production Origins**: Comma-separated allowed origins when dev origins disabled
 - **OpenAI API Key**: Your OpenAI API key for OCR functionality
 - **Google Search Engine ID**: Your Google Custom Search engine ID
 - **Google Search API Key**: Your Google Custom Search API key
@@ -68,7 +68,7 @@ Example `.env.deploy`:
 ```bash
 STACK_NAME=savorswipe
 AWS_REGION=us-east-1
-ENVIRONMENT=dev
+INCLUDE_DEV_ORIGINS=true
 PRODUCTION_ORIGINS=https://myapp.example.com
 OPENAI_KEY=sk-...
 GOOGLE_SEARCH_ID=...
@@ -83,7 +83,7 @@ EXPO_PUBLIC_API_GATEWAY_URL=https://your-api-url.execute-api.us-west-2.amazonaws
 
 ### Local Development CORS
 
-For local development, deploy with `Environment=dev` which enables CORS wildcard (`*`). For production, use `Environment=prod` and specify your allowed origins in `PRODUCTION_ORIGINS`.
+For local development, set `INCLUDE_DEV_ORIGINS=true` which enables CORS wildcard (`*`). For production, set `INCLUDE_DEV_ORIGINS=false` and specify your allowed origins in `PRODUCTION_ORIGINS`.
 
 ## Deployment Persistence
 

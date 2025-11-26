@@ -54,7 +54,7 @@ Upload a picture of your own directions, ingredients or recipe to join it to the
    - AWS region
    - OpenAI API key (for OCR)
    - Google Custom Search credentials (for recipe images)
-   - Environment mode (dev/prod)
+   - Include dev origins (CORS wildcard for local testing)
 
    See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed configuration options.
 
