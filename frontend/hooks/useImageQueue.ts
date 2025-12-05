@@ -579,8 +579,8 @@ export function useImageQueue(): ImageQueueHook {
   }, [mealTypeFilters]); // Only depend on filters, not the functions
 
   // Effect: Auto-detect new recipes in jsonData and inject them
+  // Note: injectRecipes is stable (empty deps) so including it here is safe
   useEffect(() => {
-
     if (!jsonData) return;
 
     // Get current keys
@@ -599,32 +599,33 @@ export function useImageQueue(): ImageQueueHook {
     // Find new keys
     const newKeys = Array.from(currentKeys).filter(key => !previousKeys.has(key));
 
+    // Early exit if no new keys - prevents unnecessary work when effect runs
+    // due to pendingRecipe changes without actual jsonData changes
+    if (newKeys.length === 0) {
+      return;
+    }
+
     // Check for pending recipes (recipes with image_search_results but no image_url)
     // Prioritize pending recipes over injecting all new recipes
     for (const key of newKeys) {
       const recipe = jsonData[key];
 
       if (isPendingImageSelection(recipe)) {
-
         // Only set pending recipe if not already set to this recipe
         // This prevents infinite loops from creating new object references
         if (!pendingRecipe || pendingRecipe.key !== key) {
           const recipeWithKey = { ...recipe, key };
           setPendingRecipeForPicker(recipeWithKey);
-        } else {
         }
 
         // Don't inject pending recipe into queue yet - pause until selection is complete
         prevJsonDataKeysRef.current = currentKeys;
         return;
-      } else {
       }
     }
 
     // If new keys found and no pending recipes, inject them
-    if (newKeys.length > 0) {
-      injectRecipes(newKeys);
-    }
+    injectRecipes(newKeys);
 
     // Update previous keys ref
     prevJsonDataKeysRef.current = currentKeys;

@@ -2,6 +2,36 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: SavorSwipe Recipe Processing - Complete Stack (Lambda, API Gateway, S3, CloudFront)
 
+# =============================================================================
+# ARCHITECTURE NOTE: Authentication Intentionally Omitted
+# =============================================================================
+# This is an open-source, single-user/demo recipe catalog application.
+# Authentication is NOT implemented by design for the following reasons:
+#
+# 1. OPEN-SOURCE DEMO: Reference implementation for learning - auth would
+#    complicate the core recipe logic developers want to study.
+#
+# 2. SINGLE-USER DESIGN: Personal recipe collection, not multi-tenant.
+#
+# 3. DEPLOYMENT FLEXIBILITY: Deploy your own private instance; API Gateway
+#    throttling (ThrottlingBurstLimit/ThrottlingRateLimit below) provides
+#    basic abuse protection.
+#
+# 4. FORK-FRIENDLY: Add your preferred auth (Cognito, API keys) without
+#    untangling existing auth code.
+#
+# SECURITY CONTROLS IN PLACE:
+# - API Gateway throttling: 1000 req/sec, burst 10 (see HttpApiStage)
+# - CORS: Configurable origins (IncludeDevOrigins=false by default)
+# - S3: Private bucket, CloudFront-only access via OAC
+# - Secrets: NoEcho on API keys, stored in Lambda env vars
+#
+# TO ADD AUTHENTICATION (if forking for multi-user):
+# - Option 1: Add CognitoUserPool + HttpApi Authorizer
+# - Option 2: Add API Gateway API Key requirement
+# - Option 3: Add Lambda Authorizer for custom auth
+# =============================================================================
+
 Parameters:
   StackName:
     Type: String

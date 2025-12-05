@@ -4,6 +4,7 @@ import json
 import os
 import random
 import time
+import uuid
 from datetime import datetime, timezone
 from typing import Dict, List, Tuple
 from urllib.parse import urlparse
@@ -164,7 +165,8 @@ def upload_image(search_results, bucket_name, highest_key):
             print(f"[UPLOAD] Image size: {len(image_data)} bytes")
             image_key = images_prefix + str(highest_key) + '.jpg'
 
-            tmp_image_path = '/tmp/searchImage.jpg'
+            # Use unique temp file path to avoid race conditions on concurrent requests
+            tmp_image_path = f'/tmp/searchImage_{uuid.uuid4().hex}.jpg'
             with open(tmp_image_path, 'wb') as image_file:
                 image_file.write(image_data)
             print(f"[UPLOAD] Wrote temporary file to {tmp_image_path}")
@@ -180,10 +182,20 @@ def upload_image(search_results, bucket_name, highest_key):
                     ContentType='image/jpeg'
                 )
                 print('[UPLOAD] Image uploaded successfully to S3')
+                # Clean up temp file
+                try:
+                    os.remove(tmp_image_path)
+                except OSError:
+                    pass  # Ignore cleanup errors
                 return image_url  # Return the source URL
 
             except Exception as e:
                 print(f"[UPLOAD ERROR] Error uploading image to S3: {e}")
+                # Clean up temp file on error too
+                try:
+                    os.remove(tmp_image_path)
+                except OSError:
+                    pass
                 continue  # Try next URL
         else:
             print(f"[UPLOAD ERROR] HTTP {image_response.status_code}, trying next URL")

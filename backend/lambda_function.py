@@ -8,6 +8,33 @@ Processes multiple images and PDFs containing recipes with:
 - Image URL deduplication
 - CloudWatch metrics
 - S3 completion flags for offline detection
+
+ARCHITECTURE NOTE: Authentication Intentionally Omitted
+=======================================================
+This is an open-source, single-user/demo recipe catalog application.
+Authentication is intentionally not implemented for the following reasons:
+
+1. OPEN-SOURCE DEMO: This project serves as a reference implementation and
+   learning resource. Adding auth would complicate the core recipe management
+   logic that developers want to study.
+
+2. SINGLE-USER DESIGN: The app is designed for personal use (one person's
+   recipe collection), not multi-tenant scenarios requiring user isolation.
+
+3. DEPLOYMENT FLEXIBILITY: Users can deploy their own private instance with
+   API Gateway throttling (configured in template.yaml) as the primary
+   protection against abuse.
+
+4. FORK-FRIENDLY: Contributors can easily add their preferred auth solution
+   (Cognito, Auth0, API keys) without untangling existing auth code.
+
+If you need authentication for a production multi-user deployment, consider:
+- AWS Cognito User Pools with API Gateway authorizer
+- API Gateway API keys for simple protection
+- Lambda authorizer for custom auth logic
+
+The CORS configuration and API Gateway throttling provide basic protection
+for demo/personal deployments. See template.yaml for configuration options.
 """
 
 import ipaddress
@@ -35,6 +62,15 @@ from embeddings import EmbeddingStore
 from image_uploader import fetch_image_from_url, upload_image_to_s3
 from recipe_deletion import delete_recipe_atomic
 from upload import batch_to_s3_atomic
+
+# Debug mode - set DEBUG_MODE=true in Lambda environment to enable verbose logging
+DEBUG_MODE = os.getenv('DEBUG_MODE', 'false').lower() == 'true'
+
+
+def debug_log(message: str) -> None:
+    """Print debug message only if DEBUG_MODE is enabled."""
+    if DEBUG_MODE:
+        print(message)
 
 
 def process_single_recipe(
@@ -154,7 +190,7 @@ def lambda_handler(event, context):
     request_path = event.get('requestContext', {}).get('http', {}).get('path', '')
     path_params = event.get('pathParameters', {})
 
-    print(f"[DEBUG] lambda_handler: Detected HTTP method: {http_method}, path: {request_path}")
+    debug_log(f"[DEBUG] lambda_handler: Detected HTTP method: {http_method}, path: {request_path}")
 
     if http_method == 'GET':
         return handle_get_request(event, context)
@@ -794,30 +830,30 @@ def handle_post_request(event, context):
     start_time = time.time()
 
     # Debug: Log full event structure (first 500 chars)
-    print(f"[DEBUG] Full event keys: {list(event.keys())}")
-    print(f"[DEBUG] Event preview: {str(event)[:500]}")
+    debug_log(f"[DEBUG] Full event keys: {list(event.keys())}")
+    debug_log(f"[DEBUG] Event preview: {str(event)[:500]}")
 
     # Check if body exists and log it
     if 'body' in event:
-        print(
+        debug_log(
             f"[DEBUG] Body exists, type: {type(event['body'])}, length: {len(str(event['body']))}")
-        print(f"[DEBUG] Body preview: {str(event['body'])[:200]}")
+        debug_log(f"[DEBUG] Body preview: {str(event['body'])[:200]}")
     else:
-        print("[DEBUG] No 'body' key in event!")
+        debug_log("[DEBUG] No 'body' key in event!")
 
     # Parse request body (API Gateway sends body as JSON string)
     try:
         body_content = event.get('body')
         if body_content:
             # API Gateway format - body is a JSON string
-            print("[DEBUG] handle_post_request: Parsing body from API Gateway format")
+            debug_log("[DEBUG] handle_post_request: Parsing body from API Gateway format")
             body = json.loads(body_content)
         else:
             # Direct invocation format - event is the body
-            print("[DEBUG] handle_post_request: Using direct invocation format")
+            debug_log("[DEBUG] handle_post_request: Using direct invocation format")
             body = event
     except json.JSONDecodeError as e:
-        print(f"[DEBUG] handle_post_request: JSON decode error: {e!r}")
+        debug_log(f"[DEBUG] handle_post_request: JSON decode error: {e!r}")
         return {
             'statusCode': 400,
             'headers': {
@@ -828,7 +864,7 @@ def handle_post_request(event, context):
 
     # Validate files key exists
     if 'files' not in body:
-        print(
+        debug_log(
             f"[DEBUG] handle_post_request: ERROR: No 'files' key in body. Body keys: {list(body.keys())}")
         return {
             'statusCode': 400,
@@ -838,17 +874,17 @@ def handle_post_request(event, context):
             'body': json.dumps({'returnMessage': 'No files provided in request'})
         }
 
-    print(f"[DEBUG] Body parsed successfully, contains {len(body.get('files', []))} files")
+    debug_log(f"[DEBUG] Body parsed successfully, contains {len(body.get('files', []))} files")
 
     files = body['files']
     job_id = body.get('jobId', str(uuid.uuid4()))
 
-    print(f"[DEBUG] Job ID: {job_id}, Files count: {len(files)}")
+    debug_log(f"[DEBUG] Job ID: {job_id}, Files count: {len(files)}")
 
     # Initialize services
-    print("[DEBUG] Getting S3_BUCKET environment variable...")
+    debug_log("[DEBUG] Getting S3_BUCKET environment variable...")
     bucket_name = os.getenv('S3_BUCKET')
-    print(f"[DEBUG] S3_BUCKET = '{bucket_name}'")
+    debug_log(f"[DEBUG] S3_BUCKET = '{bucket_name}'")
     if not bucket_name:
         return {
             'statusCode': 500,
@@ -860,21 +896,21 @@ def handle_post_request(event, context):
 
     try:
         # Initialize embedding store and load existing embeddings
-        print("[DEBUG] Initializing EmbeddingStore...")
+        debug_log("[DEBUG] Initializing EmbeddingStore...")
         embedding_store = EmbeddingStore(bucket_name)
-        print("[DEBUG] Loading existing embeddings...")
+        debug_log("[DEBUG] Loading existing embeddings...")
         existing_embeddings, _ = embedding_store.load_embeddings()
-        print(f"[DEBUG] Loaded {len(existing_embeddings)} existing embeddings")
+        debug_log(f"[DEBUG] Loaded {len(existing_embeddings)} existing embeddings")
 
         # Initialize embedding generator
-        print("[DEBUG] Initializing EmbeddingGenerator...")
+        debug_log("[DEBUG] Initializing EmbeddingGenerator...")
         embedding_generator = EmbeddingGenerator()
-        print("[DEBUG] EmbeddingGenerator initialized")
+        debug_log("[DEBUG] EmbeddingGenerator initialized")
 
         # Initialize duplicate detector
-        print("[DEBUG] Initializing DuplicateDetector...")
+        debug_log("[DEBUG] Initializing DuplicateDetector...")
         duplicate_detector = DuplicateDetector(existing_embeddings)
-        print("[DEBUG] All services initialized successfully")
+        debug_log("[DEBUG] All services initialized successfully")
 
     except Exception as e:
         print(f"[ERROR] Service initialization failed: {str(e)}")
@@ -893,15 +929,15 @@ def handle_post_request(event, context):
     all_recipes = []
     file_errors = []
 
-    print(f"[DEBUG] Starting file processing for {len(files)} files...")
+    debug_log(f"[DEBUG] Starting file processing for {len(files)} files...")
 
     for file_idx, file_data in enumerate(files):
         try:
-            print(f"[DEBUG] Processing file {file_idx + 1}/{len(files)}...")
+            debug_log(f"[DEBUG] Processing file {file_idx + 1}/{len(files)}...")
             # Get file data and type from frontend payload
             file_content = file_data.get('data', '')
             file_type = file_data.get('type', '').lower()
-            print(f"[DEBUG] File {file_idx}: type={file_type}, data_length={len(file_content)}")
+            debug_log(f"[DEBUG] File {file_idx}: type={file_type}, data_length={len(file_content)}")
 
             # Strip data URI prefix if present (e.g., "data:image/jpeg;base64,...")
             if file_content.startswith('data:'):
@@ -943,11 +979,11 @@ def handle_post_request(event, context):
                 base64_images = [file_content]
 
             # Extract recipes from images
-            print(f"[DEBUG] Extracting recipes from {len(base64_images)} image(s)...")
+            debug_log(f"[DEBUG] Extracting recipes from {len(base64_images)} image(s)...")
             for img_idx, base64_image in enumerate(base64_images):
-                print(f"[DEBUG] Calling OCR for image {img_idx + 1}/{len(base64_images)}...")
+                debug_log(f"[DEBUG] Calling OCR for image {img_idx + 1}/{len(base64_images)}...")
                 recipe_json = ocr.extract_recipe_data(base64_image)
-                print(
+                debug_log(
                     f"[DEBUG] OCR completed for image {img_idx + 1}, result: {len(str(recipe_json)) if recipe_json else 0} chars")
                 upload.upload_user_data('user_images_json', 'application/json',
                                         'json', recipe_json, app_time)

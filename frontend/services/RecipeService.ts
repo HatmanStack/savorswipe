@@ -1,3 +1,29 @@
+/**
+ * RecipeService - API client for recipe CRUD operations
+ *
+ * ARCHITECTURE NOTE: Authentication Intentionally Omitted
+ * =======================================================
+ * This is an open-source, single-user/demo recipe catalog application.
+ * API calls do not include Authorization headers by design:
+ *
+ * 1. OPEN-SOURCE DEMO: Reference implementation for learning - auth would
+ *    complicate the core recipe logic developers want to study.
+ *
+ * 2. SINGLE-USER DESIGN: Personal recipe collection, not multi-tenant.
+ *    Each deployment is a private instance for one user.
+ *
+ * 3. FORK-FRIENDLY: Add your preferred auth headers here without
+ *    untangling existing auth code.
+ *
+ * TO ADD AUTHENTICATION (if forking for multi-user):
+ * - Add Authorization header to fetch() calls below
+ * - Example: headers: { 'Authorization': `Bearer ${token}` }
+ * - Consider using a centralized auth context/hook for token management
+ *
+ * The backend API Gateway has throttling configured for abuse protection.
+ * See backend/template.yaml for server-side security controls.
+ */
+
 import { Recipe, S3JsonData, UploadResponse, MealType } from '@/types';
 
 const CLOUDFRONT_BASE_URL = process.env.EXPO_PUBLIC_CLOUDFRONT_BASE_URL;
