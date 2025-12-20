@@ -26,8 +26,10 @@ export const resizeImage = async (uri: string, maxSize: number): Promise<string 
  * @returns Array of base64-encoded PDF chunks
  */
 export const pdfToBase64 = async (pdfUri: string): Promise<string> => {
-  // Read PDF file as ArrayBuffer (works on both web and native)
   const response = await fetch(pdfUri)
+  if (!response.ok) {
+    throw new Error(`Failed to read PDF: ${response.status}`)
+  }
   const arrayBuffer = await response.arrayBuffer()
 
   // Convert to base64 using chunked approach to avoid O(n²) string concat
