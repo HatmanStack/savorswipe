@@ -48,15 +48,8 @@ export const RecipeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           return freshRecipes;
         }
 
-        // Merge: keep existing recipes, add only new ones
-        const merged = { ...prevData };
-        Object.keys(freshRecipes).forEach(key => {
-          if (!(key in prevData)) {
-            merged[key] = freshRecipes[key];
-          }
-        });
-
-        return merged;
+        // Merge: fresh data wins, preserving any local-only state
+        return { ...prevData, ...freshRecipes };
       });
     } catch (error) {
       console.error('[RecipeContext] Error fetching recipes:', error);
