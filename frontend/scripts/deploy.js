@@ -171,17 +171,27 @@ function uploadStarterData(s3BucketName, region) {
 
   console.log('Uploading starter data to S3...\n');
 
-  // Upload combined_data.json to jsondata/
+  // Upload combined_data.json to jsondata/ ONLY if it doesn't exist (preserve production data)
   const jsonFile = path.join(starterDataDir, 'combined_data.json');
   if (fs.existsSync(jsonFile)) {
     try {
+      // Check if combined_data.json already exists in S3
       execSync(
-        `aws s3 cp "${jsonFile}" s3://${s3BucketName}/jsondata/combined_data.json --region ${region}`,
-        { stdio: 'inherit' }
+        `aws s3 ls s3://${s3BucketName}/jsondata/combined_data.json --region ${region}`,
+        { stdio: 'ignore' }
       );
-      console.log('✓ Uploaded combined_data.json to jsondata/\n');
-    } catch (error) {
-      console.error('✗ Failed to upload combined_data.json:', error.message);
+      console.log('✓ combined_data.json already exists in S3, skipping (preserving production data)\n');
+    } catch {
+      // File doesn't exist, upload starter data
+      try {
+        execSync(
+          `aws s3 cp "${jsonFile}" s3://${s3BucketName}/jsondata/combined_data.json --region ${region}`,
+          { stdio: 'inherit' }
+        );
+        console.log('✓ Uploaded combined_data.json to jsondata/\n');
+      } catch (error) {
+        console.error('✗ Failed to upload combined_data.json:', error.message);
+      }
     }
   }
 

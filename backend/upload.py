@@ -210,11 +210,13 @@ def upload_user_data(prefix, content, file_type, data, app_time=None):
     s3_client = boto3.client('s3')
     if not app_time:
         app_time = int(time.time())
+
+    # Handle different file types
     if file_type == 'jpg':
         try:
+            decoded_data = base64.b64decode(data)
             print("[UPLOAD] Converting image to JPEG...")
-            data = base64.b64decode(data)
-            image = Image.open(io.BytesIO(data))
+            image = Image.open(io.BytesIO(decoded_data))
             jpeg_image_io = io.BytesIO()
             image.convert('RGB').save(jpeg_image_io, format='JPEG')
             data = jpeg_image_io.getvalue()
@@ -222,6 +224,24 @@ def upload_user_data(prefix, content, file_type, data, app_time=None):
         except Exception as e:
             print(f"[UPLOAD ERROR] Error converting image to JPEG: {e}")
             return
+    elif file_type == 'pdf':
+        try:
+            data = base64.b64decode(data)
+            print(f"[UPLOAD] PDF file, size: {len(data)} bytes")
+        except Exception as e:
+            print(f"[UPLOAD ERROR] Failed to decode PDF base64: {e}")
+            return
+    elif file_type == 'json':
+        # Ensure JSON data is encoded to bytes
+        if isinstance(data, bytes):
+            pass  # Already bytes
+        elif isinstance(data, str):
+            data = data.encode('utf-8')
+        elif isinstance(data, (dict, list)):
+            data = json.dumps(data).encode('utf-8')
+        else:
+            data = json.dumps(data).encode('utf-8')
+        print(f"[UPLOAD] JSON file, size: {len(data)} bytes")
     image_key = f'{prefix}/{app_time}.{file_type}'
     try:
         print(f"[UPLOAD] Uploading to S3: {bucket_name}/{image_key}")

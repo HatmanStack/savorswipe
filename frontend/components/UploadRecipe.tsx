@@ -3,8 +3,6 @@ import { Alert } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import * as ImageManipulator from 'expo-image-manipulator'
 import * as DocumentPicker from 'expo-document-picker'
-import * as FileSystem from 'expo-file-system'
-import { PDFDocument } from 'pdf-lib'
 import { UploadService } from '@/services/UploadService'
 import { UploadFile } from '@/types/upload'
 import { ToastQueue } from '@/components/Toast'
@@ -27,59 +25,23 @@ export const resizeImage = async (uri: string, maxSize: number): Promise<string 
  * @param chunkSize - Number of pages per chunk (default: 20)
  * @returns Array of base64-encoded PDF chunks
  */
-export const splitPDFIntoChunks = async (
-  pdfUri: string,
-  chunkSize: number = 20
-): Promise<string[]> => {
-  const PDF_MAX_PAGES = chunkSize
-
-  // Read PDF file as base64
-  const base64 = await FileSystem.readAsStringAsync(pdfUri, {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    encoding: 'base64' as any,
-  })
-
-  // Convert base64 to ArrayBuffer
-  const binaryString = atob(base64)
-  const bytes = new Uint8Array(binaryString.length)
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i)
+export const pdfToBase64 = async (pdfUri: string): Promise<string> => {
+  const response = await fetch(pdfUri)
+  if (!response.ok) {
+    throw new Error(`Failed to read PDF: ${response.status}`)
   }
-  const arrayBuffer = bytes.buffer
+  const arrayBuffer = await response.arrayBuffer()
 
-  // Load PDF
-  const pdfDoc = await PDFDocument.load(arrayBuffer)
-  const pageCount = pdfDoc.getPageCount()
-
-  // If small PDF, return as single chunk
-  if (pageCount <= PDF_MAX_PAGES) {
-    const singleChunkBase64 = await pdfDoc.saveAsBase64()
-    return [singleChunkBase64]
+  // Convert to base64 using chunked approach to avoid O(n²) string concat
+  const bytes = new Uint8Array(arrayBuffer)
+  const chunkSize = 8192
+  let binary = ''
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize)
+    binary += String.fromCharCode(...chunk)
   }
 
-  // Split into multiple chunks
-  const numChunks = Math.ceil(pageCount / PDF_MAX_PAGES)
-  const chunks: string[] = []
-
-  for (let i = 0; i < numChunks; i++) {
-    const chunkDoc = await PDFDocument.create()
-    const startPage = i * PDF_MAX_PAGES
-    const endPage = Math.min((i + 1) * PDF_MAX_PAGES, pageCount)
-
-    // Copy pages to chunk
-    const pageIndices = Array.from(
-      { length: endPage - startPage },
-      (_, idx) => startPage + idx
-    )
-    const copiedPages = await chunkDoc.copyPages(pdfDoc, pageIndices)
-    copiedPages.forEach((page) => chunkDoc.addPage(page))
-
-    // Save chunk as base64
-    const chunkBase64 = await chunkDoc.saveAsBase64()
-    chunks.push(chunkBase64)
-  }
-
-  return chunks
+  return btoa(binary)
 }
 
 /**
@@ -92,6 +54,8 @@ export const selectAndUploadImage = async (
   // Constants
   const IMAGE_MAX_SIZE_MB = 10
   const IMAGE_MAX_SIZE_BYTES = IMAGE_MAX_SIZE_MB * 1024 * 1024
+  const PDF_MAX_SIZE_MB = 50
+  const PDF_MAX_SIZE_BYTES = PDF_MAX_SIZE_MB * 1024 * 1024
 
   // Request permissions
   const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
@@ -123,7 +87,7 @@ export const selectAndUploadImage = async (
 
   for (const asset of result.assets) {
     try {
-      // Validate image size (skip oversized images)
+      // Validate and process images
       if (asset.mimeType?.startsWith('image/')) {
         if (asset.size && asset.size > IMAGE_MAX_SIZE_BYTES) {
           const sizeMB = Math.round(asset.size / 1024 / 1024)
@@ -135,7 +99,6 @@ export const selectAndUploadImage = async (
           continue
         }
 
-        // Resize and add image
         const base64 = await resizeImage(asset.uri, 2000)
         if (base64) {
           files.push({
@@ -145,50 +108,27 @@ export const selectAndUploadImage = async (
           })
         }
       } else if (asset.mimeType === 'application/pdf') {
-        // Split PDF into chunks
-        const chunks = await splitPDFIntoChunks(asset.uri, 20)
-        for (const chunk of chunks) {
-          files.push({
-            data: chunk,
-            type: 'pdf',
-            uri: asset.uri,
-          })
+        // Validate PDF size
+        if (asset.size && asset.size > PDF_MAX_SIZE_BYTES) {
+          const sizeMB = Math.round(asset.size / 1024 / 1024)
+          Alert.alert(
+            'File Too Large',
+            `PDF '${asset.name}' is too large (${sizeMB}MB). Max size is ${PDF_MAX_SIZE_MB}MB. Skipping this file.`
+          )
+          skippedFiles++
+          continue
         }
+
+        const base64 = await pdfToBase64(asset.uri)
+        files.push({
+          data: base64,
+          type: 'pdf',
+          uri: asset.uri,
+        })
       }
-    } catch {Alert.alert('Error', `Failed to process file '${asset.name}'. Skipping.`)
+    } catch {
+      Alert.alert('Error', `Failed to process file '${asset.name}'. Skipping.`)
       skippedFiles++
-    }
-  }
-
-  // Estimate processing time and warn if excessive
-  const pdfChunks = files.filter((f) => f.type === 'pdf').length
-  if (pdfChunks > 0) {
-    // Formula: chunks × 20 recipes/chunk × 53 seconds/recipe ÷ 60 ÷ 3 workers
-    const estimatedMinutes = Math.ceil((pdfChunks * 20 * 53) / 60 / 3)
-    if (estimatedMinutes > 10) {
-      const userConfirmed = await new Promise<boolean>((resolve) => {
-        Alert.alert(
-          'Long Processing Time',
-          `This upload contains ${pdfChunks} PDF chunks (~${estimatedMinutes} minutes to process). Large uploads may take a long time. Continue?`,
-          [
-            {
-              text: 'Continue',
-              onPress: () => resolve(true),
-            },
-            {
-              text: 'Cancel',
-              style: 'cancel',
-              onPress: () => resolve(false),
-            },
-          ]
-        )
-      })
-
-      if (!userConfirmed) {
-        // User cancelled
-        setUploadVisible(false)
-        return
-      }
     }
   }
 
@@ -224,9 +164,17 @@ type UploadFilesProps = {
 const UploadFiles: React.FC<UploadFilesProps> = ({
   setUploadVisible,
 }) => {
+  console.log('[UploadFiles] Component rendered')
+
   useEffect(() => {
+    console.log('[UploadFiles] useEffect triggered')
     const initiateUpload = async () => {
-      await selectAndUploadImage(setUploadVisible)
+      console.log('[UploadFiles] initiateUpload called')
+      try {
+        await selectAndUploadImage(setUploadVisible)
+      } catch (error) {
+        console.error('[UploadFiles] Error in selectAndUploadImage:', error)
+      }
     }
     initiateUpload()
   }, [setUploadVisible])

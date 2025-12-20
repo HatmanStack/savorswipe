@@ -243,6 +243,9 @@ export class UploadService {
     this.notifySubscribers(job)
   }
 
+  private static POLL_INTERVAL = 2000 // Poll every 2 seconds
+  private static MAX_POLL_ATTEMPTS = 300 // Max 10 minutes (300 * 2s)
+
   /**
    * Call API with batch of files
    */
@@ -254,8 +257,6 @@ export class UploadService {
 
     // Normalize URL to prevent double-slash issues
     const API_URL = rawApiUrl.replace(/\/+$/, '')
-
-    // Use the upload route
     const endpoint = `${API_URL}/recipe/upload`
 
     const payload = {
@@ -274,12 +275,78 @@ export class UploadService {
       body: JSON.stringify(payload),
     })
 
-    if (!response.ok) {
-      throw new Error(`API returned status ${response.status}`)
+    if (!response.ok && response.status !== 202) {
+      const errorText = await response.text()
+      throw new Error(`API returned status ${response.status}: ${errorText}`)
     }
 
-    const result = await response.json()
-    return result as UploadResult
+    const initialResult = await response.json()
+
+    // If status is 202 (Accepted), poll for completion
+    if (response.status === 202 && initialResult.status === 'processing') {
+      return await this.pollForCompletion(API_URL, job.id)
+    }
+
+    return initialResult as UploadResult
+  }
+
+  private static MAX_CONSECUTIVE_ERRORS = 5
+
+  /**
+   * Poll for job completion status
+   */
+  private static async pollForCompletion(apiUrl: string, jobId: string): Promise<UploadResult> {
+    const statusEndpoint = `${apiUrl}/upload/status/${jobId}`
+    let consecutiveErrors = 0
+
+    for (let attempt = 0; attempt < this.MAX_POLL_ATTEMPTS; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, this.POLL_INTERVAL))
+
+      try {
+        const response = await fetch(statusEndpoint)
+
+        if (!response.ok) {
+          consecutiveErrors++
+          if (consecutiveErrors >= this.MAX_CONSECUTIVE_ERRORS) {
+            throw new Error(`Status check failed ${consecutiveErrors} times consecutively`)
+          }
+          continue
+        }
+
+        // Reset on success
+        consecutiveErrors = 0
+
+        const status = await response.json()
+
+        if (status.status === 'completed') {
+          return {
+            returnMessage: `${status.successCount} recipes processed`,
+            successCount: status.successCount || 0,
+            failCount: status.failCount || 0,
+            jsonData: status.jsonData || {},
+            newRecipeKeys: status.newRecipeKeys || [],
+            errors: status.errors || [],
+            jobId: jobId,
+          }
+        }
+
+        if (status.status === 'error') {
+          throw new Error(status.error || 'Processing failed')
+        }
+      } catch (error) {
+        // Continue polling on transient errors, but track consecutive failures
+        if (error instanceof Error && error.message !== 'Processing failed') {
+          consecutiveErrors++
+          if (consecutiveErrors >= this.MAX_CONSECUTIVE_ERRORS) {
+            throw new Error(`Polling failed after ${consecutiveErrors} consecutive errors`)
+          }
+          continue
+        }
+        throw error
+      }
+    }
+
+    throw new Error('Processing timed out')
   }
 
   /**

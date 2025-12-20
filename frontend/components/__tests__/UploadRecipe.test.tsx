@@ -12,7 +12,6 @@ jest.mock('expo-file-system', () => ({
     Base64: 'base64',
   },
 }))
-jest.mock('pdf-lib')
 jest.mock('expo-image-manipulator', () => ({
   manipulateAsync: jest.fn(),
   SaveFormat: { JPEG: 'jpeg' },
@@ -22,10 +21,8 @@ jest.mock('expo-image-manipulator', () => ({
 import { Alert } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import * as DocumentPicker from 'expo-document-picker'
-import * as FileSystem from 'expo-file-system'
-import { PDFDocument } from 'pdf-lib'
 import * as ImageManipulator from 'expo-image-manipulator'
-import { selectAndUploadImage, splitPDFIntoChunks } from '../UploadRecipe'
+import { selectAndUploadImage, pdfToBase64 } from '../UploadRecipe'
 import { UploadService } from '@/services/UploadService'
 import { UploadFile } from '@/types/upload'
 
@@ -197,51 +194,25 @@ describe('UploadRecipe', () => {
     expect(uploadCall).toHaveLength(1)
   })
 
-  // Test 7: Process small PDF (single chunk)
-  it('test_processes_small_pdf: should return single chunk for PDF with 15 pages', async () => {
-    const mockPdfDoc = {
-      getPageCount: jest.fn().mockReturnValue(15),
-      saveAsBase64: jest.fn().mockResolvedValue('base64pdfdata'),
+  // Test 7: Convert PDF to base64
+  it('test_pdf_to_base64: should convert PDF file to base64 string', async () => {
+    // Mock fetch to return PDF data
+    const mockArrayBuffer = new ArrayBuffer(8)
+    const mockResponse = {
+      ok: true,
+      status: 200,
+      arrayBuffer: jest.fn().mockResolvedValue(mockArrayBuffer),
     }
-    ;(PDFDocument.load as jest.Mock).mockResolvedValue(mockPdfDoc)
-    ;(FileSystem.readAsStringAsync as jest.Mock).mockResolvedValue('mockbase64')
+    global.fetch = jest.fn().mockResolvedValue(mockResponse)
 
-    const chunks = await splitPDFIntoChunks('file://test.pdf', 20)
+    const result = await pdfToBase64('file://test.pdf')
 
-    expect(chunks).toHaveLength(1)
-    expect(chunks[0]).toBe('base64pdfdata')
+    expect(global.fetch).toHaveBeenCalledWith('file://test.pdf')
+    expect(typeof result).toBe('string')
   })
 
-  // Test 8: Split large PDF (3 chunks)
-  it('test_splits_large_pdf: should create 3 chunks for PDF with 50 pages', async () => {
-    const mockOriginalDoc = {
-      getPageCount: jest.fn().mockReturnValue(50),
-    }
-    const mockChunkDoc = {
-      addPage: jest.fn(),
-      saveAsBase64: jest.fn().mockResolvedValue('chunkdata'),
-      copyPages: jest.fn().mockResolvedValue([{}, {}, {}]),
-    }
-    ;(PDFDocument.load as jest.Mock).mockResolvedValue(mockOriginalDoc)
-    ;(PDFDocument.create as jest.Mock).mockResolvedValue(mockChunkDoc)
-    ;(FileSystem.readAsStringAsync as jest.Mock).mockResolvedValue('mockbase64')
-
-    const chunks = await splitPDFIntoChunks('file://test.pdf', 20)
-
-    expect(chunks).toHaveLength(3) // 50 pages / 20 per chunk = 3 chunks (20+20+10)
-    expect(PDFDocument.create).toHaveBeenCalledTimes(3)
-  })
-
-  // Test 9: Process cookbook (100 pages = 5 chunks)
-  // Note: Skipped due to test environment limitations with large PDF processing
-  it.skip(
-    'test_processes_cookbook: should create 5 UploadFile objects for 100-page PDF',
-    async () => {
-      // Mock atob for test environment
-      global.atob = jest.fn((str) => Buffer.from(str, 'base64').toString('binary'))
-      // Reset Alert mock to default no-op behavior
-      ;(Alert.alert as unknown as jest.Mock).mockImplementation(() => {})
-
+  // Test 8: PDF sent as single file (no chunking)
+  it('test_pdf_sent_whole: should send PDF as single file to backend', async () => {
     ;(ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock).mockResolvedValue({
       status: 'granted',
     })
@@ -249,35 +220,33 @@ describe('UploadRecipe', () => {
       canceled: false,
       assets: [
         {
-          uri: 'file://cookbook.pdf',
-          name: 'cookbook.pdf',
+          uri: 'file://test.pdf',
+          name: 'test.pdf',
           mimeType: 'application/pdf',
-          size: 20 * 1024 * 1024, // 20MB
+          size: 2 * 1024 * 1024,
         },
       ],
     })
 
-    const mockOriginalDoc = {
-      getPageCount: jest.fn().mockReturnValue(100),
-    }
-    const mockChunkDoc = {
-      addPage: jest.fn(),
-      saveAsBase64: jest.fn().mockResolvedValue('chunkdata'),
-      copyPages: jest.fn().mockResolvedValue([{}, {}]),
-    }
-    ;(PDFDocument.load as jest.Mock).mockResolvedValue(mockOriginalDoc)
-    ;(PDFDocument.create as jest.Mock).mockResolvedValue(mockChunkDoc)
-    ;(FileSystem.readAsStringAsync as jest.Mock).mockResolvedValue('mockbase64')
+    // Mock fetch for pdfToBase64
+    const mockArrayBuffer = new ArrayBuffer(8)
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      arrayBuffer: jest.fn().mockResolvedValue(mockArrayBuffer),
+    })
 
     await selectAndUploadImage(mockSetUploadVisible)
 
-      expect(UploadService.queueUpload).toHaveBeenCalled()
-      const uploadCall = (UploadService.queueUpload as jest.Mock).mock.calls[0][0]
-      expect(uploadCall).toHaveLength(5) // 100 pages / 20 per chunk = 5 chunks
-      expect(uploadCall.every((file: UploadFile) => file.type === 'pdf')).toBe(true)
-    },
-    10000
-  )
+    const uploadCall = (UploadService.queueUpload as jest.Mock).mock.calls[0][0]
+    expect(uploadCall).toHaveLength(1) // Single PDF file, not chunked
+    expect(uploadCall[0].type).toBe('pdf')
+  })
+
+  // Test 9: Large PDF processing (REMOVED - backend handles PDF processing now)
+  it.skip('test_processes_cookbook: backend now handles PDF page processing', () => {
+    // PDF chunking moved to backend - frontend sends whole PDF
+  })
 
   // Test 10: Verify resizeImage is called
   it('test_resizes_images: should call resizeImage with 2000 max size', async () => {
@@ -367,7 +336,7 @@ describe('UploadRecipe', () => {
   })
 
   // Test 13: Mixed files (images + PDF)
-  it('test_mixed_files: should process 2 images + 1 small PDF correctly', async () => {
+  it('test_mixed_files: should process 2 images + 1 PDF correctly', async () => {
     ;(ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock).mockResolvedValue({
       status: 'granted',
     })
@@ -398,17 +367,18 @@ describe('UploadRecipe', () => {
       base64: 'base64image',
     })
 
-    const mockPdfDoc = {
-      getPageCount: jest.fn().mockReturnValue(10),
-      saveAsBase64: jest.fn().mockResolvedValue('base64pdf'),
-    }
-    ;(PDFDocument.load as jest.Mock).mockResolvedValue(mockPdfDoc)
-    ;(FileSystem.readAsStringAsync as jest.Mock).mockResolvedValue('mockbase64')
+    // Mock fetch for PDF conversion
+    const mockArrayBuffer = new ArrayBuffer(8)
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      arrayBuffer: jest.fn().mockResolvedValue(mockArrayBuffer),
+    })
 
     await selectAndUploadImage(mockSetUploadVisible)
 
     const uploadCall = (UploadService.queueUpload as jest.Mock).mock.calls[0][0]
-    expect(uploadCall).toHaveLength(3) // 2 images + 1 PDF chunk
+    expect(uploadCall).toHaveLength(3) // 2 images + 1 PDF
     const imageFiles = uploadCall.filter((f: UploadFile) => f.type === 'image')
     const pdfFiles = uploadCall.filter((f: UploadFile) => f.type === 'pdf')
     expect(imageFiles).toHaveLength(2)
@@ -490,86 +460,13 @@ describe('UploadRecipe', () => {
     expect(UploadService.queueUpload).not.toHaveBeenCalled()
   })
 
-  // Test 16: Processing time warning
-  it('test_processing_time_warning: should show confirmation for long uploads', async () => {
-    // Mock Alert.alert to simulate user clicking "OK" (first button)
-    ;(Alert.alert as unknown as jest.Mock).mockImplementation(
-      (title, message, buttons) => {
-        if (buttons && message?.includes('minutes to process')) {
-          // Simulate user clicking first button (OK/Continue)
-          buttons[0].onPress()
-        }
-      }
-    )
-
-    ;(ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock).mockResolvedValue({
-      status: 'granted',
-    })
-    ;(DocumentPicker.getDocumentAsync as jest.Mock).mockResolvedValue({
-      canceled: false,
-      assets: Array(10).fill(null).map((_, i) => ({
-        uri: `file://pdf${i}.pdf`,
-        name: `pdf${i}.pdf`,
-        mimeType: 'application/pdf',
-        size: 5 * 1024 * 1024,
-      })),
-    })
-
-    // Mock each PDF to have 20 pages (10 PDFs × 20 pages = 200 recipes ≈ >10 min)
-    const mockPdfDoc = {
-      getPageCount: jest.fn().mockReturnValue(20),
-      saveAsBase64: jest.fn().mockResolvedValue('base64pdf'),
-    }
-    ;(PDFDocument.load as jest.Mock).mockResolvedValue(mockPdfDoc)
-    ;(FileSystem.readAsStringAsync as jest.Mock).mockResolvedValue('mockbase64')
-
-    await selectAndUploadImage(mockSetUploadVisible)
-
-    expect(Alert.alert).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.stringMatching(/minutes to process/),
-      expect.any(Array)
-    )
+  // Test 16: Processing time warning (REMOVED - backend handles processing now)
+  it.skip('test_processing_time_warning: processing time warnings removed', () => {
+    // Backend now handles async processing with polling
   })
 
-  // Test 17: User cancels long upload
-  it('test_user_cancels_long_upload: should close modal without upload when user cancels', async () => {
-    // Reset the mock to avoid interference from previous tests
-    ;(Alert.alert as unknown as jest.Mock).mockReset()
-
-    // Mock Alert.alert to simulate user clicking "Cancel" (second button)
-    ;(Alert.alert as unknown as jest.Mock).mockImplementation(
-      (title, message, buttons) => {
-        if (buttons && message?.includes('minutes to process')) {
-          // Simulate user clicking second button (Cancel)
-          buttons[1].onPress()
-        }
-      }
-    )
-
-    ;(ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock).mockResolvedValue({
-      status: 'granted',
-    })
-    ;(DocumentPicker.getDocumentAsync as jest.Mock).mockResolvedValue({
-      canceled: false,
-      assets: Array(10).fill(null).map((_, i) => ({
-        uri: `file://pdf${i}.pdf`,
-        name: `pdf${i}.pdf`,
-        mimeType: 'application/pdf',
-        size: 5 * 1024 * 1024,
-      })),
-    })
-
-    const mockPdfDoc = {
-      getPageCount: jest.fn().mockReturnValue(20),
-      saveAsBase64: jest.fn().mockResolvedValue('base64pdf'),
-    }
-    ;(PDFDocument.load as jest.Mock).mockResolvedValue(mockPdfDoc)
-    ;(FileSystem.readAsStringAsync as jest.Mock).mockResolvedValue('mockbase64')
-
-    await selectAndUploadImage(mockSetUploadVisible)
-
-    expect(mockSetUploadVisible).toHaveBeenCalledWith(false)
-    expect(UploadService.queueUpload).not.toHaveBeenCalled()
+  // Test 17: User cancels long upload (REMOVED - backend handles processing now)
+  it.skip('test_user_cancels_long_upload: processing time warnings removed', () => {
+    // Backend now handles async processing with polling
   })
 })

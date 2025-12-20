@@ -192,7 +192,15 @@ def lambda_handler(event, context):
 
     debug_log(f"[DEBUG] lambda_handler: Detected HTTP method: {http_method}, path: {request_path}")
 
+    # Check for async processing invocation (not from API Gateway)
+    if event.get('async_processing'):
+        return handle_async_processing(event, context)
+
     if http_method == 'GET':
+        # Check if this is a status check request
+        if '/upload/status/' in request_path:
+            job_id = path_params.get('jobId')
+            return handle_status_request(event, context, job_id)
         return handle_get_request(event, context)
     elif http_method == 'DELETE':
         recipe_key = path_params.get('recipe_key')
@@ -290,6 +298,125 @@ def handle_get_request(event, context):
                 'Content-Type': 'application/json'
             },
             'body': json.dumps({'error': f'Failed to fetch recipes: {str(e)}'})
+        }
+
+
+def handle_async_processing(event, context):
+    """
+    Handle async processing invocation.
+
+    Reads pending upload data from S3 and processes it.
+    This is invoked asynchronously by handle_post_request.
+    """
+    job_id = event.get('job_id')
+    print(f"[ASYNC] Starting async processing for job {job_id}")
+
+    bucket_name = os.getenv('S3_BUCKET')
+    pending_key = f'upload-pending/{job_id}.json'
+
+    try:
+        # Read pending request data from S3
+        s3_client = boto3.client('s3')
+        response = s3_client.get_object(Bucket=bucket_name, Key=pending_key)
+        body = json.loads(response['Body'].read().decode('utf-8'))
+
+        # Process using existing logic
+        result = process_upload_files(body, job_id, bucket_name)
+
+        # Clean up pending file
+        try:
+            s3_client.delete_object(Bucket=bucket_name, Key=pending_key)
+        except Exception:
+            pass
+
+        return result
+
+    except Exception as e:
+        print(f"[ASYNC ERROR] Failed to process job {job_id}: {str(e)}")
+        import traceback
+        traceback.print_exc()
+
+        # Write error status
+        try:
+            s3_client = boto3.client('s3')
+            error_status = {
+                'jobId': job_id,
+                'status': 'error',
+                'timestamp': int(time.time()),
+                'error': str(e)
+            }
+            s3_client.put_object(
+                Bucket=bucket_name,
+                Key=f'upload-status/{job_id}.json',
+                Body=json.dumps(error_status),
+                ContentType='application/json'
+            )
+        except Exception:
+            pass
+
+        return {'error': str(e)}
+
+
+def handle_status_request(event, context, job_id):
+    """
+    Handle GET requests for checking upload job status.
+
+    Reads the status file from S3 and returns current job state.
+
+    Args:
+        event: API Gateway Lambda proxy integration request
+        context: Lambda context object
+        job_id: The job ID to check status for
+
+    Returns:
+        {
+            "statusCode": 200 or 404,
+            "body": JSON with status, progress, results
+        }
+    """
+    if not job_id:
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json'},
+            'body': json.dumps({'error': 'Missing jobId parameter'})
+        }
+
+    bucket_name = os.getenv('S3_BUCKET')
+    status_key = f'upload-status/{job_id}.json'
+
+    try:
+        s3_client = boto3.client('s3')
+        response = s3_client.get_object(Bucket=bucket_name, Key=status_key)
+        status_data = json.loads(response['Body'].read().decode('utf-8'))
+
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache'
+            },
+            'body': json.dumps(status_data)
+        }
+
+    except ClientError as e:
+        if e.response.get('Error', {}).get('Code') == 'NoSuchKey':
+            return {
+                'statusCode': 404,
+                'headers': {'Content-Type': 'application/json'},
+                'body': json.dumps({'error': 'Job not found', 'jobId': job_id})
+            }
+        print(f'Error fetching job status: {str(e)}')
+        return {
+            'statusCode': 500,
+            'headers': {'Content-Type': 'application/json'},
+            'body': json.dumps({'error': f'Failed to fetch status: {str(e)}'})
+        }
+    except Exception as e:
+        print(f'Error fetching job status: {str(e)}')
+        return {
+            'statusCode': 500,
+            'headers': {'Content-Type': 'application/json'},
+            'body': json.dumps({'error': f'Failed to fetch status: {str(e)}'})
         }
 
 
@@ -825,107 +952,134 @@ def handle_post_request(event, context):
     """
     Handle POST requests for recipe uploads.
 
-    This is the existing lambda_handler logic, extracted for clarity.
+    Saves files to S3 and invokes async processing.
+    Returns immediately with job status.
     """
-    start_time = time.time()
-
-    # Debug: Log full event structure (first 500 chars)
-    debug_log(f"[DEBUG] Full event keys: {list(event.keys())}")
-    debug_log(f"[DEBUG] Event preview: {str(event)[:500]}")
-
-    # Check if body exists and log it
-    if 'body' in event:
-        debug_log(
-            f"[DEBUG] Body exists, type: {type(event['body'])}, length: {len(str(event['body']))}")
-        debug_log(f"[DEBUG] Body preview: {str(event['body'])[:200]}")
-    else:
-        debug_log("[DEBUG] No 'body' key in event!")
-
-    # Parse request body (API Gateway sends body as JSON string)
+    # Parse request body
     try:
         body_content = event.get('body')
         if body_content:
-            # API Gateway format - body is a JSON string
-            debug_log("[DEBUG] handle_post_request: Parsing body from API Gateway format")
             body = json.loads(body_content)
         else:
-            # Direct invocation format - event is the body
-            debug_log("[DEBUG] handle_post_request: Using direct invocation format")
             body = event
     except json.JSONDecodeError as e:
-        debug_log(f"[DEBUG] handle_post_request: JSON decode error: {e!r}")
         return {
             'statusCode': 400,
-            'headers': {
-                'Content-Type': 'application/json'
-            },
+            'headers': {'Content-Type': 'application/json'},
             'body': json.dumps({'returnMessage': f'Invalid JSON in request body: {str(e)}'})
         }
 
     # Validate files key exists
     if 'files' not in body:
-        debug_log(
-            f"[DEBUG] handle_post_request: ERROR: No 'files' key in body. Body keys: {list(body.keys())}")
         return {
             'statusCode': 400,
-            'headers': {
-                'Content-Type': 'application/json'
-            },
+            'headers': {'Content-Type': 'application/json'},
             'body': json.dumps({'returnMessage': 'No files provided in request'})
         }
-
-    debug_log(f"[DEBUG] Body parsed successfully, contains {len(body.get('files', []))} files")
 
     files = body['files']
     job_id = body.get('jobId', str(uuid.uuid4()))
 
-    debug_log(f"[DEBUG] Job ID: {job_id}, Files count: {len(files)}")
+    print(f"[POST] Received upload request: job_id={job_id}, files={len(files)}")
 
-    # Initialize services
-    debug_log("[DEBUG] Getting S3_BUCKET environment variable...")
     bucket_name = os.getenv('S3_BUCKET')
-    debug_log(f"[DEBUG] S3_BUCKET = '{bucket_name}'")
     if not bucket_name:
         return {
             'statusCode': 500,
-            'headers': {
-                'Content-Type': 'application/json'
-            },
+            'headers': {'Content-Type': 'application/json'},
             'body': json.dumps({'returnMessage': 'S3_BUCKET environment variable not set'})
         }
 
     try:
+        s3_client = boto3.client('s3')
+        lambda_client = boto3.client('lambda')
+
+        # Save request body to S3 for async processing
+        pending_key = f'upload-pending/{job_id}.json'
+        s3_client.put_object(
+            Bucket=bucket_name,
+            Key=pending_key,
+            Body=json.dumps(body),
+            ContentType='application/json'
+        )
+
+        # Write initial 'processing' status
+        status_data = {
+            'jobId': job_id,
+            'status': 'processing',
+            'timestamp': int(time.time()),
+            'totalFiles': len(files),
+            'successCount': 0,
+            'failCount': 0
+        }
+        s3_client.put_object(
+            Bucket=bucket_name,
+            Key=f'upload-status/{job_id}.json',
+            Body=json.dumps(status_data),
+            ContentType='application/json'
+        )
+
+        # Invoke Lambda async to process
+        function_name = os.getenv('FUNCTION_NAME')
+        lambda_client.invoke(
+            FunctionName=function_name,
+            InvocationType='Event',  # Async invocation
+            Payload=json.dumps({
+                'async_processing': True,
+                'job_id': job_id
+            })
+        )
+
+        print(f"[POST] Async processing invoked for job {job_id}")
+
+        # Return immediately with job ID
+        return {
+            'statusCode': 202,  # Accepted
+            'headers': {'Content-Type': 'application/json'},
+            'body': json.dumps({
+                'jobId': job_id,
+                'status': 'processing',
+                'message': 'Upload accepted, processing started'
+            })
+        }
+
+    except Exception as e:
+        print(f"[POST ERROR] Failed to start async processing: {str(e)}")
+        return {
+            'statusCode': 500,
+            'headers': {'Content-Type': 'application/json'},
+            'body': json.dumps({'returnMessage': f'Failed to start processing: {str(e)}'})
+        }
+
+
+def process_upload_files(body, job_id, bucket_name):
+    """
+    Process uploaded files (called by async handler).
+
+    This contains the actual OCR, embedding, and storage logic.
+    """
+    start_time = time.time()
+    files = body['files']
+
+    print(f"[PROCESS] Starting processing for job {job_id}, {len(files)} files")
+
+    try:
         # Initialize embedding store and load existing embeddings
-        debug_log("[DEBUG] Initializing EmbeddingStore...")
         embedding_store = EmbeddingStore(bucket_name)
-        debug_log("[DEBUG] Loading existing embeddings...")
         existing_embeddings, _ = embedding_store.load_embeddings()
-        debug_log(f"[DEBUG] Loaded {len(existing_embeddings)} existing embeddings")
 
         # Initialize embedding generator
-        debug_log("[DEBUG] Initializing EmbeddingGenerator...")
         embedding_generator = EmbeddingGenerator()
-        debug_log("[DEBUG] EmbeddingGenerator initialized")
 
         # Initialize duplicate detector
-        debug_log("[DEBUG] Initializing DuplicateDetector...")
         duplicate_detector = DuplicateDetector(existing_embeddings)
-        debug_log("[DEBUG] All services initialized successfully")
 
     except Exception as e:
         print(f"[ERROR] Service initialization failed: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return {
-            'statusCode': 500,
-            'headers': {
-                'Content-Type': 'application/json'
-            },
-            'body': json.dumps({'returnMessage': f'Service initialization failed: {str(e)}'})
-        }
+        raise
 
     # Extract recipes from files
-    PDF_MAX_PAGES = 20  # Safety limit (frontend should chunk)
+    PDF_MAX_PAGES = 50  # Safety limit
     all_recipes = []
     file_errors = []
 
@@ -944,14 +1098,17 @@ def handle_post_request(event, context):
                 file_content = file_content.split(
                     ',', 1)[1] if ',' in file_content else file_content
 
-            # Upload user file for records
+            # Detect if PDF from file type
+            is_pdf = 'pdf' in file_type or file_type == 'application/pdf'
+
+            # Upload user file for records (use correct mime type)
             try:
-                app_time = upload.upload_user_data('user_images', 'image/jpeg', 'jpg', file_content)
+                if is_pdf:
+                    app_time = upload.upload_user_data('user_pdfs', 'application/pdf', 'pdf', file_content)
+                else:
+                    app_time = upload.upload_user_data('user_images', 'image/jpeg', 'jpg', file_content)
             except Exception:
                 app_time = int(time.time())
-
-            # Detect if PDF from MIME type
-            is_pdf = 'pdf' in file_type or file_type == 'application/pdf'
 
             if is_pdf:
                 # Extract images from PDF
@@ -1258,7 +1415,8 @@ def handle_post_request(event, context):
             'successCount': success_count,
             'failCount': fail_count,
             'newRecipeKeys': success_keys,
-            'errors': file_errors
+            'errors': file_errors,
+            'jsonData': json_data
         }
 
         s3_client.put_object(

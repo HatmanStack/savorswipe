@@ -116,6 +116,7 @@ Resources:
           SEARCH_ID: !Ref GoogleSearchId
           SEARCH_KEY: !Ref GoogleSearchKey
           S3_BUCKET: !Ref RecipeBucket
+          FUNCTION_NAME: !Sub '${StackName}-recipe-processor'
       Policies:
         - Statement:
             - Effect: Allow
@@ -128,6 +129,10 @@ Resources:
               Action:
                 - s3:ListBucket
               Resource: !GetAtt RecipeBucket.Arn
+            - Effect: Allow
+              Action:
+                - lambda:InvokeFunction
+              Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${StackName}-recipe-processor'
       Tags:
         Application: SavorSwipe
         StackName: !Ref StackName
@@ -205,6 +210,13 @@ Resources:
     Properties:
       ApiId: !Ref HttpApi
       RouteKey: 'POST /recipe/{recipe_key}/image'
+      Target: !Sub 'integrations/${LambdaIntegration}'
+
+  GetUploadStatusRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'GET /upload/status/{jobId}'
       Target: !Sub 'integrations/${LambdaIntegration}'
 
   # Lambda Permission for API Gateway
