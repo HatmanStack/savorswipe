@@ -368,6 +368,7 @@ describe('UploadRecipe', () => {
     // Mock fetch for PDF conversion
     const mockArrayBuffer = new ArrayBuffer(8)
     global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
       status: 200,
       arrayBuffer: jest.fn().mockResolvedValue(mockArrayBuffer),
     })
