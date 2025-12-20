@@ -232,10 +232,14 @@ def upload_user_data(prefix, content, file_type, data, app_time=None):
             print(f"[UPLOAD ERROR] Failed to decode PDF base64: {e}")
             return
     elif file_type == 'json':
-        # JSON data is already a string, just encode to bytes
-        if isinstance(data, str):
+        # Ensure JSON data is encoded to bytes
+        if isinstance(data, bytes):
+            pass  # Already bytes
+        elif isinstance(data, str):
             data = data.encode('utf-8')
-        elif isinstance(data, dict):
+        elif isinstance(data, (dict, list)):
+            data = json.dumps(data).encode('utf-8')
+        else:
             data = json.dumps(data).encode('utf-8')
         print(f"[UPLOAD] JSON file, size: {len(data)} bytes")
     image_key = f'{prefix}/{app_time}.{file_type}'

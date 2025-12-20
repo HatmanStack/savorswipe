@@ -290,11 +290,14 @@ export class UploadService {
     return initialResult as UploadResult
   }
 
+  private static MAX_CONSECUTIVE_ERRORS = 5
+
   /**
    * Poll for job completion status
    */
   private static async pollForCompletion(apiUrl: string, jobId: string): Promise<UploadResult> {
     const statusEndpoint = `${apiUrl}/upload/status/${jobId}`
+    let consecutiveErrors = 0
 
     for (let attempt = 0; attempt < this.MAX_POLL_ATTEMPTS; attempt++) {
       await new Promise((resolve) => setTimeout(resolve, this.POLL_INTERVAL))
@@ -303,8 +306,15 @@ export class UploadService {
         const response = await fetch(statusEndpoint)
 
         if (!response.ok) {
+          consecutiveErrors++
+          if (consecutiveErrors >= this.MAX_CONSECUTIVE_ERRORS) {
+            throw new Error(`Status check failed ${consecutiveErrors} times consecutively`)
+          }
           continue
         }
+
+        // Reset on success
+        consecutiveErrors = 0
 
         const status = await response.json()
 
@@ -324,8 +334,12 @@ export class UploadService {
           throw new Error(status.error || 'Processing failed')
         }
       } catch (error) {
-        // Continue polling on error (might be transient)
+        // Continue polling on transient errors, but track consecutive failures
         if (error instanceof Error && error.message !== 'Processing failed') {
+          consecutiveErrors++
+          if (consecutiveErrors >= this.MAX_CONSECUTIVE_ERRORS) {
+            throw new Error(`Polling failed after ${consecutiveErrors} consecutive errors`)
+          }
           continue
         }
         throw error

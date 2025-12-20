@@ -82,11 +82,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     }
   }, [toastMessage, errorDetails.length]);
 
-  console.log('[UploadModal] render, visible:', visible)
-
   if (!visible) return null;
 
-  console.log('[UploadModal] rendering upload component')
   return (
     <>
       {/* Progress display during upload */}
