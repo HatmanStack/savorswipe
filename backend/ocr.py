@@ -96,7 +96,7 @@ Here is the partial extraction we have so far:
     partial_str = json.dumps(partial_data, indent=2)
 
     response = get_client().chat.completions.create(
-        model="gpt-4o",  # Can be upgraded to "o1" or "gpt-5" when available
+        model="gpt-5.2",
         response_format={"type": "json_object"},
         messages=[
             {
@@ -113,7 +113,7 @@ Here is the partial extraction we have so far:
             }
         ],
         temperature=0.1,  # Slightly higher to allow for completion creativity while staying accurate
-        max_tokens=4096,
+        max_completion_tokens=4096,
     )
 
     completed_json = response.choices[0].message.content
@@ -321,7 +321,7 @@ Example 3 - Multiple partial recipes (e.g., index page with snippets):
     system_prompt = system_prompt + safety_note
 
     response = get_client().chat.completions.create(
-        model="gpt-4o",
+        model="gpt-5.2",
         response_format={"type": "json_object"},
         messages=[
             {
@@ -338,7 +338,7 @@ Example 3 - Multiple partial recipes (e.g., index page with snippets):
             }
         ],
         temperature=0.0,
-        max_tokens=4096,  # Ensure enough tokens for complete recipe extraction
+        max_completion_tokens=4096,  # Ensure enough tokens for complete recipe extraction
     )
 
     # Handle content filter by retrying (max 2 attempts)
@@ -496,7 +496,7 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
     try:
         print("[PARSEJSON] Calling OpenAI API...")
         response = get_client().chat.completions.create(
-            model="gpt-4o",
+            model="gpt-5.2",
             response_format={"type": "json_object"},
 
             messages=[
@@ -510,7 +510,7 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
                 }
             ],
             temperature=0.0,
-            max_tokens=16384,  # GPT-4o maximum for completion tokens
+            max_completion_tokens=16384,
             timeout=30.0  # Add 30 second timeout
         )
         print("[PARSEJSON] OpenAI API call completed")

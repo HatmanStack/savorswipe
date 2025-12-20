@@ -243,11 +243,15 @@ export class UploadService {
     this.notifySubscribers(job)
   }
 
+  private static POLL_INTERVAL = 2000 // Poll every 2 seconds
+  private static MAX_POLL_ATTEMPTS = 300 // Max 10 minutes (300 * 2s)
+
   /**
    * Call API with batch of files
    */
   private static async callApi(job: UploadJob, files: UploadFile[]): Promise<UploadResult> {
     const rawApiUrl = this._testApiUrl || process.env.EXPO_PUBLIC_API_GATEWAY_URL
+    console.log('[API] callApi started, rawApiUrl:', rawApiUrl)
     if (!rawApiUrl) {
       throw new Error('EXPO_PUBLIC_API_GATEWAY_URL is not configured')
     }
@@ -257,6 +261,7 @@ export class UploadService {
 
     // Use the upload route
     const endpoint = `${API_URL}/recipe/upload`
+    console.log('[API] Endpoint:', endpoint)
 
     const payload = {
       files: files.map((f) => ({
@@ -265,7 +270,9 @@ export class UploadService {
       })),
       jobId: job.id,
     }
+    console.log('[API] Payload files count:', payload.files.length, 'jobId:', payload.jobId)
 
+    console.log('[API] Sending POST request...')
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
@@ -273,13 +280,74 @@ export class UploadService {
       },
       body: JSON.stringify(payload),
     })
+    console.log('[API] Response status:', response.status)
 
-    if (!response.ok) {
+    if (!response.ok && response.status !== 202) {
+      const errorText = await response.text()
+      console.error('[API] Error response:', errorText)
       throw new Error(`API returned status ${response.status}`)
     }
 
-    const result = await response.json()
-    return result as UploadResult
+    const initialResult = await response.json()
+    console.log('[API] Initial result:', JSON.stringify(initialResult).substring(0, 200))
+
+    // If status is 202 (Accepted), poll for completion
+    if (response.status === 202 && initialResult.status === 'processing') {
+      console.log('[API] Async processing started, polling for status...')
+      return await this.pollForCompletion(API_URL, job.id)
+    }
+
+    return initialResult as UploadResult
+  }
+
+  /**
+   * Poll for job completion status
+   */
+  private static async pollForCompletion(apiUrl: string, jobId: string): Promise<UploadResult> {
+    const statusEndpoint = `${apiUrl}/upload/status/${jobId}`
+
+    for (let attempt = 0; attempt < this.MAX_POLL_ATTEMPTS; attempt++) {
+      // Wait before polling
+      await new Promise((resolve) => setTimeout(resolve, this.POLL_INTERVAL))
+
+      try {
+        console.log(`[API] Polling status attempt ${attempt + 1}...`)
+        const response = await fetch(statusEndpoint)
+
+        if (!response.ok) {
+          console.log(`[API] Status check returned ${response.status}, continuing to poll...`)
+          continue
+        }
+
+        const status = await response.json()
+        console.log('[API] Status:', status.status)
+
+        if (status.status === 'completed') {
+          console.log('[API] Processing completed!')
+          return {
+            returnMessage: `${status.successCount} recipes processed`,
+            successCount: status.successCount || 0,
+            failCount: status.failCount || 0,
+            jsonData: status.jsonData || {},
+            newRecipeKeys: status.newRecipeKeys || [],
+            errors: status.errors || [],
+            jobId: jobId,
+          }
+        }
+
+        if (status.status === 'error') {
+          console.error('[API] Processing failed:', status.error)
+          throw new Error(status.error || 'Processing failed')
+        }
+
+        // Still processing, continue polling
+      } catch (error) {
+        console.error('[API] Poll error:', error)
+        // Continue polling on error (might be transient)
+      }
+    }
+
+    throw new Error('Processing timed out')
   }
 
   /**

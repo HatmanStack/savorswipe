@@ -9,20 +9,26 @@ def encode_image(image_path):
 
 
 def pdf_to_base64_images(base64_pdf):
-    pdf_data = base64.b64decode(base64_pdf)
-    with open('/tmp/temp_pdf.pdf', 'wb') as temp_pdf_file:
-        temp_pdf_file.write(pdf_data)
-    base64_images = []
-    temp_image_paths = []
+    try:
+        pdf_data = base64.b64decode(base64_pdf)
+        with open('/tmp/temp_pdf.pdf', 'wb') as temp_pdf_file:
+            temp_pdf_file.write(pdf_data)
+        base64_images = []
+        temp_image_paths = []
 
-    # Open PDF with PyMuPDF
-    doc = fitz.open('/tmp/temp_pdf.pdf')
-    total_pages = len(doc)
+        # Open PDF with PyMuPDF
+        doc = fitz.open('/tmp/temp_pdf.pdf')
+        total_pages = len(doc)
+        print(f'[PDF] Opened PDF with {total_pages} pages')
 
-    if total_pages > 3:
-        doc.close()
+        if total_pages > 50:
+            doc.close()
+            print(f'[PDF] Rejecting: {total_pages} pages exceeds limit of 50')
+            return False
+        print('[PDF] Page count OK')
+    except Exception as e:
+        print(f'[PDF ERROR] Failed to process PDF: {e}')
         return False
-    print('Total pages Counted')
 
     for page_num in range(total_pages):
         page = doc[page_num]
