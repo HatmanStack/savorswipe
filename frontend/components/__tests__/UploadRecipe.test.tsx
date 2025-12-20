@@ -199,6 +199,7 @@ describe('UploadRecipe', () => {
     // Mock fetch to return PDF data
     const mockArrayBuffer = new ArrayBuffer(8)
     const mockResponse = {
+      ok: true,
       status: 200,
       arrayBuffer: jest.fn().mockResolvedValue(mockArrayBuffer),
     }
@@ -230,6 +231,7 @@ describe('UploadRecipe', () => {
     // Mock fetch for pdfToBase64
     const mockArrayBuffer = new ArrayBuffer(8)
     global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
       status: 200,
       arrayBuffer: jest.fn().mockResolvedValue(mockArrayBuffer),
     })
