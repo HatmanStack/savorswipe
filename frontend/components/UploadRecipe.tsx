@@ -164,16 +164,12 @@ type UploadFilesProps = {
 const UploadFiles: React.FC<UploadFilesProps> = ({
   setUploadVisible,
 }) => {
-  console.log('[UploadFiles] Component rendered')
-
   useEffect(() => {
-    console.log('[UploadFiles] useEffect triggered')
     const initiateUpload = async () => {
-      console.log('[UploadFiles] initiateUpload called')
       try {
         await selectAndUploadImage(setUploadVisible)
-      } catch (error) {
-        console.error('[UploadFiles] Error in selectAndUploadImage:', error)
+      } catch {
+        // Error handled by Alert in selectAndUploadImage
       }
     }
     initiateUpload()

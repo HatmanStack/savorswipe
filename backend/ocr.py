@@ -510,7 +510,7 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
             ],
             temperature=0.0,
             max_completion_tokens=16384,
-            timeout=30.0  # Add 30 second timeout
+            timeout=120.0  # 2 minute timeout for multi-recipe processing
         )
         print("[PARSEJSON] OpenAI API call completed")
     except Exception as e:

@@ -35,22 +35,12 @@ export const RecipeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   ]);
   const [pendingRecipeForPicker, setPendingRecipeForPicker] = useState<Recipe | null>(null);
 
-  // Fetch fresh data from Lambda and merge with existing data
+  // Fetch fresh data from Lambda (replaces local data entirely)
   const refetchRecipes = useCallback(async () => {
     try {
       const freshRecipes = await RecipeService.getRecipesFromS3();
-
-      // Merge strategy: append new recipes only (preserve existing in-memory data)
-      setJsonData(prevData => {
-
-        if (!prevData || Object.keys(prevData).length === 0) {
-          // If no local data was loaded, use fresh data entirely
-          return freshRecipes;
-        }
-
-        // Merge: fresh data wins, preserving any local-only state
-        return { ...prevData, ...freshRecipes };
-      });
+      // Fresh data from S3 is the source of truth - replace entirely
+      setJsonData(freshRecipes);
     } catch (error) {
       console.error('[RecipeContext] Error fetching recipes:', error);
       // Silent fallback: continue using existing data

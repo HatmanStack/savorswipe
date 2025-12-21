@@ -73,6 +73,135 @@ def debug_log(message: str) -> None:
         print(message)
 
 
+def is_recipe_incomplete(recipe: Dict) -> bool:
+    """Check if a recipe is missing ingredients or directions."""
+    ingredients = recipe.get('Ingredients', {})
+    directions = recipe.get('Directions', [])
+
+    # Empty or missing ingredients
+    has_ingredients = bool(ingredients) and (
+        isinstance(ingredients, dict) and len(ingredients) > 0
+    )
+
+    # Empty or missing directions
+    has_directions = bool(directions) and (
+        (isinstance(directions, list) and len(directions) > 0) or
+        (isinstance(directions, dict) and len(directions) > 0)
+    )
+
+    return not has_ingredients or not has_directions
+
+
+def title_similarity(title1: str, title2: str) -> float:
+    """
+    Calculate similarity between two titles using word overlap.
+    Returns a score between 0 and 1.
+    """
+    # Normalize titles
+    def normalize(t):
+        t = t.lower()
+        t = re.sub(r'[^\w\s]', '', t)  # Remove punctuation
+        words = set(t.split())
+        # Remove common filler words
+        stopwords = {'the', 'a', 'an', 'and', 'or', 'of', 'for', 'with', 'to'}
+        return words - stopwords
+
+    words1 = normalize(title1)
+    words2 = normalize(title2)
+
+    if not words1 or not words2:
+        return 0.0
+
+    intersection = words1 & words2
+    union = words1 | words2
+
+    return len(intersection) / len(union) if union else 0.0
+
+
+def merge_recipes(incomplete: Dict, complete: Dict) -> Dict:
+    """
+    Merge an incomplete recipe into a complete one.
+    Takes description from incomplete, ingredients/directions from complete.
+    """
+    merged = complete.copy()
+
+    # Prefer the shorter/simpler title (usually the intro page title)
+    if len(incomplete.get('Title', '')) < len(complete.get('Title', '')):
+        merged['Title'] = incomplete.get('Title', complete.get('Title'))
+
+    # Merge descriptions
+    incomplete_desc = incomplete.get('Description', '')
+    complete_desc = complete.get('Description', '')
+    if incomplete_desc and complete_desc:
+        if incomplete_desc not in complete_desc:
+            merged['Description'] = f"{incomplete_desc}\n\n{complete_desc}"
+    elif incomplete_desc:
+        merged['Description'] = incomplete_desc
+
+    return merged
+
+
+def merge_incomplete_recipes(recipes: List[Dict]) -> List[Dict]:
+    """
+    Merge incomplete recipes (missing ingredients/directions) with similar complete ones.
+
+    This handles multi-page recipes where:
+    - Page 1 has title + description only
+    - Page 2+ has the actual recipe with ingredients/directions
+
+    Args:
+        recipes: List of recipe dictionaries
+
+    Returns:
+        List of merged recipes with incomplete ones removed
+    """
+    if len(recipes) <= 1:
+        return recipes
+
+    # Separate complete and incomplete recipes
+    complete = []
+    incomplete = []
+
+    for recipe in recipes:
+        if is_recipe_incomplete(recipe):
+            incomplete.append(recipe)
+        else:
+            complete.append(recipe)
+
+    if not incomplete or not complete:
+        return recipes  # Nothing to merge
+
+    print(f"[MERGE] Found {len(incomplete)} incomplete and {len(complete)} complete recipes")
+
+    # Try to match each incomplete recipe with a complete one
+    merged_indices = set()
+    for inc_recipe in incomplete:
+        inc_title = inc_recipe.get('Title', '')
+        best_match = None
+        best_score = 0.0
+
+        for idx, comp_recipe in enumerate(complete):
+            if idx in merged_indices:
+                continue
+
+            comp_title = comp_recipe.get('Title', '')
+            score = title_similarity(inc_title, comp_title)
+
+            if score > best_score and score >= 0.3:  # 30% word overlap threshold
+                best_score = score
+                best_match = idx
+
+        if best_match is not None:
+            print(f"[MERGE] Merging '{inc_title}' with '{complete[best_match].get('Title')}' (similarity: {best_score:.2f})")
+            complete[best_match] = merge_recipes(inc_recipe, complete[best_match])
+            merged_indices.add(best_match)
+        else:
+            print(f"[MERGE] No match found for incomplete recipe '{inc_title}', keeping as-is")
+            complete.append(inc_recipe)
+
+    return complete
+
+
 def process_single_recipe(
     recipe_data: Dict,
     embedding_generator: EmbeddingGenerator,
@@ -1194,6 +1323,10 @@ def process_upload_files(body, job_id, bucket_name):
                 title = recipe.get('Title', 'Unknown')
                 print(f"[LAMBDA] Recipe {idx+1}/{len(parsed_recipes)}: {title}")
 
+            # Merge incomplete recipes with similar complete ones (multi-page recipe support)
+            parsed_recipes = merge_incomplete_recipes(parsed_recipes)
+            print(f"[LAMBDA] After merge: {len(parsed_recipes)} recipe(s)")
+
             # Re-associate file indices
             final_recipes = []
             for i, recipe in enumerate(parsed_recipes):
@@ -1204,8 +1337,10 @@ def process_upload_files(body, job_id, bucket_name):
             all_recipes = final_recipes
         else:
             all_recipes = []
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[ERROR] ParseJSON/merge failed: {str(e)}")
+        import traceback
+        traceback.print_exc()
 
     # Process recipes in parallel
     unique_recipes = []
