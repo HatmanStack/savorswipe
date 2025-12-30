@@ -171,7 +171,8 @@ export function useImageQueue(): ImageQueueHook {
         // Last retry: use what we got
         fetchedImages = result.images;
         break;
-      } catch {
+      } catch (error) {
+        console.warn('[ImageQueue] Inject fetch attempt failed:', error);
         attemptCount++;
 
         if (attemptCount >= INJECT_RETRY_MAX) {
@@ -399,8 +400,8 @@ export function useImageQueue(): ImageQueueHook {
       if (allImages[1]) {
         setNextImage(allImages[1]);
       }
-    } catch {
-      // Initialization error - already handled by finally block
+    } catch (error) {
+      console.error('[ImageQueue] Queue initialization failed:', error);
     } finally {
       isInitializingRef.current = false;
       if (isMountedRef.current) {
@@ -485,8 +486,8 @@ export function useImageQueue(): ImageQueueHook {
       // Remove fetched keys from pool
       const fetchedCount = result.images.length + result.failedKeys.length;
       recipeKeyPoolRef.current = recipeKeyPoolRef.current.slice(fetchedCount);
-    } catch {
-      // Refill error - handled by finally block
+    } catch (error) {
+      console.warn('[ImageQueue] Queue refill failed:', error);
     } finally {
       isRefillingRef.current = false;
     }
