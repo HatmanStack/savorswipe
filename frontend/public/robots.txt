@@ -1,0 +1,7 @@
+# SavorSwipe robots.txt
+User-agent: *
+Allow: /
+Disallow: /_expo/
+Disallow: /_sitemap
+
+Sitemap: https://savorswipe.hatstack.fun/sitemap.xml

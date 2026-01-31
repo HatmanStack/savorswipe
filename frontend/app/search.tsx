@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet, Pressable, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
+import Head from 'expo-router/head';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedView } from '@/components/ThemedView';
@@ -99,6 +100,13 @@ export default function SearchScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      {Platform.OS === 'web' && (
+        <Head>
+          <title>Search Recipes - SavorSwipe</title>
+          <meta name="description" content="Search through hundreds of recipes by name or ingredients. Find exactly what you're craving on SavorSwipe." />
+          <link rel="canonical" href="https://savorswipe.hatstack.fun/search" />
+        </Head>
+      )}
       <ThemedView style={styles.content}>
         {/* Header with close button */}
         <View style={styles.header}>

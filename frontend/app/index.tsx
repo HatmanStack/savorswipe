@@ -1,8 +1,9 @@
 import 'react-native-gesture-handler';
 import React, { useRef, useMemo, useCallback, useState, useEffect } from 'react';
-import { Image, View, Animated, AccessibilityInfo } from 'react-native';
+import { Image, View, Animated, AccessibilityInfo, Platform } from 'react-native';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
+import Head from 'expo-router/head';
 import { useRecipe } from '@/context/RecipeContext';
 import { useImageQueue } from '@/hooks/useImageQueue';
 import { useResponsiveLayout } from '@/hooks';
@@ -156,6 +157,12 @@ export default function HomeScreen() {
 
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+      {Platform.OS === 'web' && (
+        <Head>
+          <title>SavorSwipe - Swipe, Discover, Cook</title>
+          <meta name="description" content="Discover delicious recipes with a swipe! Swipe right to cook, swipe left to skip. Recipe discovery made fun and easy." />
+        </Head>
+      )}
       <PanGestureHandler
         onGestureEvent={(event) => {
           if (event.nativeEvent.translationX < -30) {

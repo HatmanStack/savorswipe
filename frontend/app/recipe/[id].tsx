@@ -1,6 +1,7 @@
 import React, {useState, useEffect} from 'react';
-import { Dimensions, Image, Pressable } from 'react-native';
+import { Dimensions, Image, Pressable, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
+import Head from 'expo-router/head';
 import { useRecipe } from '@/context/RecipeContext';
 import { ThemedView } from '@/components/ThemedView';
 import { RecipeService, ImageService, IngredientScalingService } from '@/services';
@@ -10,6 +11,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ServingSizeControl } from '@/components/ServingSizeControl';
 import { useGlobalSearchParams} from 'expo-router';
 import type { Recipe } from '@/types';
+import { generateRecipeJsonLd, getRecipeDescription, getRecipeImageUrl, getRecipeUrl } from '@/utils/seo';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const holderImg = require('@/assets/images/skillet.png');
 
@@ -117,8 +119,35 @@ export default function RecipeDetail() {
     }
   }, [glob.id, hasValidId]);
 
+  // SEO meta data
+  const recipeTitle = currentRecipe?.Title || 'Recipe';
+  const recipeDescription = currentRecipe ? getRecipeDescription(currentRecipe) : 'View this recipe on SavorSwipe';
+  const recipeUrl = hasValidId ? getRecipeUrl(glob.id as string) : '';
+  const recipeImageUrl = hasValidId ? getRecipeImageUrl(glob.id as string) : '';
+
   return (
     <>
+      {Platform.OS === 'web' && currentRecipe && (
+        <Head>
+          <title>{recipeTitle} - SavorSwipe</title>
+          <meta name="description" content={recipeDescription} />
+          <link rel="canonical" href={recipeUrl} />
+          <meta property="og:type" content="article" />
+          <meta property="og:title" content={`${recipeTitle} - SavorSwipe`} />
+          <meta property="og:description" content={recipeDescription} />
+          <meta property="og:url" content={recipeUrl} />
+          <meta property="og:image" content={recipeImageUrl} />
+          <meta name="twitter:title" content={`${recipeTitle} - SavorSwipe`} />
+          <meta name="twitter:description" content={recipeDescription} />
+          <meta name="twitter:image" content={recipeImageUrl} />
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(generateRecipeJsonLd(currentRecipe)),
+            }}
+          />
+        </Head>
+      )}
       <Pressable
         style={{ position: 'absolute', top: 80, left: 20, zIndex: 1 }}
         onPress={() => router.push('/')}

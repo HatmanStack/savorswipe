@@ -11,13 +11,24 @@ export default {
     web: {
       favicon: './assets/images/icon.png',
       name: "SavorSwipe",
-      orientation: "portrait",
       shortName: "SavorSwipe",
+      description: "From Cravings to Cooking - Swipe, Discover, Repeat! Recipe discovery made fun.",
+      lang: "en",
+      orientation: "portrait",
       themeColor: "#ffffff",
       backgroundColor: "#ffffff",
       display: "standalone",
       startUrl: "/",
       scope: "/",
+      shortcuts: [
+        {
+          name: "Search Recipes",
+          short_name: "Search",
+          description: "Search for recipes by name or ingredients",
+          url: "/search",
+          icons: [{ src: "./assets/images/icon-192.png", sizes: "192x192" }]
+        }
+      ],
       icons: [
         {
           src: './assets/images/icon-192.png',
