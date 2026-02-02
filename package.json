@@ -14,7 +14,9 @@
     "lint": "cd frontend && expo lint && npx tsc --noEmit",
     "lint:backend": "cd backend && uvx ruff check .",
     "check": "npm run lint && npm run lint:backend && jest --passWithNoTests --no-watch --ci --runInBand --forceExit && npm run test:backend",
-    "deploy": "node ./frontend/scripts/deploy.js"
+    "deploy": "node ./frontend/scripts/deploy.js",
+    "sitemap": "node ./frontend/scripts/generate-sitemap.js",
+    "sitemap:api": "node ./frontend/scripts/generate-sitemap.js --api"
   },
   "jest": {
     "preset": "jest-expo",

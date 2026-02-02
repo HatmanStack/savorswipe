@@ -161,6 +161,7 @@ export default function HomeScreen() {
         <Head>
           <title>SavorSwipe - Swipe, Discover, Cook</title>
           <meta name="description" content="Discover delicious recipes with a swipe! Swipe right to cook, swipe left to skip. Recipe discovery made fun and easy." />
+          <link rel="canonical" href="https://savorswipe.hatstack.fun/" />
         </Head>
       )}
       <PanGestureHandler
