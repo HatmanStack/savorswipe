@@ -143,7 +143,6 @@ function generateSamConfig(config) {
 [default.build.parameters]
 cached = true
 parallel = true
-use_container = true
 
 [default.deploy]
 [default.deploy.parameters]
@@ -424,8 +423,8 @@ async function deploy() {
   }
 
   // Build Lambda function
-  console.log('Building Lambda function with Docker...\n');
-  execCommand('sam build --use-container');
+  console.log('Building Lambda function...\n');
+  execCommand('sam build');
 
   // Deploy to AWS (pass secrets and stack name via CLI)
   console.log('\nDeploying to AWS...\n');

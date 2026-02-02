@@ -7,17 +7,50 @@ import { Recipe } from '@/types';
 
 const windowWidth = Dimensions.get('window').width;
 
+// Filter out internal discriminant fields from normalized types
+const filterInternalKeys = ([key]: [string, unknown]) => !['kind', 'value', 'items', 'ingredients', 'steps', 'sections'].includes(key);
+
 function RecipeDetails({ currentRecipe }: { currentRecipe: Recipe | null }) {
   if (!currentRecipe) {
     return null; // or a fallback UI
-  } 
+  }
 
   function decodeUnicode(str: string): string {
     return str.replace(/\\u[\dA-F]{4}/gi, function (match) {
       return String.fromCharCode(parseInt(match.replace(/\\u/g, ''), 16));
     });
   }
-  
+
+  // Extract actual ingredient data from potentially normalized format
+  function getIngredientEntries(ing: NonNullable<Recipe['Ingredients']>): [string, unknown][] {
+    if (typeof ing !== 'object' || Array.isArray(ing)) return [];
+    // If normalized 'flat' format, use the nested 'ingredients' field
+    if ('kind' in ing && ing.kind === 'flat' && 'ingredients' in ing) {
+      return Object.entries((ing as { ingredients: Record<string, string> }).ingredients);
+    }
+    // If normalized 'sectioned' format, use the nested 'sections' field
+    if ('kind' in ing && ing.kind === 'sectioned' && 'sections' in ing) {
+      return Object.entries((ing as { sections: Record<string, Record<string, string>> }).sections);
+    }
+    // Raw format - filter out any 'kind' key that might have leaked in
+    return Object.entries(ing).filter(filterInternalKeys);
+  }
+
+  // Extract actual direction data from potentially normalized format
+  function getDirectionEntries(dir: NonNullable<Recipe['Directions']>): [string, unknown][] {
+    if (typeof dir !== 'object' || Array.isArray(dir)) return [];
+    // If normalized 'flat' format, use the nested 'steps' field
+    if ('kind' in dir && dir.kind === 'flat' && 'steps' in dir) {
+      return Object.entries((dir as { steps: Record<string, string> }).steps);
+    }
+    // If normalized 'sectioned' format, use the nested 'sections' field
+    if ('kind' in dir && dir.kind === 'sectioned' && 'sections' in dir) {
+      return Object.entries((dir as { sections: Record<string, Record<string, string>> }).sections);
+    }
+    // Raw format - filter out any 'kind' key that might have leaked in
+    return Object.entries(dir).filter(filterInternalKeys);
+  }
+
   return (
     <ScrollView style={styles.scrollview}>
       <ThemedView style={styles.title}>
@@ -38,7 +71,7 @@ function RecipeDetails({ currentRecipe }: { currentRecipe: Recipe | null }) {
 
 {typeof currentRecipe.Ingredients === 'object' && !Array.isArray(currentRecipe.Ingredients) ? (
   <Collapsible title="Ingredients">
-    {Object.entries(currentRecipe.Ingredients).map(([key, value], index) => {
+    {getIngredientEntries(currentRecipe.Ingredients).map(([key, value], index) => {
       // Check if this value is an object (nested section) or a string (flat ingredient)
       if (typeof value === 'object' && !Array.isArray(value)) {
         // Handle nested section
@@ -75,7 +108,7 @@ function RecipeDetails({ currentRecipe }: { currentRecipe: Recipe | null }) {
 
 {typeof currentRecipe.Directions === 'object' && !Array.isArray(currentRecipe.Directions) ? (
   <Collapsible title="Directions">
-    {Object.entries(currentRecipe.Directions)
+    {getDirectionEntries(currentRecipe.Directions)
       .sort((a, b) => {
         // Try to sort numerically if the keys are numbers
         const numA = parseInt(a[0]);

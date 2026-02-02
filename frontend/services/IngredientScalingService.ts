@@ -1,4 +1,4 @@
-import { Recipe, RecipeIngredients, RawIngredients } from '@/types';
+import { Recipe, RecipeIngredients, RawIngredients, isNormalizedIngredients } from '@/types';
 
 // Combined type for ingredient scaling - accepts both raw and normalized formats
 type ScalableIngredients = RecipeIngredients | RawIngredients;
@@ -301,7 +301,37 @@ export class IngredientScalingService {
       return ingredients.map((item) => this.scaleAmount(item, scaleFactor));
     }
 
-    // Object format
+    // Handle normalized format with 'kind' discriminant
+    if (isNormalizedIngredients(ingredients)) {
+      switch (ingredients.kind) {
+        case 'simple':
+          return {
+            kind: 'simple',
+            value: this.scaleAmount(ingredients.value, scaleFactor),
+          };
+        case 'list':
+          return {
+            kind: 'list',
+            items: ingredients.items.map((item) => this.scaleAmount(item, scaleFactor)),
+          };
+        case 'flat':
+          return {
+            kind: 'flat',
+            ingredients: this.scaleObjectValues(ingredients.ingredients, scaleFactor),
+          };
+        case 'sectioned':
+          const scaledSections: Record<string, Record<string, string>> = {};
+          for (const [sectionName, sectionIngredients] of Object.entries(ingredients.sections)) {
+            scaledSections[sectionName] = this.scaleObjectValues(sectionIngredients, scaleFactor);
+          }
+          return {
+            kind: 'sectioned',
+            sections: scaledSections,
+          };
+      }
+    }
+
+    // Raw object format (backward compatibility)
     if (typeof ingredients === 'object') {
       const scaled: Record<string, any> = {};
 
@@ -323,5 +353,19 @@ export class IngredientScalingService {
     }
 
     return ingredients;
+  }
+
+  /**
+   * Scale string values in an object (helper for flat ingredients).
+   */
+  private static scaleObjectValues(
+    obj: Readonly<Record<string, string>>,
+    scaleFactor: number
+  ): Record<string, string> {
+    const scaled: Record<string, string> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      scaled[key] = this.scaleAmount(value, scaleFactor);
+    }
+    return scaled;
   }
 }
