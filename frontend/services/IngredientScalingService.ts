@@ -1,4 +1,7 @@
-import { Recipe, RecipeIngredients } from '@/types';
+import { Recipe, RecipeIngredients, RawIngredients } from '@/types';
+
+// Combined type for ingredient scaling - accepts both raw and normalized formats
+type ScalableIngredients = RecipeIngredients | RawIngredients;
 
 interface ParsedAmount {
   value: number;
@@ -278,11 +281,12 @@ export class IngredientScalingService {
 
   /**
    * Recursively scale ingredients regardless of format.
+   * Handles both raw and normalized ingredient formats.
    */
   private static scaleIngredients(
-    ingredients: RecipeIngredients | undefined,
+    ingredients: ScalableIngredients | undefined,
     scaleFactor: number
-  ): RecipeIngredients | undefined {
+  ): ScalableIngredients | undefined {
     if (!ingredients) {
       return ingredients;
     }
@@ -305,7 +309,7 @@ export class IngredientScalingService {
         // Check if value is a nested object (sectioned ingredients)
         if (typeof value === 'object' && !Array.isArray(value)) {
           // Recursively scale nested section
-          scaled[key] = this.scaleIngredients(value as RecipeIngredients, scaleFactor);
+          scaled[key] = this.scaleIngredients(value as ScalableIngredients, scaleFactor);
         } else if (typeof value === 'string') {
           // Scale the amount string
           scaled[key] = this.scaleAmount(value, scaleFactor);

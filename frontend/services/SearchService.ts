@@ -1,4 +1,13 @@
-import { Recipe, S3JsonData } from '@/types';
+import {
+  Recipe,
+  S3JsonData,
+  RecipeIngredients,
+  RawIngredients,
+  isNormalizedIngredients,
+  isRawStringIngredients,
+  isRawArrayIngredients,
+  assertNever,
+} from '@/types';
 
 export class SearchService {
   /**
@@ -56,38 +65,89 @@ export class SearchService {
   }
 
   /**
-   * Extract all text from ingredients (handles all formats)
-   * @param ingredients - Ingredients in any format (string, array, object, nested)
+   * Extract all text from ingredients.
+   * Handles both raw and normalized formats.
+   *
+   * @param ingredients - Ingredients in any format
    * @returns Concatenated text of all ingredients
    */
-  private static extractIngredientsText(ingredients: string | string[] | Record<string, unknown> | null): string {
-    if (typeof ingredients === 'string') {
+  private static extractIngredientsText(
+    ingredients: RecipeIngredients | RawIngredients
+  ): string {
+    // Handle normalized format with 'kind' discriminant
+    if (isNormalizedIngredients(ingredients)) {
+      return this.extractNormalizedIngredientsText(ingredients);
+    }
+
+    // Handle raw string format
+    if (isRawStringIngredients(ingredients)) {
       return ingredients;
     }
 
-    if (Array.isArray(ingredients)) {
+    // Handle raw array format
+    if (isRawArrayIngredients(ingredients)) {
       return ingredients.join(' ');
     }
 
+    // Handle raw object format (flat or sectioned)
     if (typeof ingredients === 'object' && ingredients !== null) {
-      // Handle both flat objects and nested objects
-      let text = '';
-      for (const [key, value] of Object.entries(ingredients)) {
-        // Add the key (ingredient name or section name)
-        text += key + ' ';
-
-        // Recursively extract value (handles nested objects)
-        if (typeof value === 'string') {
-          text += value + ' ';
-        } else if (Array.isArray(value)) {
-          text += value.join(' ') + ' ';
-        } else if (typeof value === 'object' && value !== null) {
-          text += this.extractIngredientsText(value as string | string[] | Record<string, unknown>) + ' ';
-        }
-      }
-      return text.trim();
+      return this.extractRawObjectIngredientsText(ingredients);
     }
 
     return '';
+  }
+
+  /**
+   * Extract text from normalized ingredients using exhaustive pattern matching.
+   */
+  private static extractNormalizedIngredientsText(ingredients: RecipeIngredients): string {
+    switch (ingredients.kind) {
+      case 'simple':
+        return ingredients.value;
+
+      case 'list':
+        return ingredients.items.join(' ');
+
+      case 'flat':
+        return Object.entries(ingredients.ingredients)
+          .map(([name, amount]) => `${name} ${amount}`)
+          .join(' ');
+
+      case 'sectioned':
+        return Object.entries(ingredients.sections)
+          .flatMap(([section, items]) => [
+            section,
+            ...Object.entries(items).map(([name, amount]) => `${name} ${amount}`),
+          ])
+          .join(' ');
+
+      default:
+        return assertNever(ingredients);
+    }
+  }
+
+  /**
+   * Extract text from raw object format (backwards compatibility).
+   * Handles both flat { "ing": "amount" } and sectioned { "Section": { "ing": "amount" } }
+   */
+  private static extractRawObjectIngredientsText(
+    ingredients: Record<string, string | string[] | Record<string, string>>
+  ): string {
+    let text = '';
+    for (const [key, value] of Object.entries(ingredients)) {
+      text += key + ' ';
+
+      if (typeof value === 'string') {
+        text += value + ' ';
+      } else if (Array.isArray(value)) {
+        text += value.join(' ') + ' ';
+      } else if (typeof value === 'object' && value !== null) {
+        // Nested object (sectioned format)
+        for (const [innerKey, innerValue] of Object.entries(value)) {
+          text += `${innerKey} ${innerValue} `;
+        }
+      }
+    }
+    return text.trim();
   }
 }

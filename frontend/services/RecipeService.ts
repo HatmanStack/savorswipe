@@ -24,9 +24,21 @@
  * See backend/template.yaml for server-side security controls.
  */
 
-import { Recipe, S3JsonData, UploadResponse, MealType } from '@/types';
+import { Recipe, S3JsonData, UploadResponse, MealType, RawS3JsonData } from '@/types';
+import { normalizeS3JsonData } from '@/utils/normalizeRecipe';
 
 const CLOUDFRONT_BASE_URL = process.env.EXPO_PUBLIC_CLOUDFRONT_BASE_URL;
+
+/**
+ * Configuration constants for recipe service.
+ * Centralized for easy modification without code hunting.
+ */
+const CONFIG = {
+  /** Hours before "new" badge disappears from recipes */
+  NEW_RECIPE_HOURS: 72,
+  /** Clock skew tolerance in milliseconds */
+  CLOCK_SKEW_TOLERANCE_MS: 60 * 1000, // 1 minute
+} as const;
 
 /**
  * Normalizes a URL by removing trailing slashes
@@ -40,14 +52,14 @@ export class RecipeService {
   /**
    * Loads the bundled local recipe data from assets
    * Used for fast initial load (stale-while-revalidate pattern)
+   * Normalizes data to discriminated union types on load.
    */
   static getLocalRecipes(): S3JsonData {
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const localData = require('@/assets/starter_data/combined_data.json');
-      return localData as S3JsonData;
-    } catch (error) {
-
+      const rawData = require('@/assets/starter_data/combined_data.json') as RawS3JsonData;
+      return normalizeS3JsonData(rawData);
+    } catch {
       // Return empty object as fallback
       return {};
     }
@@ -55,7 +67,8 @@ export class RecipeService {
 
   /**
    * Fetches the combined recipe data from Lambda (which fetches from S3)
-   * This bypasses CloudFront cache to ensure fresh data
+   * This bypasses CloudFront cache to ensure fresh data.
+   * Normalizes data to discriminated union types on fetch.
    */
   static async getRecipesFromS3(): Promise<S3JsonData> {
     const rawApiUrl = process.env.EXPO_PUBLIC_API_GATEWAY_URL;
@@ -72,16 +85,13 @@ export class RecipeService {
       });
 
       if (!response.ok) {
-
-        const errorText = await response.text();
-
+        await response.text(); // Consume body
         throw new Error(`Failed to fetch JSON from API. Status: ${response.status}`);
       }
 
-      const data = await response.json();
-      return data;
+      const rawData = await response.json() as RawS3JsonData;
+      return normalizeS3JsonData(rawData);
     } catch (error) {
-
       throw error;
     }
   }
@@ -130,10 +140,16 @@ export class RecipeService {
   }
 
   /**
-   * Shuffles an array of recipe keys
+   * Shuffles an array of recipe keys using Fisher-Yates algorithm.
+   * Produces uniform distribution (unlike sort with Math.random).
    */
   static shuffleRecipeKeys(keys: string[]): string[] {
-    return [...keys].sort(() => Math.random() - 0.5);
+    const shuffled = [...keys];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
   }
 
   /**
@@ -300,9 +316,9 @@ export class RecipeService {
 }
 
 /**
- * Determines if a recipe is "new" (uploaded within last 72 hours)
+ * Determines if a recipe is "new" (uploaded within configured hours)
  * @param recipe - Recipe object with optional uploadedAt timestamp
- * @returns True if recipe was uploaded within 72 hours, false otherwise
+ * @returns True if recipe was uploaded within NEW_RECIPE_HOURS, false otherwise
  */
 export function isNewRecipe(recipe: Recipe): boolean {
   // Return false if no uploadedAt field
@@ -321,9 +337,8 @@ export function isNewRecipe(recipe: Recipe): boolean {
 
     const currentTime = Date.now();
 
-    // Handle future timestamps (with 1-minute tolerance for clock skew)
-    const ONE_MINUTE_MS = 60 * 1000;
-    if (uploadTime > currentTime + ONE_MINUTE_MS) {
+    // Handle future timestamps (with tolerance for clock skew)
+    if (uploadTime > currentTime + CONFIG.CLOCK_SKEW_TOLERANCE_MS) {
       return false;
     }
 
@@ -331,9 +346,9 @@ export function isNewRecipe(recipe: Recipe): boolean {
     const msElapsed = currentTime - uploadTime;
     const hoursElapsed = msElapsed / (1000 * 60 * 60);
 
-    // Return true if within 72 hours (exactly 72 hours returns false)
-    return hoursElapsed < 72;
-  } catch (error) {
+    // Return true if within configured hours (exactly at threshold returns false)
+    return hoursElapsed < CONFIG.NEW_RECIPE_HOURS;
+  } catch {
     // Invalid timestamp format
     return false;
   }

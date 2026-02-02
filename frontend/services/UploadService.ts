@@ -246,6 +246,8 @@ export class UploadService {
   private static POLL_INTERVAL = 2000 // Poll every 2 seconds
   private static MAX_POLL_ATTEMPTS = 300 // Max 10 minutes (300 * 2s)
 
+  private static UPLOAD_TIMEOUT = 60000 // 60 second timeout for initial upload
+
   /**
    * Call API with batch of files
    */
@@ -267,27 +269,41 @@ export class UploadService {
       jobId: job.id,
     }
 
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    })
+    // Create abort controller for timeout
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), this.UPLOAD_TIMEOUT)
 
-    if (!response.ok && response.status !== 202) {
-      const errorText = await response.text()
-      throw new Error(`API returned status ${response.status}: ${errorText}`)
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      })
+
+      if (!response.ok && response.status !== 202) {
+        const errorText = await response.text()
+        throw new Error(`API returned status ${response.status}: ${errorText}`)
+      }
+
+      const initialResult = await response.json()
+
+      // If status is 202 (Accepted), poll for completion
+      if (response.status === 202 && initialResult.status === 'processing') {
+        return await this.pollForCompletion(API_URL, job.id)
+      }
+
+      return initialResult as UploadResult
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Upload request timed out after 60 seconds')
+      }
+      throw error
+    } finally {
+      clearTimeout(timeoutId)
     }
-
-    const initialResult = await response.json()
-
-    // If status is 202 (Accepted), poll for completion
-    if (response.status === 202 && initialResult.status === 'processing') {
-      return await this.pollForCompletion(API_URL, job.id)
-    }
-
-    return initialResult as UploadResult
   }
 
   private static MAX_CONSECUTIVE_ERRORS = 5

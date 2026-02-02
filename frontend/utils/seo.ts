@@ -1,12 +1,13 @@
-import type { Recipe, RecipeIngredients, RecipeDirections } from '@/types';
+import type { Recipe, RecipeIngredients, RecipeDirections, RawIngredients, RawDirections } from '@/types';
 
 const SITE_URL = 'https://savorswipe.hatstack.fun';
 const CLOUDFRONT_BASE_URL = process.env.EXPO_PUBLIC_CLOUDFRONT_BASE_URL;
 
 /**
- * Extracts ingredients as a flat string array for JSON-LD
+ * Extracts ingredients as a flat string array for JSON-LD.
+ * Handles both raw and normalized ingredient formats.
  */
-export function getIngredientsList(ingredients: RecipeIngredients | undefined): string[] {
+export function getIngredientsList(ingredients: RecipeIngredients | RawIngredients | undefined): string[] {
   if (!ingredients) return [];
   if (typeof ingredients === 'string') return [ingredients];
   if (Array.isArray(ingredients)) return ingredients;
@@ -27,9 +28,10 @@ export function getIngredientsList(ingredients: RecipeIngredients | undefined): 
 }
 
 /**
- * Extracts directions as a flat string array for JSON-LD
+ * Extracts directions as a flat string array for JSON-LD.
+ * Handles both raw and normalized direction formats.
  */
-export function getInstructionsList(directions: RecipeDirections | undefined): string[] {
+export function getInstructionsList(directions: RecipeDirections | RawDirections | undefined): string[] {
   if (!directions) return [];
   if (typeof directions === 'string') return [directions];
   if (Array.isArray(directions)) return directions;

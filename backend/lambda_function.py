@@ -56,12 +56,17 @@ import handlepdf
 import ocr
 import search_image as si
 import upload
+from config import PDF_MAX_PAGES
 from duplicate_detector import DuplicateDetector
 from embedding_generator import EmbeddingGenerator
 from embeddings import EmbeddingStore
 from image_uploader import fetch_image_from_url, upload_image_to_s3
+from logger import get_logger
 from recipe_deletion import delete_recipe_atomic
 from upload import batch_to_s3_atomic
+
+# Structured logger for this module
+log = get_logger('lambda')
 
 # Debug mode - set DEBUG_MODE=true in Lambda environment to enable verbose logging
 DEBUG_MODE = os.getenv('DEBUG_MODE', 'false').lower() == 'true'
@@ -69,8 +74,7 @@ DEBUG_MODE = os.getenv('DEBUG_MODE', 'false').lower() == 'true'
 
 def debug_log(message: str) -> None:
     """Print debug message only if DEBUG_MODE is enabled."""
-    if DEBUG_MODE:
-        print(message)
+    log.debug(message)
 
 
 def is_recipe_incomplete(recipe: Dict) -> bool:
@@ -455,8 +459,8 @@ def handle_async_processing(event, context):
         # Clean up pending file
         try:
             s3_client.delete_object(Bucket=bucket_name, Key=pending_key)
-        except Exception:
-            pass
+        except Exception as e:
+            log.warning("Failed to delete pending file", key=pending_key, error=str(e))
 
         return result
 
@@ -480,8 +484,8 @@ def handle_async_processing(event, context):
                 Body=json.dumps(error_status),
                 ContentType='application/json'
             )
-        except Exception:
-            pass
+        except Exception as status_err:
+            log.warning("Failed to write error status to S3", job_id=job_id, error=str(status_err))
 
         return {'error': str(e)}
 
@@ -910,11 +914,14 @@ def handle_post_image_request(event, context, recipe_key=None):
 
         print(f"[POST-IMAGE] Image uploaded successfully: {s3_path}")
 
-        # NOTE: Image has been uploaded to S3. If JSON update fails below, the image
-        # becomes orphaned with no reference in combined_data.json. The retry logic
-        # handles most failures, but if all retries fail, the image remains in S3.
-        # Future cleanup job or manual intervention may be needed for orphaned images.
-        # This is acceptable given low failure likelihood with retry logic.
+        # Helper to cleanup orphaned image on JSON update failure
+        def cleanup_orphaned_image():
+            """Attempt to delete uploaded image if JSON update fails."""
+            try:
+                log.warning("Cleaning up orphaned image after JSON update failure", image_key=s3_path)
+                s3_client.delete_object(Bucket=bucket_name, Key=s3_path)
+            except Exception as cleanup_err:
+                log.error("Failed to clean up orphaned image", image_key=s3_path, error=str(cleanup_err))
 
         # Load combined_data.json and update recipe with Google URL for dedup
         MAX_RETRIES = 3
@@ -1015,6 +1022,7 @@ def handle_post_image_request(event, context, recipe_key=None):
                             time.sleep(delay)
                             continue
                         else:
+                            cleanup_orphaned_image()
                             return {
                                 'statusCode': 500,
                                 'headers': {
@@ -1027,6 +1035,7 @@ def handle_post_image_request(event, context, recipe_key=None):
                             }
                     else:
                         print(f"[POST-IMAGE] S3 error: {str(e)}")
+                        cleanup_orphaned_image()
                         return {
                             'statusCode': 500,
                             'headers': {
@@ -1040,6 +1049,7 @@ def handle_post_image_request(event, context, recipe_key=None):
 
             except Exception as e:
                 print(f"[POST-IMAGE] Unexpected error: {str(e)}")
+                cleanup_orphaned_image()
                 return {
                     'statusCode': 500,
                     'headers': {
@@ -1052,6 +1062,7 @@ def handle_post_image_request(event, context, recipe_key=None):
                 }
 
         # Should not reach here
+        cleanup_orphaned_image()
         return {
             'statusCode': 500,
             'headers': {
@@ -1065,6 +1076,13 @@ def handle_post_image_request(event, context, recipe_key=None):
 
     except Exception as e:
         print(f"[POST-IMAGE] Unexpected error processing image: {str(e)}")
+        # Attempt to clean up orphaned image if it was uploaded
+        if 's3_path' in dir() and s3_path:
+            try:
+                log.warning("Cleaning up orphaned image after unexpected error", image_key=s3_path)
+                boto3.client('s3').delete_object(Bucket=bucket_name, Key=s3_path)
+            except Exception as cleanup_err:
+                log.error("Failed to clean up orphaned image", image_key=s3_path, error=str(cleanup_err))
         return {
             'statusCode': 500,
             'headers': {
@@ -1208,7 +1226,7 @@ def process_upload_files(body, job_id, bucket_name):
         raise
 
     # Extract recipes from files
-    PDF_MAX_PAGES = 50  # Safety limit
+    # Note: PDF_MAX_PAGES is imported from config.py
     all_recipes = []
     file_errors = []
 
@@ -1236,28 +1254,22 @@ def process_upload_files(body, job_id, bucket_name):
                     app_time = upload.upload_user_data('user_pdfs', 'application/pdf', 'pdf', file_content)
                 else:
                     app_time = upload.upload_user_data('user_images', 'image/jpeg', 'jpg', file_content)
-            except Exception:
+            except Exception as e:
+                log.warning("Failed to upload user data, using fallback timestamp", error=str(e))
                 app_time = int(time.time())
 
             if is_pdf:
                 # Extract images from PDF
+                # Note: handlepdf.pdf_to_base64_images already checks page limit (PDF_MAX_PAGES)
+                # and returns False if exceeded, so no need for redundant check here
                 base64_images = handlepdf.pdf_to_base64_images(file_content)
 
-                # Check if PDF processing failed (returns False for PDFs over limit)
+                # Check if PDF processing failed (returns False for PDFs over limit or errors)
                 if base64_images is False:
                     file_errors.append({
                         'file': file_idx,
                         'title': 'unknown',
-                        'reason': 'PDF too large (exceeds page limit)'
-                    })
-                    continue
-
-                # Check page count
-                if len(base64_images) > PDF_MAX_PAGES:
-                    file_errors.append({
-                        'file': file_idx,
-                        'title': 'unknown',
-                        'reason': f'PDF too large ({len(base64_images)} pages, max {PDF_MAX_PAGES})'
+                        'reason': f'PDF too large or processing failed (max {PDF_MAX_PAGES} pages)'
                     })
                     continue
             else:
@@ -1537,8 +1549,8 @@ def process_upload_files(body, job_id, bucket_name):
                 }
             ]
         )
-    except Exception:
-        pass
+    except Exception as e:
+        log.warning("Failed to publish CloudWatch metrics", error=str(e))
 
     # Write S3 completion flag
     try:
@@ -1560,8 +1572,8 @@ def process_upload_files(body, job_id, bucket_name):
             Body=json.dumps(completion_data),
             ContentType='application/json'
         )
-    except Exception:
-        pass
+    except Exception as e:
+        log.warning("Failed to write completion flag to S3", job_id=job_id, error=str(e))
 
     # Return response with CORS headers
     print(f"[LAMBDA] Request complete: {success_count} successful, {fail_count} failed")

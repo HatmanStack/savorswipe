@@ -7,11 +7,13 @@ Detects duplicate recipes using cosine similarity of embeddings.
 import math
 from typing import Dict, List, Optional, Tuple
 
+from config import SIMILARITY_THRESHOLD
+
 
 class DuplicateDetector:
     """Detects duplicate recipes using cosine similarity of embeddings."""
 
-    SIMILARITY_THRESHOLD: float = 0.85
+    SIMILARITY_THRESHOLD: float = SIMILARITY_THRESHOLD
 
     def __init__(self, existing_embeddings: Dict[str, List[float]]) -> None:
         """

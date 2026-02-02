@@ -14,19 +14,19 @@ import requests
 from botocore.exceptions import ClientError
 from PIL import Image
 
-s3_client = boto3.client('s3')
+from config import MAX_RETRIES, PROBLEMATIC_DOMAINS
+
 bucket_name = os.getenv('S3_BUCKET')
 
-# Problematic domains that often return HTML/redirects instead of images
-PROBLEMATIC_DOMAINS = [
-    'lookaside.instagram.com',  # Instagram SEO gateway (returns HTML)
-    'instagram.com',            # Requires login
-    'pinterest.com',            # Redirects/login walls
-    'facebook.com',             # Login walls
-    'twitter.com',              # Login walls
-    'x.com',                    # Twitter/X login walls
-    'tiktok.com',               # Login walls
-]
+
+def _get_s3_client():
+    """
+    Get fresh S3 client.
+
+    Do not cache at module level to avoid stale credentials in Lambda.
+    Lambda containers can live for hours, and IAM credentials rotate.
+    """
+    return boto3.client('s3')
 
 
 def is_problematic_url(url: str) -> bool:
@@ -67,6 +67,7 @@ def is_problematic_url(url: str) -> bool:
 
 def to_s3(recipe, search_results, jsonData=None):
     combined_data_key = 'jsondata/combined_data.json'
+    s3_client = _get_s3_client()
     try:
         if not jsonData:
             existing_data = s3_client.get_object(Bucket=bucket_name, Key=combined_data_key)
@@ -78,9 +79,12 @@ def to_s3(recipe, search_results, jsonData=None):
             if existing_recipe.get('Title') == recipe.get('Title'):
                 return False, existing_data_json
         highest_key = len(existing_data_json) + 1
-    except s3_client.exceptions.NoSuchKey:
-        existing_data_json = {}
-        highest_key = 1
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'NoSuchKey':
+            existing_data_json = {}
+            highest_key = 1
+        else:
+            raise
 
     image_url = upload_image(search_results, bucket_name, highest_key)
     if image_url:
@@ -172,7 +176,7 @@ def upload_image(search_results, bucket_name, highest_key):
             print(f"[UPLOAD] Wrote temporary file to {tmp_image_path}")
 
             # Upload to S3
-            s3_client = boto3.client('s3')
+            s3_client = _get_s3_client()
             try:
                 print(f"[UPLOAD] Uploading to S3: {bucket_name}/{image_key}")
                 s3_client.put_object(
@@ -207,7 +211,7 @@ def upload_image(search_results, bucket_name, highest_key):
 
 def upload_user_data(prefix, content, file_type, data, app_time=None):
     print(f"[UPLOAD] Uploading user data to {prefix}, file_type={file_type}")
-    s3_client = boto3.client('s3')
+    s3_client = _get_s3_client()
     if not app_time:
         app_time = int(time.time())
 
@@ -299,7 +303,6 @@ def batch_to_s3_atomic(
         Exception: If max retries exceeded due to race conditions
     """
     print(f"[UPLOAD] Starting batch_to_s3_atomic with {len(recipes)} recipes")
-    MAX_RETRIES = 3
     combined_data_key = 'jsondata/combined_data.json'
 
     if not bucket_name:
@@ -307,6 +310,8 @@ def batch_to_s3_atomic(
 
     for attempt in range(MAX_RETRIES):
         print(f"[UPLOAD] Attempt {attempt + 1}/{MAX_RETRIES}")
+        # Get fresh S3 client for each attempt
+        s3_client = _get_s3_client()
         # Load existing data with ETag
         try:
             print("[UPLOAD] Loading existing combined_data.json...")

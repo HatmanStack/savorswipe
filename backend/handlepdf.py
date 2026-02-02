@@ -3,6 +3,8 @@ import os
 
 import fitz  # PyMuPDF
 
+from config import PDF_MAX_PAGES
+
 
 def encode_image(image_path):
     with open(image_path, "rb") as image_file:
@@ -24,8 +26,8 @@ def pdf_to_base64_images(base64_pdf):
         total_pages = len(doc)
         print(f'[PDF] Opened PDF with {total_pages} pages')
 
-        if total_pages > 50:
-            print(f'[PDF] Rejecting: {total_pages} pages exceeds limit of 50')
+        if total_pages > PDF_MAX_PAGES:
+            print(f'[PDF] Rejecting: {total_pages} pages exceeds limit of {PDF_MAX_PAGES}')
             return False
         print('[PDF] Page count OK')
 
