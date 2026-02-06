@@ -30,7 +30,7 @@ Upload a picture of your own directions, ingredients or recipe to join it to the
 - **Node.js** v18+ (v24 LTS recommended)
 - **AWS CLI** configured with credentials (`aws configure`)
 - **AWS SAM CLI** for serverless deployment
-- **Python 3.11+** for backend Lambda functions
+- **Python 3.13+** for backend Lambda functions
 
 ## Quick Start
 

@@ -104,7 +104,7 @@ The selected image will represent your recipe in the swipe interface.
 - Background upload processing with job queue
 - AsyncStorage for persistence
 
-**Backend**: AWS Lambda (Python 3.12) with API Gateway v2
+**Backend**: AWS Lambda (Python 3.13) with API Gateway v2
 - OpenAI Vision API for OCR
 - Google Custom Search for recipe images
 - Semantic duplicate detection using embeddings
@@ -126,8 +126,8 @@ npm run lint:backend # Backend ruff
 ```
 
 **Test Coverage**:
-- Frontend: 299 tests (services, components, integration)
-- Backend: 151 tests (Lambda, OCR, embeddings, upload)
+- Frontend: ~300 tests (services, components, integration)
+- Backend: ~150 tests (Lambda, OCR, embeddings, upload)
 
 ## License
 
