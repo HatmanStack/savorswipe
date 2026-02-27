@@ -468,11 +468,11 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
 4. Ingredients MUST be formatted as objects (key-value pairs), NOT arrays
 5. Directions MUST be formatted as objects (key-value pairs) with numeric strings as keys, NOT arrays
 6. Maintain JSON validity
-5. Preserve all nested structures
-6. Don't include any special characters in the response
-7. Keep original data types (arrays, objects, strings)
-8. Ensure all keys and values are properly escaped
-9. Return only the JSON and nothing else
+7. Preserve all nested structures
+8. Don't include any special characters in the response
+9. Keep original data types (arrays, objects, strings)
+10. Ensure all keys and values are properly escaped
+11. Return only the JSON and nothing else
 
 # Example for Multiple Recipes (3 recipes):
 {
