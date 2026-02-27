@@ -130,6 +130,7 @@ def normalize_recipe(recipe: Dict) -> Dict:
     """
     Normalize a single recipe dictionary.
     Fixes special characters, unicode fractions, and unit abbreviations.
+    Converts list-based Directions and Ingredients to dictionary format.
 
     Args:
         recipe: A single recipe dictionary with keys like Title, Ingredients, Directions, etc.
@@ -148,12 +149,25 @@ def normalize_recipe(recipe: Dict) -> Dict:
                 new_val = process_value(ing_val)
                 normalized_ingredients[new_key] = new_val
             recipe['Ingredients'] = normalized_ingredients
+        elif isinstance(recipe['Ingredients'], list):
+            # Convert list to dict
+            normalized_ingredients = {}
+            for idx, item in enumerate(recipe['Ingredients']):
+                normalized_ingredients[str(idx + 1)] = process_value(item)
+            recipe['Ingredients'] = normalized_ingredients
         else:
             recipe['Ingredients'] = process_value(recipe['Ingredients'])
 
     # Also clean up Directions, Description, Comments for consistency
     if 'Directions' in recipe:
-        recipe['Directions'] = process_value(recipe['Directions'])
+        if isinstance(recipe['Directions'], list):
+            # Convert list to dict
+            normalized_directions = {}
+            for idx, item in enumerate(recipe['Directions']):
+                normalized_directions[str(idx + 1)] = process_value(item)
+            recipe['Directions'] = normalized_directions
+        else:
+            recipe['Directions'] = process_value(recipe['Directions'])
 
     if 'Description' in recipe:
         recipe['Description'] = process_value(recipe['Description'])
