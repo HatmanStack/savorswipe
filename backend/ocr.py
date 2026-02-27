@@ -68,7 +68,7 @@ IMPORTANT GUIDELINES:
    - Title: string
    - Servings: integer
    - Ingredients: object (key-value pairs, not arrays)
-   - Directions: array of strings
+   - Directions: object (key-value pairs with numeric strings as keys, e.g., {"1": "Step one", "2": "Step two"})
    - Description: string
 
 4. Ingredients MUST be formatted as objects (key-value pairs):
@@ -84,10 +84,15 @@ IMPORTANT GUIDELINES:
      * Use "pound" or "pounds" (not "lb", "lb.", "lbs")
      * Use "gram" or "grams" (not "g", "g.")
 
-5. If the extraction was cut off mid-sentence or mid-field, complete that section naturally
-6. Don't add information that's not visible in the image - only complete what's incomplete
-7. Return ONLY valid JSON in the exact format specified
-8. This is a cooking recipe - focus on factual ingredient quantities and cooking instructions
+5. Directions MUST be formatted as objects (key-value pairs) with numeric strings as keys:
+   - Example: {"1": "Preheat oven.", "2": "Mix ingredients."}
+   - For sectioned directions: {"Section Name": {"1": "Step one", "2": "Step two"}}
+   - Never use arrays like ["Step one", "Step two"]
+
+6. If the extraction was cut off mid-sentence or mid-field, complete that section naturally
+7. Don't add information that's not visible in the image - only complete what's incomplete
+8. Return ONLY valid JSON in the exact format specified
+9. This is a cooking recipe - focus on factual ingredient quantities and cooking instructions
 
 Here is the partial extraction we have so far:
 """
@@ -157,7 +162,7 @@ You are an OCR-like data extraction tool that extracts recipe data from PDFs.
      * Servings: Default to 4 if not stated
      * Type: Default to ["main dish"] if not clear
      * Ingredients: Empty object {} if none visible
-     * Directions: Empty array [] if none visible
+     * Directions: Empty object {} if none visible
      * Description: Empty string "" if none visible
 
 6. Extract or infer the number of servings for this recipe. Guidelines:
@@ -197,11 +202,16 @@ You are an OCR-like data extraction tool that extracts recipe data from PDFs.
      * Use "gram" or "grams" (not "g", "g.")
    - For items without amounts, use phrases like "to taste", "as needed"
 
-10. All parts should either be a string or an array of strings, EXCEPT Ingredients which must be objects.
+10. Directions MUST be formatted as objects (key-value pairs) with numeric strings as keys, NOT arrays.
+   - Example: {"1": "Preheat oven.", "2": "Mix ingredients."}
+   - For sectioned directions: {"Section Name": {"1": "Step one", "2": "Step two"}}
+   - Never use arrays like ["Step one", "Step two"]
 
-11. The Description can include cooking tips, a general description of the recipe, or be left blank.
+11. All parts should either be a string or an object, EXCEPT Type which is an array of strings.
 
-12. The Title should be the name of the recipe.
+12. The Description can include cooking tips, a general description of the recipe, or be left blank.
+
+13. The Title should be the name of the recipe.
 
 Here are example outputs:
 
@@ -222,11 +232,11 @@ Example 1 - Single recipe on page:
         "salt": "to taste",
         "pepper": "to taste"
     },
-    "Directions": [
-        "Preheat the oven to 375°F. Grease a 9x13 inch baking dish with butter.",
-        "Melt 3 tablespoons butter in a skillet over medium heat. Add the mushrooms, onion, and garlic. Sauté for 5-7 minutes until softened.",
-        "Arrange a layer of potato slices in the prepared baking dish, overlapping slices. Season with salt and pepper. Top with the mushroom mixture, then sprinkle with thyme, Gruyère, and Parmesan.",
-    ],
+    "Directions": {
+        "1": "Preheat the oven to 375°F. Grease a 9x13 inch baking dish with butter.",
+        "2": "Melt 3 tablespoons butter in a skillet over medium heat. Add the mushrooms, onion, and garlic. Sauté for 5-7 minutes until softened.",
+        "3": "Arrange a layer of potato slices in the prepared baking dish, overlapping slices. Season with salt and pepper. Top with the mushroom mixture, then sprinkle with thyme, Gruyère, and Parmesan."
+    },
     "Description": "A creamy and flavorful potato gratin with a crunchy cereal topping, perfect for a cozy meal."
 
 
@@ -245,13 +255,13 @@ Example 2 - Multiple complete recipes on page:
                 "brown sugar": "1 cup",
                 "eggs": "2 large"
             },
-            "Directions": [
-                "Preheat oven to 375°F.",
-                "Mix butter and sugar until creamy.",
-                "Add eggs and beat well.",
-                "Stir in flour and chocolate chips.",
-                "Bake for 10-12 minutes."
-            ],
+            "Directions": {
+                "1": "Preheat oven to 375°F.",
+                "2": "Mix butter and sugar until creamy.",
+                "3": "Add eggs and beat well.",
+                "4": "Stir in flour and chocolate chips.",
+                "5": "Bake for 10-12 minutes."
+            },
             "Description": "Classic chocolate chip cookies."
         },
         {
@@ -265,13 +275,13 @@ Example 2 - Multiple complete recipes on page:
                 "brown sugar": "1 cup",
                 "eggs": "2 large"
             },
-            "Directions": [
-                "Preheat oven to 350°F.",
-                "Mix butter and sugar.",
-                "Add eggs and beat.",
-                "Stir in oats and raisins.",
-                "Bake for 12-15 minutes."
-            ],
+            "Directions": {
+                "1": "Preheat oven to 350°F.",
+                "2": "Mix butter and sugar.",
+                "3": "Add eggs and beat.",
+                "4": "Stir in oats and raisins.",
+                "5": "Bake for 12-15 minutes."
+            },
             "Description": "Chewy oatmeal cookies with raisins."
         }
     ]
@@ -290,7 +300,7 @@ Example 3 - Multiple partial recipes (e.g., index page with snippets):
                 "ground beef": "1 pound",
                 "ricotta cheese": "2 cups"
             },
-            "Directions": [],
+            "Directions": {},
             "Description": ""
         },
         {
@@ -301,7 +311,7 @@ Example 3 - Multiple partial recipes (e.g., index page with snippets):
                 "chicken breasts": "4 pieces",
                 "marinara sauce": "2 cups"
             },
-            "Directions": [],
+            "Directions": {},
             "Description": ""
         },
         {
@@ -309,7 +319,7 @@ Example 3 - Multiple partial recipes (e.g., index page with snippets):
             "Servings": 4,
             "Type": ["side dish"],
             "Ingredients": {},
-            "Directions": [],
+            "Directions": {},
             "Description": ""
         }
     ]
@@ -443,11 +453,11 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
         "salt": "to taste",
         "pepper": "to taste"
     }},
-    "Directions": [
-        "Preheat the oven to 375°F. Grease a 9x13 inch baking dish with butter.",
-        "Melt 3 tablespoons butter in a skillet over medium heat. Add the mushrooms, onion, and garlic. Sauté for 5-7 minutes until softened.",
-        "Arrange a layer of potato slices in the prepared baking dish, overlapping slices. Season with salt and pepper. Top with the mushroom mixture, then sprinkle with thyme, Gruyère, and Parmesan."
-    ],
+    "Directions": {{
+        "1": "Preheat the oven to 375°F. Grease a 9x13 inch baking dish with butter.",
+        "2": "Melt 3 tablespoons butter in a skillet over medium heat. Add the mushrooms, onion, and garlic. Sauté for 5-7 minutes until softened.",
+        "3": "Arrange a layer of potato slices in the prepared baking dish, overlapping slices. Season with salt and pepper. Top with the mushroom mixture, then sprinkle with thyme, Gruyère, and Parmesan."
+    }},
     "Description": "A creamy and flavorful potato gratin with a crunchy cereal topping, perfect for a cozy meal."
 }}
 
@@ -455,7 +465,9 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
 1. If input contains MULTIPLE DISTINCT recipes (different titles), you MUST return: {"recipes": [recipe1, recipe2, ...]}
 2. If input contains SINGLE recipe (or multiple with same title merged), return: {Title: "...", ...}
 3. CRITICAL: For multiple recipes, ALWAYS wrap in {"recipes": [...]} - NEVER return a direct array or single object
-4. Maintain JSON validity
+4. Ingredients MUST be formatted as objects (key-value pairs), NOT arrays
+5. Directions MUST be formatted as objects (key-value pairs) with numeric strings as keys, NOT arrays
+6. Maintain JSON validity
 5. Preserve all nested structures
 6. Don't include any special characters in the response
 7. Keep original data types (arrays, objects, strings)
