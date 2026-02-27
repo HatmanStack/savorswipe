@@ -481,22 +481,22 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
       "Title": "Recipe 1",
       "Servings": 4,
       "Type": ["main dish"],
-      "Ingredients": {...},
-      "Directions": [...]
+      "Ingredients": {"ingredient": "amount"},
+      "Directions": {"1": "step one", "2": "step two"}
     },
     {
       "Title": "Recipe 2",
       "Servings": 6,
       "Type": ["dessert"],
-      "Ingredients": {...},
-      "Directions": [...]
+      "Ingredients": {"ingredient": "amount"},
+      "Directions": {"1": "step one"}
     },
     {
       "Title": "Recipe 3",
       "Servings": 8,
       "Type": ["appetizer"],
-      "Ingredients": {...},
-      "Directions": [...]
+      "Ingredients": {"ingredient": "amount"},
+      "Directions": {"1": "step one"}
     }
   ]
 }
