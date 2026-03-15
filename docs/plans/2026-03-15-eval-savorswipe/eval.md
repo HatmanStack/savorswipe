@@ -270,3 +270,42 @@ Merged and deduplicated targets from all 3 evaluators, prioritized by lowest sco
 ### Priority 10: Creativity (8/10 → 9/10) — LOW-HIGH complexity
 - Refactor `transformErrorMessage` to declarative pattern array (LOW)
 - Consider semantic search via client-side embeddings (HIGH)
+
+## Calibration
+
+### Cross-Evaluator Divergences
+- No significant divergences (≥3 points) found between overlapping pillars:
+  - Architecture (Hire: 7) ↔ Defensiveness (Stress: 7) — aligned on structural concerns (god-hook, non-atomic delete)
+  - Code Quality (Hire: 7) ↔ Performance (Stress: 7) — aligned on backend logging debt and hook complexity
+  - Problem-Solution Fit (Hire: 8) ↔ Pragmatism (Stress: 8) — aligned on unused dependency concerns
+
+### Effective Thresholds
+| Pillar | Target | Source |
+|--------|--------|--------|
+| Problem-Solution Fit | 9 | default |
+| Architecture | 9 | default |
+| Code Quality | 9 | default |
+| Creativity | 9 | default |
+| Pragmatism | 9 | default |
+| Defensiveness | 9 | default |
+| Performance | 9 | default |
+| Type Rigor | 9 | default |
+| Test Value | 9 | default |
+| Reproducibility | 9 | default |
+| Git Hygiene | 7 | user override |
+| Onboarding | 9 | default |
+
+### Pillars Requiring Remediation
+| Pillar | Current | Target | Gap |
+|--------|---------|--------|-----|
+| Git Hygiene | 5 | 7 | -2 |
+| Architecture | 7 | 9 | -2 |
+| Code Quality | 7 | 9 | -2 |
+| Defensiveness | 7 | 9 | -2 |
+| Performance | 7 | 9 | -2 |
+| Test Value | 7 | 9 | -2 |
+| Reproducibility | 7 | 9 | -2 |
+| Problem-Solution Fit | 8 | 9 | -1 |
+| Creativity | 8 | 9 | -1 |
+| Pragmatism | 8 | 9 | -1 |
+| Onboarding | 8 | 9 | -1 |
