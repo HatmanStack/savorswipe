@@ -304,34 +304,3 @@ def select_unique_image_url(search_results: List[str], used_urls: Set[str]) -> s
     # All URLs are used - return first as fallback
     print("[SEARCH WARNING] All URLs already used, using first as fallback")
     return search_results[0]
-
-
-# Legacy function for backward compatibility with existing code
-def google_search_image_legacy(title):
-    """
-    Legacy function that returns full search results object.
-
-    DEPRECATED: Use google_search_image() instead.
-    """
-    url = "https://www.googleapis.com/customsearch/v1"
-    params = {
-        'key': os.getenv('SEARCH_KEY'),
-        'cx': os.getenv('SEARCH_ID'),
-        'q': title,
-        'searchType': 'image',
-        'num': 10,
-        'imgSize': 'xlarge',
-        'imgType': 'photo',
-    }
-    response = requests.get(url, params=params)
-    if response.status_code == 200:
-        search_results = response.json()
-
-        if 'items' in search_results and len(search_results['items']) > 0:
-            return search_results
-        else:
-            print("No image results found.")
-            return None
-    else:
-        print(f"Error: {response.status_code}")
-        return None
