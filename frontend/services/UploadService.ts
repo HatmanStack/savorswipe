@@ -376,11 +376,15 @@ export class UploadService {
     this.subscribers.forEach((callback) => {
       try {
         callback(jobCopy)
-      } catch (error) {}
+      } catch (error) {
+        console.error('[UploadService] Subscriber notification failed:', error);
+      }
     })
 
     // Persist queue state to AsyncStorage (errors silently ignored - persistence is optional)
-    UploadPersistence.saveQueue(this.jobQueue).catch(() => {})
+    UploadPersistence.saveQueue(this.jobQueue).catch((error) => {
+      console.error('[UploadService] Queue persistence failed:', error);
+    })
   }
 
   /**
