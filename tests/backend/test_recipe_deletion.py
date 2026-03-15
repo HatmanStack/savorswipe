@@ -508,8 +508,8 @@ class TestDeleteRecipeAtomic:
             assert len(combined_puts) >= 2, f"Expected at least 2 combined_data puts (write + rollback), got {len(combined_puts)}"
             assert len(embeddings_puts) >= 1, f"Expected at least 1 embeddings put, got {len(embeddings_puts)}"
 
-            # Verify error logging was invoked for the rollback failure
+            # Verify the rollback-specific error message from _rollback_combined_data
             assert mock_log.error.called, "Expected log.error to be called on rollback failure"
             error_calls = [str(call) for call in mock_log.error.call_args_list]
-            assert any('CRITICAL' in call or 'Rollback' in call or 'rollback' in call or 'AccessDenied' in call for call in error_calls), \
-                f"Expected rollback failure in error log calls, got: {error_calls}"
+            assert any('CRITICAL: Rollback failed - manual recovery needed' in call for call in error_calls), \
+                f"Expected 'CRITICAL: Rollback failed - manual recovery needed' in error log calls, got: {error_calls}"

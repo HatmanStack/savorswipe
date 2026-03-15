@@ -226,18 +226,20 @@ export function useRecipeInjection({
       return;
     }
 
+    // If a pending recipe is already being resolved, defer processing new keys
+    // to avoid overwriting the active pendingRecipe with a different one
+    if (pendingRecipe) {
+      return;
+    }
+
     // Check for pending recipes (recipes with image_search_results but no image_url)
     // Prioritize pending recipes over injecting all new recipes
     for (const key of newKeys) {
       const recipe = jsonData[key];
 
       if (isPendingImageSelection(recipe)) {
-        // Only set pending recipe if not already set to this recipe
-        // This prevents infinite loops from creating new object references
-        if (!pendingRecipe || pendingRecipe.key !== key) {
-          const recipeWithKey = { ...recipe, key };
-          setPendingRecipeForPicker(recipeWithKey);
-        }
+        const recipeWithKey = { ...recipe, key };
+        setPendingRecipeForPicker(recipeWithKey);
 
         // Mark only this specific pending key as processed so other new keys
         // remain available for later injection

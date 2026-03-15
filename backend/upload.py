@@ -9,11 +9,11 @@ from typing import Dict, List, Tuple
 from urllib.parse import urlparse
 
 import boto3
-import requests
 from botocore.exceptions import ClientError
 from PIL import Image
 
 from config import MAX_RETRIES, PROBLEMATIC_DOMAINS
+from image_uploader import fetch_image_from_url
 from logger import StructuredLogger
 
 log = StructuredLogger("upload")
@@ -134,7 +134,8 @@ def upload_image(search_results, bucket_name, highest_key):
     filtered_urls = []
     for url in image_urls:
         if is_problematic_url(url):
-            log.info("Skipping problematic URL", url=url[:100])
+            host = urlparse(url).hostname or "unknown"
+            log.info("Skipping problematic URL", host=host)
         else:
             filtered_urls.append(url)
 
@@ -146,56 +147,34 @@ def upload_image(search_results, bucket_name, highest_key):
         return None
 
     for idx, image_url in enumerate(filtered_urls):
-        log.info("Trying image URL", index=idx + 1, total=item_count, url=image_url[:100])
+        host = urlparse(image_url).hostname or "unknown"
+        log.info("Trying image URL", index=idx + 1, total=item_count, host=host)
 
+        # Use centralized fetcher with SSRF/DNS-rebinding protections
+        image_data, content_type = fetch_image_from_url(image_url)
+
+        if image_data is None:
+            log.warning("Fetch failed, trying next URL", index=idx + 1, host=host)
+            continue
+
+        log.info("Image fetched", size_bytes=len(image_data))
+        image_key = images_prefix + str(highest_key) + '.jpg'
+
+        # Upload to S3
+        s3_client = _get_s3_client()
         try:
-            # Add headers to appear like a real browser request
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.9',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Referer': 'https://www.google.com/',
-                'DNT': '1',
-                'Connection': 'keep-alive',
-                'Upgrade-Insecure-Requests': '1'
-            }
-            image_response = requests.get(image_url, headers=headers, timeout=10)
-        except requests.exceptions.RequestException as e:
-            log.error("Request failed", error=str(e))
-            continue  # Try next URL
+            log.info("Uploading to S3", bucket=bucket_name, key=image_key)
+            s3_client.put_object(
+                Bucket=bucket_name,
+                Key=image_key,
+                Body=image_data,
+                ContentType='image/jpeg'
+            )
+            log.info("Image uploaded successfully to S3")
+            return image_url  # Return the source URL
 
-        if image_response.status_code == 200:
-            content_type = image_response.headers.get('Content-Type', 'unknown')
-            log.info("Successfully fetched", content_type=content_type)
-
-            if 'image' not in content_type:
-                log.warning("Not an image, skipping", content_type=content_type)
-                continue  # Try next URL
-
-            # Valid image found
-            image_data = image_response.content
-            log.info("Image fetched", size_bytes=len(image_data))
-            image_key = images_prefix + str(highest_key) + '.jpg'
-
-            # Upload to S3
-            s3_client = _get_s3_client()
-            try:
-                log.info("Uploading to S3", bucket=bucket_name, key=image_key)
-                s3_client.put_object(
-                    Bucket=bucket_name,
-                    Key=image_key,
-                    Body=image_data,
-                    ContentType='image/jpeg'
-                )
-                log.info("Image uploaded successfully to S3")
-                return image_url  # Return the source URL
-
-            except Exception as e:
-                log.error("Error uploading image to S3", error=str(e))
-                continue  # Try next URL
-        else:
-            log.error("HTTP error, trying next URL", status_code=image_response.status_code)
+        except Exception as e:
+            log.error("Error uploading image to S3", error=str(e))
             continue  # Try next URL
 
     log.warning("All image URLs failed", total=item_count)

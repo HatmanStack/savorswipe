@@ -35,11 +35,11 @@ describe('Upload Flow Integration', () => {
   const mockSetJsonData = jest.fn()
   const mockSetCurrentRecipe = jest.fn()
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks()
 
-    // Reset UploadService state
-    UploadService._resetForTests()
+    // Reset UploadService state (async to clear persistence)
+    await UploadService._resetForTests()
     UploadService._setTestApiUrl('https://mock-api-url.com')
 
     // Mock useRecipe hook

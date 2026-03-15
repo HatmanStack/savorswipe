@@ -465,4 +465,4 @@ After completing all 6 tasks:
 
 **Known limitations:**
 - The hook interfaces between `useQueueState`, `useRecipeInjection`, and `useImagePicker` pass setters and refs as props. This is intentional — it avoids introducing a new state management layer while keeping hooks composable.
-- The URL validation parallelization uses 5 threads. For very large URL sets (>50), this could be increased, but 5 is appropriate for the typical 10-URL batch from Google search.
+- The URL validation parallelization uses 5 threads. For URL sets larger than 50, this could be increased, but 5 is appropriate for the typical 10-URL batch from Google search.

@@ -20,10 +20,10 @@ describe('UploadService', () => {
     jobId: 'mock-job-id',
   }
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks()
-    // Reset service state between tests
-    UploadService._resetForTests()
+    // Reset service state between tests (async to clear persistence)
+    await UploadService._resetForTests()
     UploadService._setTestApiUrl('https://mock-api-url.com')
 
     // Default fetch mock to prevent unhandled rejections

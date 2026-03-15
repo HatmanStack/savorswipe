@@ -634,10 +634,10 @@ def handle_delete_request(event, context, recipe_key=None):
                 })
             }
         else:
-            log.error("Failed to delete recipe", recipe_key=recipe_key, error=error_message)
             # Distinguish between "not found" (idempotent, 200) and real failures (500)
             if error_message and 'not found' in error_message.lower():
                 # Recipe was already deleted or never existed - idempotent operation
+                log.info("Recipe not found (idempotent delete)", recipe_key=recipe_key)
                 return {
                     'statusCode': 200,
                     'headers': {
@@ -650,6 +650,7 @@ def handle_delete_request(event, context, recipe_key=None):
                 }
             else:
                 # Real failure (S3 error, permissions, race condition, etc.)
+                log.error("Failed to delete recipe", recipe_key=recipe_key, error=error_message)
                 return {
                     'statusCode': 500,
                     'headers': {

@@ -7,6 +7,7 @@ Provides functions to:
 - Upload images to S3 with retry logic
 """
 
+import hashlib
 import io
 import ipaddress
 import logging
@@ -19,6 +20,33 @@ from typing import Optional, Tuple
 import requests
 from botocore.exceptions import ClientError
 from PIL import Image
+from requests.adapters import HTTPAdapter
+from urllib3.util.ssl_ import create_urllib3_context
+
+
+class _PinnedHostnameAdapter(HTTPAdapter):
+    """HTTPAdapter that overrides SNI and certificate hostname verification.
+
+    When connecting to a resolved IP (to prevent DNS rebinding), TLS needs to
+    use the original hostname for SNI and certificate validation.
+    """
+
+    def __init__(self, server_hostname: str, **kwargs):
+        self._server_hostname = server_hostname
+        super().__init__(**kwargs)
+
+    def init_poolmanager(self, *args, **kwargs):
+        ctx = create_urllib3_context()
+        kwargs['ssl_context'] = ctx
+        kwargs['server_hostname'] = self._server_hostname
+        super().init_poolmanager(*args, **kwargs)
+
+
+def _url_log_meta(image_url: str) -> dict:
+    """Return safe metadata for logging a URL without exposing its full content."""
+    parsed = urllib.parse.urlparse(image_url)
+    url_hash = hashlib.sha256(image_url.encode()).hexdigest()[:8]
+    return {"hostname": parsed.hostname or "unknown", "url_len": len(image_url), "url_hash": url_hash}
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -54,7 +82,7 @@ def _validate_image_url(image_url: str) -> Optional[str]:
 
         hostname = parsed.hostname
         if not hostname:
-            logger.warning(f"[IMAGE] URL has no hostname: {image_url}")
+            logger.warning("[IMAGE] URL has no hostname", **_url_log_meta(image_url))
             return None
 
         # Resolve hostname to IP and check it's not private/reserved
@@ -98,12 +126,13 @@ def fetch_image_from_url(image_url: str, timeout: int = 10) -> Tuple[Optional[by
         logger.warning("[IMAGE] Empty image_url provided")
         return None, None
 
-    logger.info(f"[IMAGE] Fetching image from URL: {image_url[:100]}...")
+    meta = _url_log_meta(image_url)
+    logger.info("[IMAGE] Fetching image", **meta)
 
     # Validate URL and get resolved IP to prevent SSRF/DNS rebinding attacks
     resolved_ip = _validate_image_url(image_url)
     if not resolved_ip:
-        logger.warning(f"[IMAGE] URL validation failed, refusing to fetch: {image_url[:100]}...")
+        logger.warning("[IMAGE] URL validation failed, refusing to fetch", **meta)
         return None, None
 
     try:
@@ -133,8 +162,13 @@ def fetch_image_from_url(image_url: str, timeout: int = 10) -> Tuple[Optional[by
             'Connection': 'keep-alive',
         }
 
+        # Use a session with a pinned hostname adapter so TLS SNI and certificate
+        # verification use the original hostname, not the resolved IP
+        session = requests.Session()
+        session.mount('https://', _PinnedHostnameAdapter(server_hostname=hostname))
+
         # Disable redirects to unvalidated hosts; use pinned URL with resolved IP
-        response = requests.get(pinned_url, headers=headers, timeout=timeout, allow_redirects=False, verify=True)
+        response = session.get(pinned_url, headers=headers, timeout=timeout, allow_redirects=False, verify=True)
 
         if response.status_code != 200:
             logger.warning(f"[IMAGE] Failed to fetch: HTTP {response.status_code}")

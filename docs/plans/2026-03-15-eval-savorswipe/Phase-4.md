@@ -37,11 +37,13 @@ Add pre-commit hooks, commit message enforcement, developer documentation, backe
 3. Run `npx husky init` to create the `.husky` directory.
 4. Create `.husky/pre-commit` with the following content:
    ```bash
-   cd frontend && npx expo lint
+   #!/usr/bin/env sh
+   set -e
+   (cd frontend && npx expo lint)
    if command -v uvx >/dev/null 2>&1; then
-     cd ../backend && uvx ruff check .
+     (cd backend && uvx ruff check .)
    elif command -v ruff >/dev/null 2>&1; then
-     cd ../backend && ruff check .
+     (cd backend && ruff check .)
    fi
    ```
    Note: The backend ruff check uses a conditional to fall back to `ruff` if `uvx` is not available. The hook fails on lint violations so issues are caught before commit.
@@ -91,7 +93,7 @@ chore(ci): add husky pre-commit hooks for lint enforcement
    {
      "extends": ["@commitlint/config-conventional"],
      "rules": {
-       "type-enum": [2, "always", ["feat", "fix", "refactor", "test", "chore", "docs", "perf", "ci", "style"]],
+       "type-enum": [2, "always", ["feat", "fix", "refactor", "test", "chore", "docs", "perf", "ci", "style", "build", "revert"]],
        "scope-case": [2, "always", "lower-case"],
        "subject-max-length": [1, "always", 100]
      }

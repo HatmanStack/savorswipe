@@ -51,6 +51,7 @@ export function useQueueState({
   const isRefillingRef = useRef(false);
   const isMountedRef = useRef(true);
   const isInitializingRef = useRef(false);
+  const initializingGenerationRef = useRef(0);
   const queueRef = useRef<ImageFile[]>([]);
   const nextImageRef = useRef<ImageFile | null>(null);
   const lastInjectionTimeRef = useRef<number>(0);
@@ -91,11 +92,13 @@ export function useQueueState({
   const initializeQueue = useCallback(async () => {
     if (!jsonData) return;
 
-    // Prevent double initialization
-    if (isInitializingRef.current) return;
+    const currentGeneration = ++generationRef.current;
+
+    // Prevent double initialization, but allow newer generations to proceed
+    if (isInitializingRef.current && currentGeneration <= initializingGenerationRef.current) return;
 
     isInitializingRef.current = true;
-    const currentGeneration = ++generationRef.current;
+    initializingGenerationRef.current = currentGeneration;
     setIsLoading(true);
 
     try {
