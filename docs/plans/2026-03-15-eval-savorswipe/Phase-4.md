@@ -45,11 +45,11 @@ Add pre-commit hooks, commit message enforcement, developer documentation, backe
 6. Test by making a small whitespace change, staging it, and committing.
 
 **Verification Checklist:**
-- [ ] `.husky/pre-commit` exists and is executable
-- [ ] `husky` appears in `devDependencies` in `package.json`
-- [ ] `"prepare": "husky"` in `package.json` scripts
-- [ ] Pre-commit hook runs lint on `git commit`
-- [ ] Hook does not block commits when backend ruff is unavailable
+- [x] `.husky/pre-commit` exists and is executable
+- [x] `husky` appears in `devDependencies` in `package.json`
+- [x] `"prepare": "husky"` in `package.json` scripts
+- [x] Pre-commit hook runs lint on `git commit`
+- [x] Hook does not block commits when backend ruff is unavailable
 
 **Testing Instructions:**
 - Make a test change, stage it, and run `git commit -m "test: verify pre-commit hook"`. Verify lint runs before commit completes.
@@ -102,11 +102,11 @@ chore(ci): add husky pre-commit hooks for lint enforcement
 6. Test with a good commit message like `chore: test commitlint` — should pass.
 
 **Verification Checklist:**
-- [ ] `.commitlintrc.json` exists with conventional commits config
-- [ ] `.husky/commit-msg` exists and is executable
-- [ ] `@commitlint/cli` and `@commitlint/config-conventional` in `devDependencies`
-- [ ] Bad commit messages are rejected
-- [ ] Good conventional commit messages pass
+- [x] `.commitlintrc.json` exists with conventional commits config
+- [x] `.husky/commit-msg` exists and is executable
+- [x] `@commitlint/cli` and `@commitlint/config-conventional` in `devDependencies`
+- [x] Bad commit messages are rejected
+- [x] Good conventional commit messages pass
 
 **Testing Instructions:**
 - Create a test file, stage it, try `git commit -m "bad message"` — should fail.
@@ -166,11 +166,11 @@ chore(ci): add commitlint for conventional commit enforcement
 4. Verify locally: `cd backend && pip install -e ".[dev]" && pytest ../tests/backend -v --tb=short`
 
 **Verification Checklist:**
-- [ ] `[project.optional-dependencies]` section in `pyproject.toml`
-- [ ] All test dependencies listed (pytest, pytest-mock, requests-mock, moto, ruff)
-- [ ] CI workflow updated to use `pip install -e ".[dev]"`
-- [ ] `PYTHONPATH=backend pytest tests/backend -v --tb=short` passes
-- [ ] CI workflow still works (same packages installed)
+- [x] `[project.optional-dependencies]` section in `pyproject.toml`
+- [x] All test dependencies listed (pytest, pytest-mock, requests-mock, moto, ruff)
+- [x] CI workflow updated to use `pip install -e ".[dev]"`
+- [x] `PYTHONPATH=backend pytest tests/backend -v --tb=short` passes
+- [x] CI workflow still works (same packages installed)
 
 **Testing Instructions:**
 - Run: `cd backend && pip install -e ".[dev]"`
@@ -222,11 +222,11 @@ chore(backend): declare dev dependencies in pyproject.toml
 4. Verify `.env.example` is NOT in `.gitignore` (it should be committed, unlike `.env`).
 
 **Verification Checklist:**
-- [ ] `.env.example` exists at project root
-- [ ] All `EXPO_PUBLIC_*` variables documented with placeholder values
-- [ ] `.env.example` is NOT in `.gitignore`
-- [ ] Comments explain each variable's purpose
-- [ ] Reference to `docs/DEPLOYMENT.md` for detailed setup
+- [x] `.env.example` exists at project root
+- [x] All `EXPO_PUBLIC_*` variables documented with placeholder values
+- [x] `.env.example` is NOT in `.gitignore`
+- [x] Comments explain each variable's purpose
+- [x] Reference to `docs/DEPLOYMENT.md` for detailed setup
 
 **Testing Instructions:**
 - No automated tests. Manual verification:
@@ -274,11 +274,11 @@ docs: add .env.example with frontend environment variables
 2. Keep it concise — under 100 lines. Reference existing docs where appropriate.
 
 **Verification Checklist:**
-- [ ] `CONTRIBUTING.md` exists at project root
-- [ ] Covers: setup, branching, commits, PRs, tests, code style
-- [ ] References `npm run check` as the all-in-one verification command
-- [ ] Mentions squash merge strategy for PRs
-- [ ] Under 100 lines
+- [x] `CONTRIBUTING.md` exists at project root
+- [x] Covers: setup, branching, commits, PRs, tests, code style
+- [x] References `npm run check` as the all-in-one verification command
+- [x] Mentions squash merge strategy for PRs
+- [x] Under 100 lines
 
 **Testing Instructions:**
 - No automated tests. Review the file for accuracy and completeness.
@@ -338,10 +338,10 @@ docs: add CONTRIBUTING.md with development guidelines
 3. Keep it factual and concise.
 
 **Verification Checklist:**
-- [ ] "Scaling Considerations" section added to `DEPLOYMENT.md`
-- [ ] Documents memory limit, concurrency behavior, and read latency
-- [ ] Provides migration path for scaling beyond current design
-- [ ] Tone is pragmatic, not apologetic
+- [x] "Scaling Considerations" section added to `DEPLOYMENT.md`
+- [x] Documents memory limit, concurrency behavior, and read latency
+- [x] Provides migration path for scaling beyond current design
+- [x] Tone is pragmatic, not apologetic
 
 **Testing Instructions:**
 - No automated tests. Review for accuracy.
