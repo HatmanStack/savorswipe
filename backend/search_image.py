@@ -1,13 +1,12 @@
-import logging
 import os
 import re
 from typing import Dict, List, Optional, Set
 
 import requests
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from logger import StructuredLogger
+
+log = StructuredLogger("search")
 
 
 def simplify_recipe_title(title: str) -> str:
@@ -25,7 +24,7 @@ def simplify_recipe_title(title: str) -> str:
     Returns:
         Simplified title focusing on main ingredient/dish
     """
-    print(f"[SEARCH] Simplifying title: '{title}'")
+    log.info("Simplifying title", title=title)
 
     # Remove common prefixes
     prefixes_to_remove = [
@@ -48,7 +47,7 @@ def simplify_recipe_title(title: str) -> str:
     # Remove extra whitespace
     simplified = ' '.join(simplified.split())
 
-    print(f"[SEARCH] Simplified to: '{simplified}'")
+    log.info("Simplified title", simplified=simplified)
     return simplified
 
 
@@ -68,19 +67,19 @@ def validate_image_urls(image_urls: List[str], timeout: int = 5) -> List[str]:
         List of valid image URLs (may be fewer than input)
     """
     if not image_urls:
-        logger.info("[SEARCH] No image URLs to validate")
+        log.info("No image URLs to validate")
         return []
 
-    logger.info(f"[SEARCH] Validating {len(image_urls)} image URLs...")
+    log.info("Validating image URLs", count=len(image_urls))
     valid_urls = []
 
     for url in image_urls:
         if not url:
-            logger.warning("[SEARCH] Skipping empty URL")
+            log.warning("Skipping empty URL")
             continue
 
         try:
-            logger.info(f"[SEARCH] Validating URL: {url[:100]}...")
+            log.info("Validating URL", url=url[:100])
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
             }
@@ -92,24 +91,21 @@ def validate_image_urls(image_urls: List[str], timeout: int = 5) -> List[str]:
                 # Verify content-type is an image
                 content_type = response.headers.get('Content-Type', '')
                 if 'image' in content_type.lower():
-                    logger.info(f"[SEARCH] URL validated successfully: {content_type}")
+                    log.info("URL validated successfully", content_type=content_type)
                     valid_urls.append(url)
                 else:
-                    logger.warning(
-                        f"[SEARCH] URL has invalid content-type (not an image): {content_type}"
-                    )
+                    log.warning("URL has invalid content-type", content_type=content_type)
             else:
-                logger.warning(f"[SEARCH] URL returned non-200 status: {response.status_code}")
+                log.warning("URL returned non-200 status", status_code=response.status_code)
 
         except requests.exceptions.Timeout:
-            logger.warning(f"[SEARCH] URL validation timeout after {timeout}s")
+            log.warning("URL validation timeout", timeout=timeout)
         except requests.exceptions.RequestException as e:
-            logger.warning(f"[SEARCH] URL validation failed: {str(e)}")
+            log.warning("URL validation failed", error=str(e))
         except Exception as e:
-            logger.error(f"[SEARCH] Unexpected error validating URL: {str(e)}")
+            log.error("Unexpected error validating URL", error=str(e))
 
-    logger.info(
-        f"[SEARCH] URL validation complete: {len(valid_urls)}/{len(image_urls)} URLs are valid")
+    log.info("URL validation complete", valid=len(valid_urls), total=len(image_urls))
     return valid_urls
 
 
@@ -131,7 +127,7 @@ def google_search_image(title: str, count: int = 10, recipe_type: Optional[str] 
     Returns:
         List of image URLs (up to count results), or empty list if no results
     """
-    print(f"[SEARCH] Original title: '{title}', type: '{recipe_type}'")
+    log.info("Search request", title=title, recipe_type=recipe_type)
 
     # Simplify the title first
     simplified_title = simplify_recipe_title(title)
@@ -139,42 +135,39 @@ def google_search_image(title: str, count: int = 10, recipe_type: Optional[str] 
     # Determine search suffix based on recipe type
     if recipe_type and 'beverage' in recipe_type.lower():
         suffix1 = "beverage photo"
-        print("[SEARCH] Detected beverage type - using beverage-specific search terms")
+        log.info("Detected beverage type - using beverage-specific search terms")
     else:
         suffix1 = "food photo"
 
     # Strategy 1: Try simplified title + type-specific suffix
-    print(f"[SEARCH] Strategy 1: Trying '{simplified_title} {suffix1}'...")
+    log.info("Strategy 1", query=f"{simplified_title} {suffix1}")
     results = _search_google_images(f"{simplified_title} {suffix1}", count)
 
     # Strategy 2: If we got very few results, try with "recipe photo"
     if len(results) < 5:
-        print(
-            f"[SEARCH] Only found {len(results)} results, trying strategy 2: '{simplified_title} recipe photo'...")
+        log.info("Strategy 2: trying recipe photo", results_so_far=len(results), query=f"{simplified_title} recipe photo")
         recipe_results = _search_google_images(f"{simplified_title} recipe photo", count)
 
         # Use whichever gave us more results
         if len(recipe_results) > len(results):
-            print(f"[SEARCH] Strategy 2 found more results: {len(recipe_results)}")
+            log.info("Strategy 2 found more results", count=len(recipe_results))
             results = recipe_results
 
     # Strategy 3: If still very few, try just simplified title as fallback
     if len(results) < 5:
-        print(
-            f"[SEARCH] Only found {len(results)} results, trying strategy 3: '{simplified_title}'...")
+        log.info("Strategy 3: trying simplified title only", results_so_far=len(results), query=simplified_title)
         simple_results = _search_google_images(simplified_title, count)
 
         # Use whichever gave us more results
         if len(simple_results) > len(results):
-            print(
-                f"[SEARCH] Strategy 3 (simplified only) found more results: {len(simple_results)}")
+            log.info("Strategy 3 found more results", count=len(simple_results))
             results = simple_results
 
     # Validate URLs to ensure they're actually accessible
-    print(f"[SEARCH] Validating {len(results)} URLs before returning...")
+    log.info("Validating URLs before returning", count=len(results))
     validated_results = validate_image_urls(results)
 
-    print(f"[SEARCH] Final validated result count: {len(validated_results)}")
+    log.info("Final validated result count", count=len(validated_results))
     return validated_results
 
 
@@ -189,7 +182,7 @@ def _search_google_images(query: str, count: int = 10) -> List[str]:
     Returns:
         List of image URLs
     """
-    print(f"[SEARCH] Searching for images: '{query}', count={count}")
+    log.info("Searching for images", query=query, count=count)
     url = "https://www.googleapis.com/customsearch/v1"
     params = {
         'key': os.getenv('SEARCH_KEY'),
@@ -204,35 +197,35 @@ def _search_google_images(query: str, count: int = 10) -> List[str]:
     }
 
     try:
-        print("[SEARCH] Sending request to Google Custom Search API...")
+        log.info("Sending request to Google Custom Search API")
         response = requests.get(url, params=params, timeout=10)  # 10 second timeout
-        print(f"[SEARCH] Response status code: {response.status_code}")
+        log.info("Response received", status_code=response.status_code)
 
         if response.status_code == 200:
             try:
                 search_results = response.json()
-                print("[SEARCH] Response parsed successfully")
+                log.info("Response parsed successfully")
             except ValueError as json_err:
-                print(f"[SEARCH ERROR] Error parsing JSON response: {json_err}")
+                log.error("Error parsing JSON response", error=str(json_err))
                 return []
 
             # Extract image URLs from results
             if 'items' in search_results and len(search_results['items']) > 0:
                 image_urls = [item['link'] for item in search_results['items']]
-                print(f"[SEARCH] Found {len(image_urls)} image URLs")
+                log.info("Found image URLs", count=len(image_urls))
                 return image_urls
             else:
-                print("[SEARCH] No image results found")
+                log.info("No image results found")
                 return []
         else:
-            print(f"[SEARCH ERROR] Error: {response.status_code} - {response.text[:200]}")
+            log.error("Search API error", status_code=response.status_code, response=response.text[:200])
             return []
 
     except requests.exceptions.Timeout:
-        print("[SEARCH ERROR] Request timed out after 10 seconds")
+        log.error("Request timed out", timeout=10)
         return []
     except requests.exceptions.RequestException as e:
-        print(f"[SEARCH ERROR] Error making request: {e}")
+        log.error("Error making request", error=str(e))
         return []
 
 
@@ -246,7 +239,7 @@ def extract_used_image_urls(json_data: Dict) -> Set[str]:
     Returns:
         Set of image URLs already in use
     """
-    print(f"[SEARCH] Extracting used image URLs from {len(json_data)} recipes")
+    log.info("Extracting used image URLs", recipe_count=len(json_data))
     used_urls = set()
 
     for recipe in json_data.values():
@@ -258,7 +251,7 @@ def extract_used_image_urls(json_data: Dict) -> Set[str]:
         elif 'ImageUrl' in recipe:
             used_urls.add(recipe['ImageUrl'])
 
-    print(f"[SEARCH] Extracted {len(used_urls)} used image URLs")
+    log.info("Extracted used image URLs", count=len(used_urls))
     return used_urls
 
 
@@ -289,18 +282,17 @@ def select_unique_image_url(search_results: List[str], used_urls: Set[str]) -> s
         >>> select_unique_image_url([], set())
         ''  # Empty results
     """
-    print(
-        f"[SEARCH] Selecting unique URL from {len(search_results)} results, {len(used_urls)} URLs already used")
+    log.info("Selecting unique URL", results=len(search_results), used=len(used_urls))
     if not search_results:
-        print("[SEARCH] No search results provided")
+        log.info("No search results provided")
         return ''
 
     # Find first unused URL
     for idx, url in enumerate(search_results):
         if url not in used_urls:
-            print(f"[SEARCH] Selected unused URL at position {idx}")
+            log.info("Selected unused URL", position=idx)
             return url
 
     # All URLs are used - return first as fallback
-    print("[SEARCH WARNING] All URLs already used, using first as fallback")
+    log.warning("All URLs already used, using first as fallback")
     return search_results[0]
