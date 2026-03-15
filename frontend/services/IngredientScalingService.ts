@@ -333,13 +333,13 @@ export class IngredientScalingService {
 
     // Raw object format (backward compatibility)
     if (typeof ingredients === 'object') {
-      const scaled: Record<string, any> = {};
+      const scaled: Record<string, string | ScalableIngredients> = {};
 
       for (const [key, value] of Object.entries(ingredients)) {
         // Check if value is a nested object (sectioned ingredients)
         if (typeof value === 'object' && !Array.isArray(value)) {
           // Recursively scale nested section
-          scaled[key] = this.scaleIngredients(value as ScalableIngredients, scaleFactor);
+          scaled[key] = this.scaleIngredients(value as ScalableIngredients, scaleFactor) ?? value;
         } else if (typeof value === 'string') {
           // Scale the amount string
           scaled[key] = this.scaleAmount(value, scaleFactor);
@@ -349,7 +349,7 @@ export class IngredientScalingService {
         }
       }
 
-      return scaled;
+      return scaled as ScalableIngredients;
     }
 
     return ingredients;
