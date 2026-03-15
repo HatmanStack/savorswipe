@@ -322,5 +322,66 @@ class TestUploadModule(unittest.TestCase):
         self.assertNotIn('image_url', added_recipe)
 
 
+    @patch('upload.upload_image')
+    def test_batch_to_s3_key_generation_after_deletion(self, mock_upload_image):
+        """Test that key generation uses max(keys)+1, not len(data)+1.
+
+        After deleting recipes 2 and 4, keys are {"1","3","5"}.
+        New recipe should get key "6" (max+1), not "4" (len+1).
+        """
+        existing_with_gaps = {
+            '1': {'Title': 'Recipe One', 'key': 1},
+            '3': {'Title': 'Recipe Three', 'key': 3},
+            '5': {'Title': 'Recipe Five', 'key': 5},
+        }
+        mock_response = {
+            'Body': MagicMock(read=lambda: json.dumps(existing_with_gaps).encode()),
+            'ETag': '"etag123"'
+        }
+        self.mock_s3.get_object.return_value = mock_response
+        mock_upload_image.return_value = 'https://example.com/image.jpg'
+
+        new_recipe = [{'Title': 'New Recipe', 'Ingredients': ['flour']}]
+        search_results_list = [['url1', 'url2']]
+
+        _result_data, success_keys, _position_to_key, errors = batch_to_s3_atomic(
+            new_recipe, search_results_list
+        )
+
+        self.assertEqual(len(errors), 0)
+        self.assertEqual(len(success_keys), 1)
+        self.assertEqual(success_keys[0], '6')  # max(1,3,5) + 1 = 6, not len(3) + 1 = 4
+
+    @patch('upload.upload_image')
+    def test_to_s3_key_generation_after_deletion(self, mock_upload_image):
+        """Test that to_s3 uses max(keys)+1 after deletions."""
+        from upload import to_s3
+
+        existing_with_gaps = {
+            '1': {'Title': 'Recipe One'},
+            '3': {'Title': 'Recipe Three'},
+            '5': {'Title': 'Recipe Five'},
+        }
+        mock_upload_image.return_value = 'https://example.com/image.jpg'
+
+        new_recipe = {'Title': 'New Recipe', 'Ingredients': ['flour']}
+
+        success, result_data = to_s3(
+            new_recipe, ['url1', 'url2'],
+            jsonData=json.dumps(existing_with_gaps)
+        )
+
+        self.assertTrue(success)
+        # Key should be "6" (max(1,3,5) + 1), not "4" (len(3) + 1)
+        self.assertIn('6', result_data)
+        self.assertNotIn('4', result_data)
+
+        # Verify the recipe object stored at key '6' has expected fields
+        stored_recipe = result_data['6']
+        self.assertEqual(stored_recipe['Title'], 'New Recipe')
+        self.assertIn('flour', stored_recipe['Ingredients'])
+        self.assertEqual(stored_recipe['key'], 6)
+
+
 if __name__ == '__main__':
     unittest.main()

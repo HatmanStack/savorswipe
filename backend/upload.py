@@ -4,17 +4,19 @@ import json
 import os
 import random
 import time
-import uuid
 from datetime import datetime, timezone
 from typing import Dict, List, Tuple
 from urllib.parse import urlparse
 
 import boto3
-import requests
 from botocore.exceptions import ClientError
 from PIL import Image
 
 from config import MAX_RETRIES, PROBLEMATIC_DOMAINS
+from image_uploader import fetch_image_from_url, upload_image_to_s3
+from logger import StructuredLogger
+
+log = StructuredLogger("upload")
 
 bucket_name = os.getenv('S3_BUCKET')
 
@@ -68,17 +70,20 @@ def is_problematic_url(url: str) -> bool:
 def to_s3(recipe, search_results, jsonData=None):
     combined_data_key = 'jsondata/combined_data.json'
     s3_client = _get_s3_client()
+    etag = None
     try:
         if not jsonData:
             existing_data = s3_client.get_object(Bucket=bucket_name, Key=combined_data_key)
             existing_data_body = existing_data['Body'].read()
+            etag = existing_data['ETag'].strip('"')
         else:
             existing_data_body = jsonData
         existing_data_json = json.loads(existing_data_body)
         for existing_recipe in existing_data_json.values():
             if existing_recipe.get('Title') == recipe.get('Title'):
                 return False, existing_data_json
-        highest_key = len(existing_data_json) + 1
+        numeric_keys = [int(k) for k in existing_data_json.keys() if k.isdigit()]
+        highest_key = max(numeric_keys, default=0) + 1
     except ClientError as e:
         if e.response['Error']['Code'] == 'NoSuchKey':
             existing_data_json = {}
@@ -94,123 +99,88 @@ def to_s3(recipe, search_results, jsonData=None):
         recipe['uploadedAt'] = datetime.now(timezone.utc).isoformat()
         existing_data_json[str(highest_key)] = recipe
         updated_data_json = json.dumps(existing_data_json)
-        s3_client.put_object(Bucket=bucket_name, Key=combined_data_key,
-                             Body=updated_data_json, ContentType='application/json')
+        params = {
+            'Bucket': bucket_name,
+            'Key': combined_data_key,
+            'Body': updated_data_json,
+            'ContentType': 'application/json'
+        }
+        if etag is not None:
+            params['IfMatch'] = etag
+        s3_client.put_object(**params)
         return True, existing_data_json
     else:
         return False, existing_data_json
 
 
 def upload_image(search_results, bucket_name, highest_key):
-    print(f"[UPLOAD] Starting image upload for recipe key {highest_key}")
-    print(f"[UPLOAD] search_results type: {type(search_results)}")
-    print(f"[UPLOAD] search_results preview: {str(search_results)[:200]}")
-    images_prefix = 'images/'
+    log.info("Starting image upload", recipe_key=highest_key, search_results_type=str(type(search_results)))
 
     # Handle both list format (new) and dict format (legacy)
     if isinstance(search_results, list):
         # New format: list of URLs
-        print(f"[UPLOAD] Processing as list format ({len(search_results)} URLs)")
+        log.info("Processing as list format", url_count=len(search_results))
         image_urls = search_results
     elif isinstance(search_results, dict) and 'items' in search_results:
         # Legacy format: {'items': [{'link': 'url'}]}
-        print("[UPLOAD] Processing as dict format with 'items' key")
+        log.info("Processing as dict format with 'items' key")
         image_urls = [item['link'] for item in search_results['items']]
     else:
-        print(f"[UPLOAD ERROR] Invalid search_results format: {type(search_results)}")
+        log.error("Invalid search_results format", format_type=str(type(search_results)))
         return None
 
     # Filter out problematic URLs before trying to fetch
     filtered_urls = []
     for url in image_urls:
         if is_problematic_url(url):
-            print(f"[UPLOAD] Skipping problematic URL (known to return HTML): {url[:100]}...")
+            host = urlparse(url).hostname or "unknown"
+            log.info("Skipping problematic URL", host=host)
         else:
             filtered_urls.append(url)
 
     item_count = len(filtered_urls)
-    print(
-        f"[UPLOAD] Have {item_count} valid URLs to try (filtered {len(image_urls) - len(filtered_urls)} problematic URLs)")
+    log.info("Valid URLs to try", valid=item_count, filtered=len(image_urls) - len(filtered_urls))
 
     if item_count == 0:
-        print("[UPLOAD] No valid URLs after filtering, returning None")
+        log.warning("No valid URLs after filtering")
         return None
 
     for idx, image_url in enumerate(filtered_urls):
-        print(f"[UPLOAD] Trying image {idx + 1}/{item_count} from URL: {image_url[:100]}...")
+        host = urlparse(image_url).hostname or "unknown"
+        log.info("Trying image URL", index=idx + 1, total=item_count, host=host)
 
-        try:
-            # Add headers to appear like a real browser request
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.9',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Referer': 'https://www.google.com/',
-                'DNT': '1',
-                'Connection': 'keep-alive',
-                'Upgrade-Insecure-Requests': '1'
-            }
-            image_response = requests.get(image_url, headers=headers, timeout=10)
-        except requests.exceptions.RequestException as e:
-            print(f"[UPLOAD ERROR] Request failed: {e}")
-            continue  # Try next URL
+        # Use centralized fetcher with SSRF/DNS-rebinding protections
+        image_data, content_type = fetch_image_from_url(image_url)
 
-        if image_response.status_code == 200:
-            content_type = image_response.headers.get('Content-Type', 'unknown')
-            print(f"[UPLOAD] Successfully fetched, content-type: {content_type}")
+        if image_data is None:
+            log.warning("Fetch failed, trying next URL", index=idx + 1, host=host)
+            continue
 
-            if 'image' not in content_type:
-                print(f"[UPLOAD WARNING] Not an image (skipping): {content_type}")
-                continue  # Try next URL
+        log.info("Image fetched", size_bytes=len(image_data))
 
-            # Valid image found
-            image_data = image_response.content
-            print(f"[UPLOAD] Image size: {len(image_data)} bytes")
-            image_key = images_prefix + str(highest_key) + '.jpg'
+        # Upload to S3 with JPEG conversion and retry logic
+        s3_client = _get_s3_client()
+        s3_path, upload_error = upload_image_to_s3(
+            recipe_key=str(highest_key),
+            image_bytes=image_data,
+            s3_client=s3_client,
+            bucket=bucket_name,
+            content_type=content_type or 'image/jpeg',
+        )
 
-            # Use unique temp file path to avoid race conditions on concurrent requests
-            tmp_image_path = f'/tmp/searchImage_{uuid.uuid4().hex}.jpg'
-            with open(tmp_image_path, 'wb') as image_file:
-                image_file.write(image_data)
-            print(f"[UPLOAD] Wrote temporary file to {tmp_image_path}")
-
-            # Upload to S3
-            s3_client = _get_s3_client()
-            try:
-                print(f"[UPLOAD] Uploading to S3: {bucket_name}/{image_key}")
-                s3_client.put_object(
-                    Bucket=bucket_name,
-                    Key=image_key,
-                    Body=image_data,
-                    ContentType='image/jpeg'
-                )
-                print('[UPLOAD] Image uploaded successfully to S3')
-                # Clean up temp file
-                try:
-                    os.remove(tmp_image_path)
-                except OSError:
-                    pass  # Ignore cleanup errors
-                return image_url  # Return the source URL
-
-            except Exception as e:
-                print(f"[UPLOAD ERROR] Error uploading image to S3: {e}")
-                # Clean up temp file on error too
-                try:
-                    os.remove(tmp_image_path)
-                except OSError:
-                    pass
-                continue  # Try next URL
+        if s3_path:
+            log.info("Image uploaded successfully to S3", s3_path=s3_path)
+            return image_url  # Return the source URL
         else:
-            print(f"[UPLOAD ERROR] HTTP {image_response.status_code}, trying next URL")
+            log.error("Error uploading image to S3", error=upload_error)
             continue  # Try next URL
 
-    print(f"[UPLOAD] All {item_count} image URLs failed, returning None")
+    log.warning("All image URLs failed", total=item_count)
     return None
 
 
 def upload_user_data(prefix, content, file_type, data, app_time=None):
-    print(f"[UPLOAD] Uploading user data to {prefix}, file_type={file_type}")
+    log.info("Uploading user data", prefix=prefix, file_type=file_type)
     s3_client = _get_s3_client()
     if not app_time:
         app_time = int(time.time())
@@ -219,21 +189,21 @@ def upload_user_data(prefix, content, file_type, data, app_time=None):
     if file_type == 'jpg':
         try:
             decoded_data = base64.b64decode(data)
-            print("[UPLOAD] Converting image to JPEG...")
+            log.info("Converting image to JPEG")
             image = Image.open(io.BytesIO(decoded_data))
             jpeg_image_io = io.BytesIO()
             image.convert('RGB').save(jpeg_image_io, format='JPEG')
             data = jpeg_image_io.getvalue()
-            print(f"[UPLOAD] Image converted, size: {len(data)} bytes")
+            log.info("Image converted", size_bytes=len(data))
         except Exception as e:
-            print(f"[UPLOAD ERROR] Error converting image to JPEG: {e}")
+            log.error("Error converting image to JPEG", error=str(e))
             return
     elif file_type == 'pdf':
         try:
             data = base64.b64decode(data)
-            print(f"[UPLOAD] PDF file, size: {len(data)} bytes")
+            log.info("PDF file decoded", size_bytes=len(data))
         except Exception as e:
-            print(f"[UPLOAD ERROR] Failed to decode PDF base64: {e}")
+            log.error("Failed to decode PDF base64", error=str(e))
             return
     elif file_type == 'json':
         # Ensure JSON data is encoded to bytes
@@ -245,20 +215,20 @@ def upload_user_data(prefix, content, file_type, data, app_time=None):
             data = json.dumps(data).encode('utf-8')
         else:
             data = json.dumps(data).encode('utf-8')
-        print(f"[UPLOAD] JSON file, size: {len(data)} bytes")
+        log.info("JSON file", size_bytes=len(data))
     image_key = f'{prefix}/{app_time}.{file_type}'
     try:
-        print(f"[UPLOAD] Uploading to S3: {bucket_name}/{image_key}")
+        log.info("Uploading to S3", bucket=bucket_name, key=image_key)
         s3_client.put_object(
-            Bucket=bucket_name,  # Replace with your bucket name
+            Bucket=bucket_name,
             Key=image_key,
             Body=data,
-            ContentType=content  # Adjust based on the actual image type
+            ContentType=content
         )
-        print('[UPLOAD] User data uploaded successfully')
+        log.info("User data uploaded successfully")
 
     except Exception as e:
-        print(f"[UPLOAD ERROR] Error uploading User Image to S3: {e}")
+        log.error("Error uploading user data to S3", error=str(e))
 
     return app_time
 
@@ -302,51 +272,51 @@ def batch_to_s3_atomic(
     Raises:
         Exception: If max retries exceeded due to race conditions
     """
-    print(f"[UPLOAD] Starting batch_to_s3_atomic with {len(recipes)} recipes")
+    log.info("Starting batch_to_s3_atomic", recipe_count=len(recipes))
     combined_data_key = 'jsondata/combined_data.json'
 
     if not bucket_name:
         raise ValueError("S3_BUCKET environment variable not set")
 
     for attempt in range(MAX_RETRIES):
-        print(f"[UPLOAD] Attempt {attempt + 1}/{MAX_RETRIES}")
+        log.info("Batch upload attempt", attempt=attempt + 1, max_retries=MAX_RETRIES)
         # Get fresh S3 client for each attempt
         s3_client = _get_s3_client()
         # Load existing data with ETag
         try:
-            print("[UPLOAD] Loading existing combined_data.json...")
+            log.info("Loading existing combined_data.json")
             response = s3_client.get_object(Bucket=bucket_name, Key=combined_data_key)
             existing_data = json.loads(response['Body'].read())
             etag = response['ETag'].strip('"')
-            print(f"[UPLOAD] Loaded {len(existing_data)} existing recipes, ETag: {etag}")
+            log.info("Loaded existing recipes", count=len(existing_data), etag=etag)
         except ClientError as e:
             if e.response['Error']['Code'] == 'NoSuchKey':
-                print("[UPLOAD] No existing combined_data.json found (first upload)")
+                log.info("No existing combined_data.json found (first upload)")
                 existing_data = {}
                 etag = None
             else:
-                print(f"[UPLOAD ERROR] S3 error loading combined_data.json: {e}")
+                log.error("S3 error loading combined_data.json", error=str(e))
                 raise
 
-        # Find next recipe key based on total count
+        # Find next recipe key based on max existing key (handles deletions)
         if existing_data:
-            highest_key = len(existing_data)
-            print(f"[UPLOAD] Existing recipe count: {highest_key}")
+            numeric_keys = [int(k) for k in existing_data.keys() if k.isdigit()]
+            highest_key = max(numeric_keys, default=0)
+            log.info("Highest existing recipe key", highest_key=highest_key)
         else:
             highest_key = 0
-            print("[UPLOAD] No existing recipes, starting from 1")
+            log.info("No existing recipes, starting from 1")
 
         # Process each recipe
         success_keys = []
         position_to_key = {}  # Map position in recipes list to recipe key
         errors = []
         next_key = highest_key + 1
-        print(f"[UPLOAD] Processing {len(recipes)} recipes starting from key {next_key}")
+        log.info("Processing recipes", count=len(recipes), start_key=next_key)
 
         for file_idx, recipe in enumerate(recipes):
-            print(f"[UPLOAD] Processing recipe {file_idx}, type: {type(recipe)}")
             title = recipe.get('Title', '')
-            print(f"[UPLOAD] Processing recipe {file_idx}: '{title}'")
+            log.info("Processing recipe", file_idx=file_idx, title=title)
             normalized_title = normalize_title(title)
 
             # Check for duplicate title (case-insensitive)
@@ -358,7 +328,7 @@ def batch_to_s3_atomic(
                     break
 
             if is_duplicate:
-                print(f"[UPLOAD] Recipe {file_idx} is a duplicate title")
+                log.info("Recipe is a duplicate title", file_idx=file_idx)
                 errors.append({
                     'file': file_idx,
                     'title': title,
@@ -369,13 +339,12 @@ def batch_to_s3_atomic(
             # Store image search results for user selection (picture picker feature)
             search_results = search_results_list[file_idx] if file_idx < len(
                 search_results_list) else []
-            print(
-                f"[UPLOAD] Storing {len(search_results)} image URLs for recipe {file_idx} (key {next_key})...")
+            log.info("Storing image URLs", file_idx=file_idx, key=next_key, url_count=len(search_results))
 
             # PICTURE_PICKER: Store URLs in image_search_results, don't upload yet
             # User will select preferred image via ImagePickerModal in frontend
             if isinstance(search_results, list) and len(search_results) > 0:
-                print(f"[UPLOAD] Image URLs stored successfully for key {next_key}")
+                log.info("Image URLs stored successfully", key=next_key)
                 # Add recipe to data with search results but NO image_url
                 recipe['key'] = next_key
                 recipe['image_search_results'] = search_results  # Store all URLs for user selection
@@ -387,21 +356,20 @@ def batch_to_s3_atomic(
                 position_to_key[file_idx] = str(next_key)  # Track position mapping
                 next_key += 1
             else:
-                print(f"[UPLOAD ERROR] No image URLs available for recipe {file_idx}")
+                log.error("No image URLs available for recipe", file_idx=file_idx)
                 errors.append({
                     'file': file_idx,
                     'title': title,
                     'reason': 'No image search results available'
                 })
 
-        print(
-            f"[UPLOAD] Batch processing complete: {len(success_keys)} success, {len(errors)} errors")
+        log.info("Batch processing complete", success=len(success_keys), errors=len(errors))
 
         # Attempt atomic write with conditional put
         if success_keys:
             try:
                 updated_data_json = json.dumps(existing_data)
-                print(f"[UPLOAD] Attempting atomic write to S3 with ETag={etag}")
+                log.info("Attempting atomic write to S3", etag=etag)
 
                 params = {
                     'Bucket': bucket_name,
@@ -415,7 +383,7 @@ def batch_to_s3_atomic(
                     params['IfMatch'] = etag
 
                 s3_client.put_object(**params)  # type: ignore
-                print("[UPLOAD] Atomic write successful!")
+                log.info("Atomic write successful")
 
                 # Success!
                 return existing_data, success_keys, position_to_key, errors
@@ -423,23 +391,22 @@ def batch_to_s3_atomic(
             except ClientError as e:
                 if e.response['Error']['Code'] == 'PreconditionFailed':
                     # Race condition detected - retry with exponential backoff
-                    print(
-                        f"[UPLOAD WARNING] Race condition detected on attempt {attempt + 1}, retrying...")
+                    log.warning("Race condition detected, retrying", attempt=attempt + 1)
 
                     if attempt < MAX_RETRIES - 1:
                         delay = random.uniform(0.1, 0.5) * (2 ** attempt)
-                        print(f"[UPLOAD] Retrying after {delay:.2f}s delay...")
+                        log.info("Retrying after delay", delay_seconds=round(delay, 2))
                         time.sleep(delay)
                         continue
                 else:
                     # Other S3 error
-                    print(f"[UPLOAD ERROR] S3 error during atomic write: {e}")
+                    log.error("S3 error during atomic write", error=str(e))
                     raise
         else:
             # No successful recipes to upload
-            print("[UPLOAD] No successful recipes to upload")
+            log.info("No successful recipes to upload")
             return existing_data, success_keys, position_to_key, errors
 
     # Max retries exhausted
-    print(f"[UPLOAD ERROR] Max retries exhausted after {MAX_RETRIES} attempts")
+    log.error("Max retries exhausted", max_retries=MAX_RETRIES)
     raise Exception("Race condition: max retries exceeded after {} attempts".format(MAX_RETRIES))

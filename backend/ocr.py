@@ -1,24 +1,31 @@
 import json
 import os
+import threading
+import traceback
 
 from openai import OpenAI
 
 from fix_ingredients import normalize_recipe
+from logger import StructuredLogger
 
-# Lazy initialization will happen in functions
-client = None
+log = StructuredLogger("ocr")
+
+# Lazy initialization with thread-safe double-checked locking
+_client = None
+_lock = threading.Lock()
 
 
 def get_client():
-    global client
-    if client is None:
-        # Check if API_KEY is present
-        api_key = os.getenv('API_KEY')
-        if api_key:
-            client = OpenAI(api_key=api_key)
-        else:
-            raise ValueError("API_KEY environment variable not set. Mock get_client() in tests.")
-    return client
+    global _client
+    if _client is None:
+        with _lock:
+            if _client is None:
+                api_key = os.getenv('API_KEY')
+                if api_key:
+                    _client = OpenAI(api_key=api_key)
+                else:
+                    raise ValueError("API_KEY environment variable not set. Mock get_client() in tests.")
+    return _client
 
 
 def _repair_partial_json(recipe_json: str) -> str:
@@ -118,6 +125,7 @@ Here is the partial extraction we have so far:
         ],
         temperature=0.1,  # Slightly higher to allow for completion creativity while staying accurate
         max_completion_tokens=4096,
+        timeout=120.0,
     )
 
     completed_json = response.choices[0].message.content
@@ -392,8 +400,7 @@ Example 3 - Multiple partial recipes (e.g., index page with snippets):
 
 
 def parseJSON(recipes):
-    print(f"[PARSEJSON] Received {len(recipes)} recipe object(s)")
-    print(f"[PARSEJSON] Input preview: {str(recipes)[:300]}")
+    log.info("Received recipe objects", count=len(recipes))
 
     parse_prompt = """
     # Role and Objective
@@ -505,7 +512,7 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
     json_string = json.dumps(recipes)
 
     try:
-        print("[PARSEJSON] Calling OpenAI API...")
+        log.info("Calling OpenAI API")
         response = get_client().chat.completions.create(
             model="gpt-5.2",
             response_format={"type": "json_object"},
@@ -524,17 +531,14 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
             max_completion_tokens=16384,
             timeout=120.0  # 2 minute timeout for multi-recipe processing
         )
-        print("[PARSEJSON] OpenAI API call completed")
+        log.info("OpenAI API call completed")
     except Exception as e:
-        print(f"[PARSEJSON ERROR] OpenAI API call failed: {str(e)}")
-        import traceback
-        traceback.print_exc()
+        log.error("OpenAI API call failed", error=str(e), traceback=traceback.format_exc())
         raise
 
     # Parse the LLM response and normalize the recipe
     recipe_json = response.choices[0].message.content
-    print(f"[PARSEJSON] GPT returned {len(recipe_json)} characters")
-    print(f"[PARSEJSON] GPT response preview: {recipe_json[:400]}")
+    log.info("GPT response received", characters=len(recipe_json))
 
     try:
         recipe_data = json.loads(recipe_json)
@@ -548,17 +552,15 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
 
         if isinstance(recipe_data, dict) and 'recipes' in recipe_data:
             # Format 1: Wrapped array
-            print(
-                f"[PARSEJSON] Detected wrapped array format with {len(recipe_data['recipes'])} recipes")
+            log.info("Detected wrapped array format", count=len(recipe_data['recipes']))
             recipes_to_normalize = recipe_data['recipes']
         elif isinstance(recipe_data, list):
             # Format 2: Direct array
-            print(f"[PARSEJSON] Detected direct array format with {len(recipe_data)} recipes")
+            log.info("Detected direct array format", count=len(recipe_data))
             recipes_to_normalize = recipe_data
         else:
             # Format 3: Single recipe
-            print(
-                f"[PARSEJSON] Detected single recipe format: {recipe_data.get('Title', 'Unknown')}")
+            log.info("Detected single recipe format", title=recipe_data.get('Title', 'Unknown'))
             normalized_recipe = normalize_recipe(recipe_data)
             result = json.dumps(normalized_recipe, ensure_ascii=False)
             return result
@@ -569,7 +571,7 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
             normalized_recipe = normalize_recipe(recipe)
             normalized_recipes.append(normalized_recipe)
 
-        print(f"[PARSEJSON] Returning {len(normalized_recipes)} normalized recipes")
+        log.info("Returning normalized recipes", count=len(normalized_recipes))
         result = json.dumps(normalized_recipes, ensure_ascii=False)
         return result
 

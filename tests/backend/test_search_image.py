@@ -178,6 +178,59 @@ class TestValidateImageUrls:
         assert len(result) == 2
 
     @patch("search_image.requests.head")
+    def test_validate_preserves_original_order(self, mock_head):
+        """Test that validation returns URLs in original order even when later URLs validate faster."""
+        import time
+
+        urls = [
+            "https://example.com/slow.jpg",
+            "https://example.com/fast.jpg",
+            "https://example.com/medium.jpg",
+        ]
+
+        def head_side_effect(url, **kwargs):
+            response = Mock()
+            response.status_code = 200
+            response.headers = {"Content-Type": "image/jpeg"}
+            # Simulate different latencies
+            if "slow" in url:
+                time.sleep(0.05)
+            return response
+
+        mock_head.side_effect = head_side_effect
+
+        result = validate_image_urls(urls)
+
+        assert result == urls  # Order must be preserved
+
+    @patch("search_image.requests.head")
+    def test_validate_filters_invalid_urls(self, mock_head):
+        """Test that invalid URLs are filtered out while preserving order."""
+        urls = [
+            "https://example.com/valid1.jpg",
+            "https://example.com/invalid.html",
+            "https://example.com/valid2.jpg",
+        ]
+
+        def head_side_effect(url, **kwargs):
+            response = Mock()
+            response.status_code = 200
+            if "invalid" in url:
+                response.headers = {"Content-Type": "text/html"}
+            else:
+                response.headers = {"Content-Type": "image/jpeg"}
+            return response
+
+        mock_head.side_effect = head_side_effect
+
+        result = validate_image_urls(urls)
+
+        assert result == [
+            "https://example.com/valid1.jpg",
+            "https://example.com/valid2.jpg",
+        ]
+
+    @patch("search_image.requests.head")
     def test_validate_variable_content_types(self, mock_head):
         """Test validation accepts various image content types."""
         # Arrange

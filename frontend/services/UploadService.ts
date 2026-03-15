@@ -30,7 +30,37 @@ export class UploadService {
    * @internal
    */
   static _setTestApiUrl(url: string | null): void {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('_setTestApiUrl is only available in test/development environments')
+    }
     this._testApiUrl = url
+  }
+
+  /**
+   * Test-only method to reset all internal state
+   * @internal
+   */
+  static async _resetForTests(): Promise<void> {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('_resetForTests is only available in test/development environments')
+    }
+    this.jobQueue = []
+    this.currentJobId = null
+    this.isProcessing = false
+    this.subscribers = new Set()
+    this._testApiUrl = null
+    await UploadPersistence.clear()
+  }
+
+  /**
+   * Test-only method to control processing lock
+   * @internal
+   */
+  static _setProcessingForTests(value: boolean): void {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('_setProcessingForTests is only available in test/development environments')
+    }
+    this.isProcessing = value
   }
 
   /**
@@ -376,11 +406,15 @@ export class UploadService {
     this.subscribers.forEach((callback) => {
       try {
         callback(jobCopy)
-      } catch (error) {}
+      } catch (error) {
+        console.warn('[UploadService] Subscriber notification failed')
+      }
     })
 
     // Persist queue state to AsyncStorage (errors silently ignored - persistence is optional)
-    UploadPersistence.saveQueue(this.jobQueue).catch(() => {})
+    UploadPersistence.saveQueue(this.jobQueue).catch(() => {
+      console.warn('[UploadService] Queue persistence failed')
+    })
   }
 
   /**

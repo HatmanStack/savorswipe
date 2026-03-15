@@ -6,8 +6,6 @@ import '@testing-library/jest-native/extend-expect';
 process.env.EXPO_PUBLIC_API_GATEWAY_URL = 'https://placeholder-api-gateway-url.execute-api.us-east-1.amazonaws.com';
 process.env.EXPO_PUBLIC_CLOUDFRONT_BASE_URL = 'https://test-cloudfront.cloudfront.net';
 
-jest.mock('aws-sdk');
-
 // Mock expo-crypto
 jest.mock('expo-crypto', () => ({
   randomUUID: jest.fn(() => {

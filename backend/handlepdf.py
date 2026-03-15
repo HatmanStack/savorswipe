@@ -4,6 +4,9 @@ import os
 import fitz  # PyMuPDF
 
 from config import PDF_MAX_PAGES
+from logger import StructuredLogger
+
+log = StructuredLogger("pdf")
 
 
 def encode_image(image_path):
@@ -24,15 +27,17 @@ def pdf_to_base64_images(base64_pdf):
         # Open PDF with PyMuPDF
         doc = fitz.open(temp_pdf_path)
         total_pages = len(doc)
-        print(f'[PDF] Opened PDF with {total_pages} pages')
+        log.info("Opened PDF", total_pages=total_pages)
 
         if total_pages > PDF_MAX_PAGES:
-            print(f'[PDF] Rejecting: {total_pages} pages exceeds limit of {PDF_MAX_PAGES}')
-            return False
-        print('[PDF] Page count OK')
+            log.info("PDF exceeds page limit, processing in chunks", total_pages=total_pages, limit=PDF_MAX_PAGES, chunk_size=PDF_MAX_PAGES)
 
         base64_images = []
         for page_num in range(total_pages):
+            if total_pages > PDF_MAX_PAGES and page_num % PDF_MAX_PAGES == 0:
+                chunk_idx = page_num // PDF_MAX_PAGES
+                chunk_end = min(page_num + PDF_MAX_PAGES, total_pages)
+                log.info("Processing chunk", chunk=chunk_idx + 1, pages=f"{page_num + 1}-{chunk_end}", total_pages=total_pages)
             page = doc[page_num]
             # Render page to image (2x zoom for better quality)
             mat = fitz.Matrix(2, 2)
@@ -43,11 +48,11 @@ def pdf_to_base64_images(base64_pdf):
             base64_image = encode_image(temp_image_path)
             base64_images.append(base64_image)
 
-        print('PDF Pages Saved and Encoded')
+        log.info("PDF pages saved and encoded", total_pages=total_pages)
         return base64_images
 
     except Exception as e:
-        print(f'[PDF ERROR] Failed to process PDF: {e}')
+        log.error("Failed to process PDF", error=str(e))
         return False
 
     finally:

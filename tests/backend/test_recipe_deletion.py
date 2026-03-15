@@ -12,7 +12,8 @@ from botocore.exceptions import ClientError
 from recipe_deletion import (
     delete_recipe_from_combined_data,
     delete_embedding_from_store,
-    delete_recipe_atomic
+    delete_recipe_atomic,
+    _rollback_combined_data
 )
 
 
@@ -399,3 +400,116 @@ class TestDeleteRecipeAtomic:
         data = json.loads(response['Body'].read())
         assert "1" not in data
         assert "3" in data
+
+    def test_rollback_on_embeddings_failure(self):
+        """Test that combined_data is restored when embeddings write fails."""
+        # Setup mock S3 client
+        mock_client = MagicMock()
+
+        combined_data = {
+            "1": {"Title": "Recipe 1"},
+            "2": {"Title": "Recipe 2"},
+        }
+        embeddings = {
+            "1": [0.1] * 10,
+            "2": [0.2] * 10,
+        }
+
+        # Track all put_object calls to verify rollback
+        put_calls = []
+
+        def mock_get_object(Bucket, Key):
+            body = MagicMock()
+            if 'combined_data' in Key:
+                body.read.return_value = json.dumps(combined_data).encode()
+            else:
+                body.read.return_value = json.dumps(embeddings).encode()
+            return {'Body': body, 'ETag': '"etag123"'}
+
+        def mock_put_object(**kwargs):
+            put_calls.append(kwargs)
+            if 'embeddings' in kwargs['Key']:
+                # Embeddings write always fails
+                error_response = {'Error': {'Code': 'PreconditionFailed'}}
+                raise ClientError(error_response, 'PutObject')
+
+        mock_client.get_object.side_effect = mock_get_object
+        mock_client.put_object.side_effect = mock_put_object
+
+        success, error_msg = delete_recipe_atomic("1", mock_client, "test-bucket")
+
+        # Should fail since embeddings write failed on all retries
+        assert success is False
+        assert error_msg is not None
+
+        # Verify rollback was attempted: there should be a combined_data write
+        # with recipe removed, then a rollback write restoring the recipe
+        combined_puts = [c for c in put_calls if 'combined_data' in c['Key']]
+        assert len(combined_puts) >= 2, f"Expected at least 2 combined_data puts (delete + rollback), got {len(combined_puts)}"
+
+        # First combined_data put should have recipe "1" removed
+        first_put_data = json.loads(combined_puts[0]['Body'])
+        assert "1" not in first_put_data
+        assert "2" in first_put_data
+
+        # Rollback put should restore recipe "1"
+        rollback_put_data = json.loads(combined_puts[1]['Body'])
+        assert "1" in rollback_put_data
+
+    def test_rollback_failure_logging(self):
+        """Test that rollback failure is logged when embeddings write and rollback both fail."""
+        mock_client = MagicMock()
+
+        combined_data = {
+            "1": {"Title": "Recipe 1"},
+        }
+        embeddings = {
+            "1": [0.1] * 10,
+        }
+
+        put_calls = []
+
+        def mock_get_object(Bucket, Key):
+            body = MagicMock()
+            if 'combined_data' in Key:
+                body.read.return_value = json.dumps(combined_data).encode()
+            else:
+                body.read.return_value = json.dumps(embeddings).encode()
+            return {'Body': body, 'ETag': '"etag123"'}
+
+        def mock_put_object(**kwargs):
+            put_calls.append(kwargs)
+            # Let the initial combined_data write succeed
+            if 'combined_data' in kwargs['Key'] and len([c for c in put_calls if 'combined_data' in c['Key']]) == 1:
+                return {}
+            # Embeddings write fails, triggering rollback
+            if 'embeddings' in kwargs['Key']:
+                error_response = {'Error': {'Code': 'AccessDenied'}}
+                raise ClientError(error_response, 'PutObject')
+            # Rollback write also fails
+            if 'combined_data' in kwargs['Key']:
+                error_response = {'Error': {'Code': 'AccessDenied'}}
+                raise ClientError(error_response, 'PutObject')
+            return {}
+
+        mock_client.get_object.side_effect = mock_get_object
+        mock_client.put_object.side_effect = mock_put_object
+
+        # Should not raise, should return (False, error_message)
+        with patch('recipe_deletion.log') as mock_log:
+            success, error_msg = delete_recipe_atomic("1", mock_client, "test-bucket")
+
+            assert success is False
+            assert error_msg is not None
+
+            # Verify combined_data write succeeded, then embeddings failed, then rollback attempted
+            combined_puts = [c for c in put_calls if 'combined_data' in c['Key']]
+            embeddings_puts = [c for c in put_calls if 'embeddings' in c['Key']]
+            assert len(combined_puts) >= 2, f"Expected at least 2 combined_data puts (write + rollback), got {len(combined_puts)}"
+            assert len(embeddings_puts) >= 1, f"Expected at least 1 embeddings put, got {len(embeddings_puts)}"
+
+            # Verify the rollback-specific error message from _rollback_combined_data
+            assert mock_log.error.called, "Expected log.error to be called on rollback failure"
+            error_calls = [str(call) for call in mock_log.error.call_args_list]
+            assert any('CRITICAL: Rollback failed - manual recovery needed' in call for call in error_calls), \
+                f"Expected 'CRITICAL: Rollback failed - manual recovery needed' in error log calls, got: {error_calls}"

@@ -43,3 +43,4 @@ frontend/dist/
 backend/.aws-sam/
 tests/__pycache__/
 frontend/.env
+backend/savorswipe_backend.egg-info/
