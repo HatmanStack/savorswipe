@@ -1,2 +1,2 @@
 cd frontend && npx expo lint 2>/dev/null
-cd backend && uvx ruff check . 2>/dev/null || true
+cd ../backend && uvx ruff check . 2>/dev/null || true
