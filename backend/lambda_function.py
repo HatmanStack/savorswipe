@@ -44,6 +44,7 @@ import random
 import re
 import socket
 import time
+import traceback
 import urllib.parse
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -175,7 +176,7 @@ def merge_incomplete_recipes(recipes: List[Dict]) -> List[Dict]:
     if not incomplete or not complete:
         return recipes  # Nothing to merge
 
-    print(f"[MERGE] Found {len(incomplete)} incomplete and {len(complete)} complete recipes")
+    log.info("Found incomplete and complete recipes", incomplete=len(incomplete), complete=len(complete))
 
     # Try to match each incomplete recipe with a complete one
     merged_indices = set()
@@ -196,11 +197,11 @@ def merge_incomplete_recipes(recipes: List[Dict]) -> List[Dict]:
                 best_match = idx
 
         if best_match is not None:
-            print(f"[MERGE] Merging '{inc_title}' with '{complete[best_match].get('Title')}' (similarity: {best_score:.2f})")
+            log.info("Merging recipes", incomplete_title=inc_title, complete_title=complete[best_match].get('Title'), similarity=round(best_score, 2))
             complete[best_match] = merge_recipes(inc_recipe, complete[best_match])
             merged_indices.add(best_match)
         else:
-            print(f"[MERGE] No match found for incomplete recipe '{inc_title}', keeping as-is")
+            log.info("No match found for incomplete recipe, keeping as-is", title=inc_title)
             complete.append(inc_recipe)
 
     return complete
@@ -414,7 +415,7 @@ def handle_get_request(event, context):
                 'body': json.dumps({'error': f'File not found: {json_key}'})
             }
         else:
-            print(f'S3 ClientError fetching recipe JSON: {str(e)}')
+            log.error("S3 ClientError fetching recipe JSON", error=str(e))
             return {
                 'statusCode': 500,
                 'headers': {
@@ -424,7 +425,7 @@ def handle_get_request(event, context):
             }
 
     except Exception as e:
-        print(f'Error fetching recipe JSON from S3: {str(e)}')
+        log.error("Error fetching recipe JSON from S3", error=str(e))
         return {
             'statusCode': 500,
             'headers': {
@@ -442,7 +443,7 @@ def handle_async_processing(event, context):
     This is invoked asynchronously by handle_post_request.
     """
     job_id = event.get('job_id')
-    print(f"[ASYNC] Starting async processing for job {job_id}")
+    log.info("Starting async processing", job_id=job_id)
 
     bucket_name = os.getenv('S3_BUCKET')
     pending_key = f'upload-pending/{job_id}.json'
@@ -465,9 +466,7 @@ def handle_async_processing(event, context):
         return result
 
     except Exception as e:
-        print(f"[ASYNC ERROR] Failed to process job {job_id}: {str(e)}")
-        import traceback
-        traceback.print_exc()
+        log.error("Failed to process job", job_id=job_id, error=str(e), traceback=traceback.format_exc())
 
         # Write error status
         try:
@@ -538,14 +537,14 @@ def handle_status_request(event, context, job_id):
                 'headers': {'Content-Type': 'application/json'},
                 'body': json.dumps({'error': 'Job not found', 'jobId': job_id})
             }
-        print(f'Error fetching job status: {str(e)}')
+        log.error("Error fetching job status", error=str(e))
         return {
             'statusCode': 500,
             'headers': {'Content-Type': 'application/json'},
             'body': json.dumps({'error': f'Failed to fetch status: {str(e)}'})
         }
     except Exception as e:
-        print(f'Error fetching job status: {str(e)}')
+        log.error("Error fetching job status", error=str(e))
         return {
             'statusCode': 500,
             'headers': {'Content-Type': 'application/json'},
@@ -595,7 +594,7 @@ def handle_delete_request(event, context, recipe_key=None):
             })
         }
 
-    print(f"[DELETE] Recipe key: {recipe_key}")
+    log.info("Delete request received", recipe_key=recipe_key)
 
     # Validate recipe_key format (alphanumeric, underscore, hyphen)
     if not re.match(r'^[a-zA-Z0-9_-]+$', recipe_key):
@@ -623,7 +622,7 @@ def handle_delete_request(event, context, recipe_key=None):
         )
 
         if success:
-            print(f"[DELETE] Successfully deleted recipe '{recipe_key}'")
+            log.info("Successfully deleted recipe", recipe_key=recipe_key)
             return {
                 'statusCode': 200,
                 'headers': {
@@ -635,7 +634,7 @@ def handle_delete_request(event, context, recipe_key=None):
                 })
             }
         else:
-            print(f"[DELETE] Failed to delete recipe '{recipe_key}': {error_message}")
+            log.error("Failed to delete recipe", recipe_key=recipe_key, error=error_message)
             # Distinguish between "not found" (idempotent, 200) and real failures (500)
             if error_message and 'not found' in error_message.lower():
                 # Recipe was already deleted or never existed - idempotent operation
@@ -663,7 +662,7 @@ def handle_delete_request(event, context, recipe_key=None):
                 }
 
     except Exception as e:
-        print(f"[DELETE] Unexpected error deleting recipe '{recipe_key}': {str(e)}")
+        log.error("Unexpected error deleting recipe", recipe_key=recipe_key, error=str(e))
         return {
             'statusCode': 500,
             'headers': {
@@ -714,7 +713,7 @@ def _validate_image_url_for_api(image_url: str) -> Tuple[bool, Optional[str]]:
                     ip.is_multicast or ip.is_reserved):
                 return False, f"Refusing to fetch private/reserved IP: {hostname} -> {ip_str}"
 
-            print(f"[SSRF-CHECK] URL validation passed: {hostname} -> {ip_str}")
+            log.info("URL validation passed", hostname=hostname, ip=ip_str)
             return True, None
 
         except (socket.gaierror, socket.error) as e:
@@ -772,7 +771,7 @@ def handle_post_image_request(event, context, recipe_key=None):
             })
         }
 
-    print(f"[POST-IMAGE] Recipe key: {recipe_key}")
+    log.info("Post-image request received", recipe_key=recipe_key)
 
     # Parse request body
     try:
@@ -784,7 +783,7 @@ def handle_post_image_request(event, context, recipe_key=None):
             # Direct invocation format - event is the body
             body = event
     except json.JSONDecodeError as e:
-        print(f"[POST-IMAGE] JSON decode error: {e}")
+        log.error("JSON decode error", error=str(e))
         return {
             'statusCode': 400,
             'headers': {
@@ -813,7 +812,7 @@ def handle_post_image_request(event, context, recipe_key=None):
     # Validate imageUrl to prevent SSRF attacks
     is_valid, validation_error = _validate_image_url_for_api(image_url)
     if not is_valid:
-        print(f"[POST-IMAGE] URL validation failed: {validation_error}")
+        log.warning("URL validation failed", error=validation_error)
         return {
             'statusCode': 400,
             'headers': {
@@ -834,7 +833,7 @@ def handle_post_image_request(event, context, recipe_key=None):
 
         recipe = json_data.get(recipe_key)
         if not recipe or 'image_search_results' not in recipe:
-            print(f"[POST-IMAGE] Recipe {recipe_key} not found or has no search results")
+            log.warning("Recipe not found or has no search results", recipe_key=recipe_key)
             return {
                 'statusCode': 404,
                 'headers': {
@@ -848,7 +847,7 @@ def handle_post_image_request(event, context, recipe_key=None):
 
         # Check if imageUrl is in the recipe's search results
         if image_url not in recipe.get('image_search_results', []):
-            print("[POST-IMAGE] Image URL not in recipe's search results")
+            log.warning("Image URL not in recipe's search results")
             return {
                 'statusCode': 400,
                 'headers': {
@@ -860,7 +859,7 @@ def handle_post_image_request(event, context, recipe_key=None):
                 })
             }
     except ClientError as e:
-        print(f"[POST-IMAGE] Error validating image URL against search results: {str(e)}")
+        log.error("Error validating image URL against search results", error=str(e))
         return {
             'statusCode': 500,
             'headers': {
@@ -872,8 +871,9 @@ def handle_post_image_request(event, context, recipe_key=None):
             })
         }
 
-    print(f"[POST-IMAGE] Fetching and uploading image: {image_url[:100]}...")
+    log.info("Fetching and uploading image", url=image_url[:100])
 
+    s3_path = None
     try:
         s3_client = boto3.client('s3')
 
@@ -881,7 +881,7 @@ def handle_post_image_request(event, context, recipe_key=None):
         image_bytes, content_type = fetch_image_from_url(image_url)
 
         if image_bytes is None:
-            print("[POST-IMAGE] Failed to fetch image from URL")
+            log.error("Failed to fetch image from URL")
             return {
                 'statusCode': 500,
                 'headers': {
@@ -893,14 +893,14 @@ def handle_post_image_request(event, context, recipe_key=None):
                 })
             }
 
-        print(f"[POST-IMAGE] Image fetched: {len(image_bytes)} bytes, content-type: {content_type}")
+        log.info("Image fetched", size_bytes=len(image_bytes), content_type=content_type)
 
         # Step 2: Upload image to S3
         s3_path, error_msg = upload_image_to_s3(
             recipe_key, image_bytes, s3_client, bucket_name, content_type=content_type)
 
         if s3_path is None:
-            print(f"[POST-IMAGE] Failed to upload image to S3: {error_msg}")
+            log.error("Failed to upload image to S3", error=error_msg)
             return {
                 'statusCode': 500,
                 'headers': {
@@ -912,7 +912,7 @@ def handle_post_image_request(event, context, recipe_key=None):
                 })
             }
 
-        print(f"[POST-IMAGE] Image uploaded successfully: {s3_path}")
+        log.info("Image uploaded successfully", s3_path=s3_path)
 
         # Helper to cleanup orphaned image on JSON update failure
         def cleanup_orphaned_image():
@@ -927,7 +927,7 @@ def handle_post_image_request(event, context, recipe_key=None):
         MAX_RETRIES = 3
         for attempt in range(MAX_RETRIES):
             try:
-                print(f"[POST-IMAGE] Attempt {attempt + 1}/{MAX_RETRIES} to update recipe")
+                log.info("Attempting to update recipe", attempt=attempt + 1, max_retries=MAX_RETRIES)
 
                 # Load existing data with ETag
                 try:
@@ -935,11 +935,10 @@ def handle_post_image_request(event, context, recipe_key=None):
                         Bucket=bucket_name, Key='jsondata/combined_data.json')
                     json_data = json.loads(response['Body'].read())
                     etag = response['ETag'].strip('"')
-                    print(
-                        f"[POST-IMAGE] Loaded combined_data with {len(json_data)} recipes, ETag: {etag}")
+                    log.info("Loaded combined_data", recipe_count=len(json_data), etag=etag)
                 except ClientError as e:
                     if e.response['Error']['Code'] == 'NoSuchKey':
-                        print("[POST-IMAGE] combined_data.json not found")
+                        log.warning("combined_data.json not found")
                         return {
                             'statusCode': 404,
                             'headers': {
@@ -964,7 +963,7 @@ def handle_post_image_request(event, context, recipe_key=None):
 
                 # Find and update recipe
                 if recipe_key not in json_data:
-                    print(f"[POST-IMAGE] Recipe '{recipe_key}' not found in combined_data")
+                    log.warning("Recipe not found in combined_data", recipe_key=recipe_key)
                     return {
                         'statusCode': 404,
                         'headers': {
@@ -979,8 +978,7 @@ def handle_post_image_request(event, context, recipe_key=None):
                 # Update recipe's image_url with Google URL for deduplication tracking
                 recipe = json_data[recipe_key]
                 recipe['image_url'] = image_url
-                print(
-                    f"[POST-IMAGE] Updated recipe '{recipe_key}' with image_url: {image_url[:100]}...")
+                log.info("Updated recipe with image_url", recipe_key=recipe_key, image_url=image_url[:100])
 
                 # Atomic write back to S3
                 try:
@@ -997,7 +995,7 @@ def handle_post_image_request(event, context, recipe_key=None):
                         params['IfMatch'] = etag
 
                     s3_client.put_object(**params)
-                    print("[POST-IMAGE] Successfully updated combined_data.json")
+                    log.info("Successfully updated combined_data.json")
 
                     # Success!
                     return {
@@ -1015,10 +1013,10 @@ def handle_post_image_request(event, context, recipe_key=None):
                 except ClientError as e:
                     if e.response['Error']['Code'] == 'PreconditionFailed':
                         # Race condition detected
-                        print(f"[POST-IMAGE] Race condition on attempt {attempt + 1}, retrying...")
+                        log.warning("Race condition detected", attempt=attempt + 1)
                         if attempt < MAX_RETRIES - 1:
                             delay = random.uniform(0.1, 0.5) * (2 ** attempt)
-                            print(f"[POST-IMAGE] Retrying after {delay:.2f}s...")
+                            log.info("Retrying after delay", delay_seconds=round(delay, 2))
                             time.sleep(delay)
                             continue
                         else:
@@ -1034,7 +1032,7 @@ def handle_post_image_request(event, context, recipe_key=None):
                                 })
                             }
                     else:
-                        print(f"[POST-IMAGE] S3 error: {str(e)}")
+                        log.error("S3 error updating recipe", error=str(e))
                         cleanup_orphaned_image()
                         return {
                             'statusCode': 500,
@@ -1048,7 +1046,7 @@ def handle_post_image_request(event, context, recipe_key=None):
                         }
 
             except Exception as e:
-                print(f"[POST-IMAGE] Unexpected error: {str(e)}")
+                log.error("Unexpected error updating recipe", error=str(e))
                 cleanup_orphaned_image()
                 return {
                     'statusCode': 500,
@@ -1075,9 +1073,9 @@ def handle_post_image_request(event, context, recipe_key=None):
         }
 
     except Exception as e:
-        print(f"[POST-IMAGE] Unexpected error processing image: {str(e)}")
+        log.error("Unexpected error processing image", error=str(e))
         # Attempt to clean up orphaned image if it was uploaded
-        if 's3_path' in dir() and s3_path:
+        if s3_path:
             try:
                 log.warning("Cleaning up orphaned image after unexpected error", image_key=s3_path)
                 boto3.client('s3').delete_object(Bucket=bucket_name, Key=s3_path)
@@ -1127,7 +1125,7 @@ def handle_post_request(event, context):
     files = body['files']
     job_id = body.get('jobId', str(uuid.uuid4()))
 
-    print(f"[POST] Received upload request: job_id={job_id}, files={len(files)}")
+    log.info("Received upload request", job_id=job_id, file_count=len(files))
 
     bucket_name = os.getenv('S3_BUCKET')
     if not bucket_name:
@@ -1177,7 +1175,7 @@ def handle_post_request(event, context):
             })
         )
 
-        print(f"[POST] Async processing invoked for job {job_id}")
+        log.info("Async processing invoked", job_id=job_id)
 
         # Return immediately with job ID
         return {
@@ -1191,7 +1189,7 @@ def handle_post_request(event, context):
         }
 
     except Exception as e:
-        print(f"[POST ERROR] Failed to start async processing: {str(e)}")
+        log.error("Failed to start async processing", error=str(e))
         return {
             'statusCode': 500,
             'headers': {'Content-Type': 'application/json'},
@@ -1208,7 +1206,7 @@ def process_upload_files(body, job_id, bucket_name):
     start_time = time.time()
     files = body['files']
 
-    print(f"[PROCESS] Starting processing for job {job_id}, {len(files)} files")
+    log.info("Starting processing", job_id=job_id, file_count=len(files))
 
     try:
         # Initialize embedding store and load existing embeddings
@@ -1222,7 +1220,7 @@ def process_upload_files(body, job_id, bucket_name):
         duplicate_detector = DuplicateDetector(existing_embeddings)
 
     except Exception as e:
-        print(f"[ERROR] Service initialization failed: {str(e)}")
+        log.error("Service initialization failed", error=str(e))
         raise
 
     # Extract recipes from files
@@ -1303,12 +1301,10 @@ def process_upload_files(body, job_id, bucket_name):
                         all_recipes.append((parsed_data, file_idx))
 
                 except json.JSONDecodeError:
-                    pass
+                    log.warning("Failed to parse OCR result as JSON", file_index=file_idx)
 
         except Exception as e:
-            print(f"[ERROR] File {file_idx} extraction failed: {str(e)}")
-            import traceback
-            traceback.print_exc()
+            log.error("File extraction failed", file_idx=file_idx, error=str(e), traceback=traceback.format_exc())
             file_errors.append({
                 'file': file_idx,
                 'title': 'unknown',
@@ -1320,24 +1316,23 @@ def process_upload_files(body, job_id, bucket_name):
         if all_recipes:
             # Collect just the recipes for parseJSON
             recipes_only = [r[0] for r in all_recipes]
-            print(f"[LAMBDA] Parsing and combining {len(recipes_only)} recipe objects...")
-            print(f"[LAMBDA] Recipe objects preview: {str(recipes_only)[:500]}")
+            log.info("Parsing and combining recipe objects", count=len(recipes_only), preview=str(recipes_only)[:500])
             parsed_json = ocr.parseJSON(recipes_only)
-            print(f"[LAMBDA] ParseJSON returned {len(parsed_json)} characters")
+            log.info("ParseJSON returned", characters=len(parsed_json))
             parsed_recipes = json.loads(parsed_json)
 
             # Handle both list and single recipe outputs
             if not isinstance(parsed_recipes, list):
                 parsed_recipes = [parsed_recipes]
 
-            print(f"[LAMBDA] Parsed {len(parsed_recipes)} recipe(s)")
+            log.info("Parsed recipes", count=len(parsed_recipes))
             for idx, recipe in enumerate(parsed_recipes):
                 title = recipe.get('Title', 'Unknown')
-                print(f"[LAMBDA] Recipe {idx+1}/{len(parsed_recipes)}: {title}")
+                log.info("Recipe parsed", index=idx + 1, total=len(parsed_recipes), title=title)
 
             # Merge incomplete recipes with similar complete ones (multi-page recipe support)
             parsed_recipes = merge_incomplete_recipes(parsed_recipes)
-            print(f"[LAMBDA] After merge: {len(parsed_recipes)} recipe(s)")
+            log.info("After merge", count=len(parsed_recipes))
 
             # Re-associate file indices
             final_recipes = []
@@ -1350,9 +1345,7 @@ def process_upload_files(body, job_id, bucket_name):
         else:
             all_recipes = []
     except Exception as e:
-        print(f"[ERROR] ParseJSON/merge failed: {str(e)}")
-        import traceback
-        traceback.print_exc()
+        log.error("ParseJSON/merge failed", error=str(e), traceback=traceback.format_exc())
 
     # Process recipes in parallel
     unique_recipes = []
@@ -1360,15 +1353,14 @@ def process_upload_files(body, job_id, bucket_name):
     new_embeddings = {}
     position_to_file_idx = {}
 
-    print(f"[LAMBDA] Starting parallel processing of {len(all_recipes)} recipe(s)...")
+    log.info("Starting parallel processing", recipe_count=len(all_recipes))
 
     try:
         with ThreadPoolExecutor(max_workers=3) as executor:
             # Submit all recipes for processing
             future_to_idx = {}
             for recipe, file_idx in all_recipes:
-                print(
-                    f"[LAMBDA] Submitting recipe '{recipe.get('Title', 'unknown')}' for processing...")
+                log.info("Submitting recipe for processing", title=recipe.get('Title', 'unknown'))
                 future = executor.submit(
                     process_single_recipe,
                     recipe,
@@ -1377,20 +1369,17 @@ def process_upload_files(body, job_id, bucket_name):
                 )
                 future_to_idx[future] = (recipe, file_idx)
 
-            print(
-                f"[LAMBDA] Submitted {len(future_to_idx)} recipe(s) for processing, waiting for results...")
+            log.info("Submitted recipes for processing, waiting for results", count=len(future_to_idx))
 
             # Collect results as they complete
             for idx, future in enumerate(as_completed(future_to_idx)):
                 recipe, file_idx = future_to_idx[future]
-                print(
-                    f"[LAMBDA] Processing result {idx+1}/{len(future_to_idx)} for '{recipe.get('Title', 'unknown')}'...")
+                log.info("Processing result", index=idx + 1, total=len(future_to_idx), title=recipe.get('Title', 'unknown'))
                 result_recipe, embedding, search_results, error_reason = future.result()
 
                 if error_reason:
                     # Processing failed
-                    print(
-                        f"[LAMBDA] Recipe '{recipe.get('Title', 'unknown')}' failed: {error_reason}")
+                    log.error("Recipe processing failed", title=recipe.get('Title', 'unknown'), reason=error_reason)
                     file_errors.append({
                         'file': file_idx,
                         'title': recipe.get('Title', 'unknown'),
@@ -1398,21 +1387,17 @@ def process_upload_files(body, job_id, bucket_name):
                     })
                 else:
                     # Success - add to batch
-                    print(
-                        f"[LAMBDA] Recipe '{recipe.get('Title', 'unknown')}' processed successfully")
+                    log.info("Recipe processed successfully", title=recipe.get('Title', 'unknown'))
                     position = len(unique_recipes)
                     unique_recipes.append(result_recipe)
                     search_results_list.append(search_results)
                     new_embeddings[position] = embedding
                     position_to_file_idx[position] = file_idx
 
-        print(
-            f"[LAMBDA] Parallel processing complete: {len(unique_recipes)} successful, {len(file_errors)} failed")
+        log.info("Parallel processing complete", successful=len(unique_recipes), failed=len(file_errors))
 
     except Exception as e:
-        print(f"[LAMBDA ERROR] Parallel processing failed: {str(e)}")
-        import traceback
-        traceback.print_exc()
+        log.error("Parallel processing failed", error=str(e), traceback=traceback.format_exc())
         return {
             'statusCode': 500,
             'headers': {
@@ -1425,31 +1410,31 @@ def process_upload_files(body, job_id, bucket_name):
     success_keys = []
     json_data = {}
 
-    print(f"[LAMBDA] Starting S3 upload for {len(unique_recipes)} unique recipe(s)...")
+    log.info("Starting S3 upload", recipe_count=len(unique_recipes))
 
     try:
         if unique_recipes:
             # Get existing recipe data for URL deduplication
-            print("[LAMBDA] Loading existing recipe data from S3...")
+            log.info("Loading existing recipe data from S3")
             s3_client = boto3.client('s3')
             try:
                 response = s3_client.get_object(
                     Bucket=bucket_name, Key='jsondata/combined_data.json')
                 json_data = json.loads(response['Body'].read())
-                print(f"[LAMBDA] Loaded {len(json_data)} existing recipes from S3")
+                log.info("Loaded existing recipes from S3", count=len(json_data))
             except s3_client.exceptions.NoSuchKey:
                 # File doesn't exist yet - first upload
-                print("[LAMBDA] No existing recipe data found (first upload)")
+                log.info("No existing recipe data found (first upload)")
                 json_data = {}
             except Exception as e:
                 # Other errors should be logged/raised
-                print(f"[LAMBDA] Error loading existing data: {str(e)}")
+                log.error("Error loading existing data", error=str(e))
                 json_data = {}
 
             # Extract used URLs
-            print("[LAMBDA] Extracting used image URLs...")
+            log.info("Extracting used image URLs")
             used_urls = si.extract_used_image_urls(json_data)
-            print(f"[LAMBDA] Found {len(used_urls)} used image URLs")
+            log.info("Found used image URLs", count=len(used_urls))
 
             # Filter URLs for each recipe (preserve all unused URLs as fallbacks)
             unique_search_results = []
@@ -1467,12 +1452,12 @@ def process_upload_files(body, job_id, bucket_name):
                     unique_search_results.append(search_results[:5])
 
             # Batch upload
-            print("[LAMBDA] Starting batch upload to S3...")
+            log.info("Starting batch upload to S3")
             json_data, success_keys, position_to_key, upload_errors = batch_to_s3_atomic(
                 unique_recipes,
                 unique_search_results
             )
-            print(f"[LAMBDA] Batch upload complete: {len(success_keys)} successful")
+            log.info("Batch upload complete", successful=len(success_keys))
 
             # Merge upload errors into file_errors
             file_errors.extend(upload_errors)
@@ -1487,16 +1472,14 @@ def process_upload_files(body, job_id, bucket_name):
 
             # Save embeddings atomically
             if keyed_embeddings:
-                print(f"[LAMBDA] Saving {len(keyed_embeddings)} embeddings...")
+                log.info("Saving embeddings", count=len(keyed_embeddings))
                 embedding_store.add_embeddings(keyed_embeddings)
-                print("[LAMBDA] Embeddings saved successfully")
+                log.info("Embeddings saved successfully")
         else:
-            print("[LAMBDA] No unique recipes to upload")
+            log.info("No unique recipes to upload")
 
     except Exception as e:
-        print(f"[LAMBDA ERROR] Batch upload failed: {str(e)}")
-        import traceback
-        traceback.print_exc()
+        log.error("Batch upload failed", error=str(e), traceback=traceback.format_exc())
         return {
             'statusCode': 500,
             'headers': {
@@ -1576,8 +1559,8 @@ def process_upload_files(body, job_id, bucket_name):
         log.warning("Failed to write completion flag to S3", job_id=job_id, error=str(e))
 
     # Return response with CORS headers
-    print(f"[LAMBDA] Request complete: {success_count} successful, {fail_count} failed")
-    print("[LAMBDA] Returning response with status 200")
+    log.info("Request complete", successful=success_count, failed=fail_count)
+    log.info("Returning response with status 200")
     return {
         'statusCode': 200,
         'headers': {
