@@ -316,7 +316,10 @@ export function useQueueState({
     // Always reset when filters change so in-flight initializations
     // don't apply results for previous filters
     resetQueue();
-  }, [mealTypeFilters]); // Only depend on filters, not the functions
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- resetQueue is memoized
+    // and stable. jsonData is intentionally excluded: it arrives once on mount before
+    // filters ever change, so including it would cause unnecessary double-resets.
+  }, [mealTypeFilters]);
 
   // Effect: Check if queue needs refilling
   useEffect(() => {

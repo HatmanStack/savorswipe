@@ -120,6 +120,8 @@ def _rollback_combined_data(
         return True
 
     except Exception as rollback_err:
+        # Deliberately log full recipe_data so operators can manually restore
+        # the deleted recipe if automatic rollback fails.
         log.error(
             "CRITICAL: Rollback failed - manual recovery needed",
             recipe_key=recipe_key,

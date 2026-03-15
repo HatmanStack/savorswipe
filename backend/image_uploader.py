@@ -94,11 +94,11 @@ def _validate_image_url(image_url: str) -> Optional[str]:
             if (ip.is_private or ip.is_loopback or ip.is_link_local or
                     ip.is_multicast or ip.is_reserved):
                 logger.warning(
-                    f"[IMAGE] Refusing to fetch private/reserved IP: {hostname} -> {ip_str}"
+                    "[IMAGE] Refusing to fetch private/reserved IP",
+                    extra={"hostname": hostname, "resolved_ip": ip_str}
                 )
                 return None
 
-            logger.info(f"[IMAGE] URL validation passed: {hostname} -> {ip_str}")
             return ip_str
 
         except (socket.gaierror, socket.error) as e:

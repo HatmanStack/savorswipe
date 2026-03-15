@@ -13,7 +13,7 @@ from botocore.exceptions import ClientError
 from PIL import Image
 
 from config import MAX_RETRIES, PROBLEMATIC_DOMAINS
-from image_uploader import fetch_image_from_url
+from image_uploader import fetch_image_from_url, upload_image_to_s3
 from logger import StructuredLogger
 
 log = StructuredLogger("upload")
@@ -115,7 +115,6 @@ def to_s3(recipe, search_results, jsonData=None):
 
 def upload_image(search_results, bucket_name, highest_key):
     log.info("Starting image upload", recipe_key=highest_key, search_results_type=str(type(search_results)))
-    images_prefix = 'images/'
 
     # Handle both list format (new) and dict format (legacy)
     if isinstance(search_results, list):
@@ -158,23 +157,22 @@ def upload_image(search_results, bucket_name, highest_key):
             continue
 
         log.info("Image fetched", size_bytes=len(image_data))
-        image_key = images_prefix + str(highest_key) + '.jpg'
 
-        # Upload to S3
+        # Upload to S3 with JPEG conversion and retry logic
         s3_client = _get_s3_client()
-        try:
-            log.info("Uploading to S3", bucket=bucket_name, key=image_key)
-            s3_client.put_object(
-                Bucket=bucket_name,
-                Key=image_key,
-                Body=image_data,
-                ContentType='image/jpeg'
-            )
-            log.info("Image uploaded successfully to S3")
-            return image_url  # Return the source URL
+        s3_path, upload_error = upload_image_to_s3(
+            recipe_key=str(highest_key),
+            image_bytes=image_data,
+            s3_client=s3_client,
+            bucket=bucket_name,
+            content_type=content_type or 'image/jpeg',
+        )
 
-        except Exception as e:
-            log.error("Error uploading image to S3", error=str(e))
+        if s3_path:
+            log.info("Image uploaded successfully to S3", s3_path=s3_path)
+            return image_url  # Return the source URL
+        else:
+            log.error("Error uploading image to S3", error=upload_error)
             continue  # Try next URL
 
     log.warning("All image URLs failed", total=item_count)
