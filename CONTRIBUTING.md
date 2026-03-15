@@ -31,7 +31,7 @@ This project uses [conventional commits](https://www.conventionalcommits.org/), 
 
 Format: `type(scope): description`
 
-**Valid types:** `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `perf`, `ci`, `style`
+**Valid types:** `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `perf`, `ci`, `style`, `build`, `revert`
 
 **Examples:**
 ```text

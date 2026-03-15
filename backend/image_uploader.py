@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 # This allows Google Image Search results from any public website
 
 
-def _validate_image_url(image_url: str) -> bool:
+def _validate_image_url(image_url: str) -> Optional[str]:
     """
     Validate image URL to prevent SSRF attacks.
 
@@ -42,7 +42,7 @@ def _validate_image_url(image_url: str) -> bool:
         image_url: URL to validate
 
     Returns:
-        True if URL is safe to fetch, False otherwise
+        Resolved IP string if URL is safe to fetch, None otherwise
     """
     try:
         parsed = urllib.parse.urlparse(image_url)
@@ -50,12 +50,12 @@ def _validate_image_url(image_url: str) -> bool:
         # Check scheme is HTTPS
         if parsed.scheme != 'https':
             logger.warning(f"[IMAGE] Disallowed URL scheme (not HTTPS): {parsed.scheme}")
-            return False
+            return None
 
         hostname = parsed.hostname
         if not hostname:
             logger.warning(f"[IMAGE] URL has no hostname: {image_url}")
-            return False
+            return None
 
         # Resolve hostname to IP and check it's not private/reserved
         try:
@@ -68,18 +68,18 @@ def _validate_image_url(image_url: str) -> bool:
                 logger.warning(
                     f"[IMAGE] Refusing to fetch private/reserved IP: {hostname} -> {ip_str}"
                 )
-                return False
+                return None
 
             logger.info(f"[IMAGE] URL validation passed: {hostname} -> {ip_str}")
-            return True
+            return ip_str
 
         except (socket.gaierror, socket.error) as e:
             logger.warning(f"[IMAGE] Failed to resolve hostname {hostname}: {str(e)}")
-            return False
+            return None
 
     except Exception as e:
         logger.error(f"[IMAGE] Error validating URL: {str(e)}")
-        return False
+        return None
 
 
 def fetch_image_from_url(image_url: str, timeout: int = 10) -> Tuple[Optional[bytes], Optional[str]]:
@@ -100,14 +100,30 @@ def fetch_image_from_url(image_url: str, timeout: int = 10) -> Tuple[Optional[by
 
     logger.info(f"[IMAGE] Fetching image from URL: {image_url[:100]}...")
 
-    # Validate URL to prevent SSRF attacks
-    if not _validate_image_url(image_url):
+    # Validate URL and get resolved IP to prevent SSRF/DNS rebinding attacks
+    resolved_ip = _validate_image_url(image_url)
+    if not resolved_ip:
         logger.warning(f"[IMAGE] URL validation failed, refusing to fetch: {image_url[:100]}...")
         return None, None
 
     try:
+        # Build a pinned URL using the resolved IP to prevent DNS rebinding TOCTOU
+        parsed = urllib.parse.urlparse(image_url)
+        hostname = parsed.hostname
+        port = parsed.port or 443
+        pinned_url = urllib.parse.urlunparse((
+            parsed.scheme,
+            f"{resolved_ip}:{port}" if port != 443 else resolved_ip,
+            parsed.path,
+            parsed.params,
+            parsed.query,
+            parsed.fragment,
+        ))
+
         # Use browser-like headers to avoid being blocked
+        # Set Host header to original hostname so the server responds correctly
         headers = {
+            'Host': hostname,
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
             'Accept-Language': 'en-US,en;q=0.9',
@@ -117,8 +133,8 @@ def fetch_image_from_url(image_url: str, timeout: int = 10) -> Tuple[Optional[by
             'Connection': 'keep-alive',
         }
 
-        # Disable redirects to unvalidated hosts
-        response = requests.get(image_url, headers=headers, timeout=timeout, allow_redirects=False)
+        # Disable redirects to unvalidated hosts; use pinned URL with resolved IP
+        response = requests.get(pinned_url, headers=headers, timeout=timeout, allow_redirects=False, verify=True)
 
         if response.status_code != 200:
             logger.warning(f"[IMAGE] Failed to fetch: HTTP {response.status_code}")

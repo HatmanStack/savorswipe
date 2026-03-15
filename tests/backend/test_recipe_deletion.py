@@ -457,7 +457,7 @@ class TestDeleteRecipeAtomic:
         assert "1" in rollback_put_data
 
     def test_rollback_failure_logging(self):
-        """Test that rollback failure returns (False, error_message) and logs errors."""
+        """Test that rollback failure is logged when embeddings write and rollback both fail."""
         mock_client = MagicMock()
 
         combined_data = {
@@ -479,9 +479,18 @@ class TestDeleteRecipeAtomic:
 
         def mock_put_object(**kwargs):
             put_calls.append(kwargs)
-            # All writes fail (both initial combined_data, embeddings, and rollback)
-            error_response = {'Error': {'Code': 'AccessDenied'}}
-            raise ClientError(error_response, 'PutObject')
+            # Let the initial combined_data write succeed
+            if 'combined_data' in kwargs['Key'] and len([c for c in put_calls if 'combined_data' in c['Key']]) == 1:
+                return {}
+            # Embeddings write fails, triggering rollback
+            if 'embeddings' in kwargs['Key']:
+                error_response = {'Error': {'Code': 'AccessDenied'}}
+                raise ClientError(error_response, 'PutObject')
+            # Rollback write also fails
+            if 'combined_data' in kwargs['Key']:
+                error_response = {'Error': {'Code': 'AccessDenied'}}
+                raise ClientError(error_response, 'PutObject')
+            return {}
 
         mock_client.get_object.side_effect = mock_get_object
         mock_client.put_object.side_effect = mock_put_object
@@ -493,11 +502,14 @@ class TestDeleteRecipeAtomic:
             assert success is False
             assert error_msg is not None
 
-            # Verify that put_object was called (initial write attempted)
-            assert len(put_calls) >= 1, "Expected at least one put_object call"
+            # Verify combined_data write succeeded, then embeddings failed, then rollback attempted
+            combined_puts = [c for c in put_calls if 'combined_data' in c['Key']]
+            embeddings_puts = [c for c in put_calls if 'embeddings' in c['Key']]
+            assert len(combined_puts) >= 2, f"Expected at least 2 combined_data puts (write + rollback), got {len(combined_puts)}"
+            assert len(embeddings_puts) >= 1, f"Expected at least 1 embeddings put, got {len(embeddings_puts)}"
 
-            # Verify error logging was invoked for the failure
-            assert mock_log.error.called, "Expected log.error to be called on failure"
+            # Verify error logging was invoked for the rollback failure
+            assert mock_log.error.called, "Expected log.error to be called on rollback failure"
             error_calls = [str(call) for call in mock_log.error.call_args_list]
-            assert any('AccessDenied' in call for call in error_calls), \
-                f"Expected AccessDenied in error log calls, got: {error_calls}"
+            assert any('CRITICAL' in call or 'Rollback' in call or 'rollback' in call or 'AccessDenied' in call for call in error_calls), \
+                f"Expected rollback failure in error log calls, got: {error_calls}"

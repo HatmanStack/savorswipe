@@ -208,7 +208,7 @@ chore(backend): declare dev dependencies in pyproject.toml
    - `EXPO_PUBLIC_UPLOAD_URL` — Used in `RecipeService.ts` for recipe image uploads
    - Check for any other `process.env.EXPO_PUBLIC_` or `Constants.expoConfig` references
 2. Create `.env.example`:
-   ```
+   ```dotenv
    # SavorSwipe Frontend Environment Variables
    # Copy this file to .env and fill in your values
    # See docs/DEPLOYMENT.md for setup instructions

@@ -67,7 +67,21 @@ describe('useImagePicker', () => {
       'https://example.com/selected.jpg'
     );
     expect(mockSetJsonData).toHaveBeenCalled();
+
+    // Verify the state updater produces the correct jsonData
+    const updater = mockSetJsonData.mock.calls[0][0];
+    const updatedData = updater(pendingData);
+    expect(updatedData.pending1).toEqual({
+      key: 'pending1',
+      Title: 'Pending Recipe',
+      image_url: 'https://example.com/selected.jpg',
+    });
+    // Sibling recipes should be preserved
+    expect(updatedData.recipe1).toEqual(mockJsonData.recipe1);
+
     expect(mockInjectRecipes).toHaveBeenCalledWith(['pending1']);
+    // Modal should be cleared on success
+    expect(mockSetPendingRecipeForPicker).toHaveBeenCalledWith(null);
     expect(ToastQueue.show).toHaveBeenCalledWith('Image saved');
   });
 
@@ -90,6 +104,16 @@ describe('useImagePicker', () => {
 
     expect(RecipeService.deleteRecipe).toHaveBeenCalledWith('pending1');
     expect(mockSetJsonData).toHaveBeenCalled();
+
+    // Verify the state updater removes the recipe and preserves siblings
+    const updater = mockSetJsonData.mock.calls[0][0];
+    const updatedData = updater(pendingData);
+    expect(updatedData.pending1).toBeUndefined();
+    expect(updatedData.recipe1).toEqual(mockJsonData.recipe1);
+    expect(updatedData.recipe2).toEqual(mockJsonData.recipe2);
+
+    // Modal should be cleared on success
+    expect(mockSetPendingRecipeForPicker).toHaveBeenCalledWith(null);
     expect(ToastQueue.show).toHaveBeenCalledWith('Recipe deleted');
   });
 

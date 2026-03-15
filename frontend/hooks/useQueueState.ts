@@ -82,8 +82,10 @@ export function useQueueState({
   useEffect(() => {
     if (currentImage) {
       updateCurrentRecipe(currentImage);
+    } else {
+      setCurrentRecipe(null);
     }
-  }, [currentImage, updateCurrentRecipe]);
+  }, [currentImage, updateCurrentRecipe, setCurrentRecipe]);
 
   // Initialize queue on first load
   const initializeQueue = useCallback(async () => {
@@ -250,9 +252,9 @@ export function useQueueState({
       setCurrentImage(newCurrent);
       setNextImage(newNext);
 
-      // Mark recipe as seen if exists
-      if (newCurrent) {
-        const recipeKey = ImageService.getRecipeKeyFromFileName(newCurrent.filename);
+      // Mark the consumed (swiped) card as seen, not the new current
+      if (prev[0]) {
+        const recipeKey = ImageService.getRecipeKeyFromFileName(prev[0].filename);
         seenRecipeKeysRef.current.add(recipeKey);
       }
 
@@ -308,10 +310,9 @@ export function useQueueState({
     // Skip on initial mount (jsonData will be null)
     if (!jsonData) return;
 
-    // Only reset if we already have a queue (avoid double initialization)
-    if (queue.length > 0 || currentImage !== null) {
-      resetQueue();
-    }
+    // Always reset when filters change so in-flight initializations
+    // don't apply results for previous filters
+    resetQueue();
   }, [mealTypeFilters]); // Only depend on filters, not the functions
 
   // Effect: Check if queue needs refilling

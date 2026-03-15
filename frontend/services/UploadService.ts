@@ -40,7 +40,7 @@ export class UploadService {
    * Test-only method to reset all internal state
    * @internal
    */
-  static _resetForTests(): void {
+  static async _resetForTests(): Promise<void> {
     if (process.env.NODE_ENV === 'production') {
       throw new Error('_resetForTests is only available in test/development environments')
     }
@@ -49,6 +49,7 @@ export class UploadService {
     this.isProcessing = false
     this.subscribers = new Set()
     this._testApiUrl = null
+    await UploadPersistence.clear()
   }
 
   /**
@@ -406,13 +407,13 @@ export class UploadService {
       try {
         callback(jobCopy)
       } catch (error) {
-        console.error('[UploadService] Subscriber notification failed:', error);
+        console.warn('[UploadService] Subscriber notification failed')
       }
     })
 
     // Persist queue state to AsyncStorage (errors silently ignored - persistence is optional)
-    UploadPersistence.saveQueue(this.jobQueue).catch((error) => {
-      console.error('[UploadService] Queue persistence failed:', error);
+    UploadPersistence.saveQueue(this.jobQueue).catch(() => {
+      console.warn('[UploadService] Queue persistence failed')
     })
   }
 

@@ -82,7 +82,8 @@ def to_s3(recipe, search_results, jsonData=None):
         for existing_recipe in existing_data_json.values():
             if existing_recipe.get('Title') == recipe.get('Title'):
                 return False, existing_data_json
-        highest_key = max((int(k) for k in existing_data_json.keys()), default=0) + 1
+        numeric_keys = [int(k) for k in existing_data_json.keys() if k.isdigit()]
+        highest_key = max(numeric_keys, default=0) + 1
     except ClientError as e:
         if e.response['Error']['Code'] == 'NoSuchKey':
             existing_data_json = {}
@@ -322,7 +323,8 @@ def batch_to_s3_atomic(
 
         # Find next recipe key based on max existing key (handles deletions)
         if existing_data:
-            highest_key = max((int(k) for k in existing_data.keys()), default=0)
+            numeric_keys = [int(k) for k in existing_data.keys() if k.isdigit()]
+            highest_key = max(numeric_keys, default=0)
             log.info("Highest existing recipe key", highest_key=highest_key)
         else:
             highest_key = 0

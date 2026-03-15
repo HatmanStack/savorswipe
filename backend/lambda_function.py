@@ -979,7 +979,7 @@ def handle_post_image_request(event, context, recipe_key=None):
                 # Update recipe's image_url with Google URL for deduplication tracking
                 recipe = json_data[recipe_key]
                 recipe['image_url'] = image_url
-                log.info("Updated recipe with image_url", recipe_key=recipe_key, image_url=image_url[:100])
+                log.info("Updated recipe with image_url", recipe_key=recipe_key, image_host=urllib.parse.urlparse(image_url).hostname)
 
                 # Atomic write back to S3
                 try:
@@ -1317,7 +1317,7 @@ def process_upload_files(body, job_id, bucket_name):
         if all_recipes:
             # Collect just the recipes for parseJSON
             recipes_only = [r[0] for r in all_recipes]
-            log.info("Parsing and combining recipe objects", count=len(recipes_only), preview=str(recipes_only)[:500])
+            log.info("Parsing and combining recipe objects", count=len(recipes_only))
             parsed_json = ocr.parseJSON(recipes_only)
             log.info("ParseJSON returned", characters=len(parsed_json))
             parsed_recipes = json.loads(parsed_json)

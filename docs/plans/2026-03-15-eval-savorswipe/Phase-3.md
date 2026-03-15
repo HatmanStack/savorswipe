@@ -387,7 +387,7 @@ perf(backend): parallelize URL validation with ThreadPoolExecutor
 
 - Replace sequential HEAD requests with parallel validation (5 workers)
 - Preserve original URL ordering for search result ranking
-- Reduces validation time from O(n*timeout) to O(timeout)
+- With max_workers=5, reduces worst-case validation time from O(n*timeout) to O(ceil(n/5)*timeout); for typical ~10-URL batches this significantly reduces wall time
 ```
 
 ---
