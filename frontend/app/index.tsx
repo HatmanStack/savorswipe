@@ -139,17 +139,13 @@ export default function HomeScreen() {
           style={{ width: 200, height: 200 }}
         />
         {/* Render modal even during loading */}
-        {(() => {
-          return (
-            <ImagePickerModal
-              isVisible={showImagePickerModal}
-              recipe={pendingRecipe}
-              onConfirm={onConfirmImage}
-              onDelete={onDeleteRecipe}
-              onCancel={resetPendingRecipe}
-            />
-          );
-        })()}
+        <ImagePickerModal
+          isVisible={showImagePickerModal}
+          recipe={pendingRecipe}
+          onConfirm={onConfirmImage}
+          onDelete={onDeleteRecipe}
+          onCancel={resetPendingRecipe}
+        />
       </View>
     );
   }
@@ -190,17 +186,13 @@ export default function HomeScreen() {
       <NewRecipeBanner visible={showBanner} />
 
       {/* Image Picker Modal for recipes pending image selection */}
-      {(() => {
-        return (
-          <ImagePickerModal
-            isVisible={showImagePickerModal}
-            recipe={pendingRecipe}
-            onConfirm={onConfirmImage}
-            onDelete={onDeleteRecipe}
-            onCancel={resetPendingRecipe}
-          />
-        );
-      })()}
+      <ImagePickerModal
+        isVisible={showImagePickerModal}
+        recipe={pendingRecipe}
+        onConfirm={onConfirmImage}
+        onDelete={onDeleteRecipe}
+        onCancel={resetPendingRecipe}
+      />
     </View>
   );
 }
