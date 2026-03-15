@@ -70,10 +70,12 @@ def is_problematic_url(url: str) -> bool:
 def to_s3(recipe, search_results, jsonData=None):
     combined_data_key = 'jsondata/combined_data.json'
     s3_client = _get_s3_client()
+    etag = None
     try:
         if not jsonData:
             existing_data = s3_client.get_object(Bucket=bucket_name, Key=combined_data_key)
             existing_data_body = existing_data['Body'].read()
+            etag = existing_data['ETag'].strip('"')
         else:
             existing_data_body = jsonData
         existing_data_json = json.loads(existing_data_body)
@@ -96,15 +98,22 @@ def to_s3(recipe, search_results, jsonData=None):
         recipe['uploadedAt'] = datetime.now(timezone.utc).isoformat()
         existing_data_json[str(highest_key)] = recipe
         updated_data_json = json.dumps(existing_data_json)
-        s3_client.put_object(Bucket=bucket_name, Key=combined_data_key,
-                             Body=updated_data_json, ContentType='application/json')
+        params = {
+            'Bucket': bucket_name,
+            'Key': combined_data_key,
+            'Body': updated_data_json,
+            'ContentType': 'application/json'
+        }
+        if etag is not None:
+            params['IfMatch'] = etag
+        s3_client.put_object(**params)
         return True, existing_data_json
     else:
         return False, existing_data_json
 
 
 def upload_image(search_results, bucket_name, highest_key):
-    log.info("Starting image upload", recipe_key=highest_key, search_results_type=str(type(search_results)), preview=str(search_results)[:200])
+    log.info("Starting image upload", recipe_key=highest_key, search_results_type=str(type(search_results)))
     images_prefix = 'images/'
 
     # Handle both list format (new) and dict format (legacy)

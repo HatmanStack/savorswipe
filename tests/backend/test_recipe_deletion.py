@@ -457,7 +457,7 @@ class TestDeleteRecipeAtomic:
         assert "1" in rollback_put_data
 
     def test_rollback_failure_logging(self):
-        """Test that rollback failure returns (False, error_message) and doesn't raise."""
+        """Test that rollback failure returns (False, error_message) and logs errors."""
         mock_client = MagicMock()
 
         combined_data = {
@@ -487,10 +487,17 @@ class TestDeleteRecipeAtomic:
         mock_client.put_object.side_effect = mock_put_object
 
         # Should not raise, should return (False, error_message)
-        success, error_msg = delete_recipe_atomic("1", mock_client, "test-bucket")
+        with patch('recipe_deletion.log') as mock_log:
+            success, error_msg = delete_recipe_atomic("1", mock_client, "test-bucket")
 
-        assert success is False
-        assert error_msg is not None
+            assert success is False
+            assert error_msg is not None
 
-        # Verify that put_object was called (initial write attempted)
-        assert len(put_calls) >= 1, "Expected at least one put_object call"
+            # Verify that put_object was called (initial write attempted)
+            assert len(put_calls) >= 1, "Expected at least one put_object call"
+
+            # Verify error logging was invoked for the failure
+            assert mock_log.error.called, "Expected log.error to be called on failure"
+            error_calls = [str(call) for call in mock_log.error.call_args_list]
+            assert any('AccessDenied' in call for call in error_calls), \
+                f"Expected AccessDenied in error log calls, got: {error_calls}"

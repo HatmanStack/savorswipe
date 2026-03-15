@@ -83,7 +83,12 @@ export function useRecipeInjection({
     let attemptCount = 0;
     const chunkSize = ImageQueueService.CONFIG.BATCH_SIZE;
 
-    // Retry loop for S3 eventual consistency
+    // Retry loop for S3 eventual consistency.
+    // attemptCount is incremented in two places: the partial-fetch path and the catch path.
+    // These are mutually exclusive per iteration, so total attempts never exceed INJECT_RETRY_MAX (3).
+    // - Success path: breaks immediately on full fetch.
+    // - Partial path: retries with backoff on attempts 0 and 1; on attempt 2 uses partial results.
+    // - Error path: increments and breaks at INJECT_RETRY_MAX.
     while (attemptCount < INJECT_RETRY_MAX) {
       try {
         // Fetch in chunks respecting batch size

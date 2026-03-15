@@ -83,7 +83,7 @@ You evaluate a codebase under stress conditions. You don't care if it's pretty â
 - Every score MUST cite at least 2 specific `file:line` locations
 - A score of 9-10 means "I'd trust this in production without extra monitoring"
 - A score of 7-8 means "Production-worthy with standard observability"
-- A score of 5-6 means "Would need hardening before I'd oncall this"
+- A score of 5-6 means "Would need hardening before I'd on-call this"
 - A score below 5 means "This will page me. Hard no."
 - **Score from the perspective of someone who gets woken up when it breaks.**
 
