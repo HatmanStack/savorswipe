@@ -4,6 +4,9 @@ import os
 import fitz  # PyMuPDF
 
 from config import PDF_MAX_PAGES
+from logger import StructuredLogger
+
+log = StructuredLogger("pdf")
 
 
 def encode_image(image_path):
@@ -24,12 +27,12 @@ def pdf_to_base64_images(base64_pdf):
         # Open PDF with PyMuPDF
         doc = fitz.open(temp_pdf_path)
         total_pages = len(doc)
-        print(f'[PDF] Opened PDF with {total_pages} pages')
+        log.info("Opened PDF", total_pages=total_pages)
 
         if total_pages > PDF_MAX_PAGES:
-            print(f'[PDF] Rejecting: {total_pages} pages exceeds limit of {PDF_MAX_PAGES}')
+            log.warning("Rejecting PDF: exceeds page limit", total_pages=total_pages, limit=PDF_MAX_PAGES)
             return False
-        print('[PDF] Page count OK')
+        log.info("Page count OK")
 
         base64_images = []
         for page_num in range(total_pages):
@@ -43,11 +46,11 @@ def pdf_to_base64_images(base64_pdf):
             base64_image = encode_image(temp_image_path)
             base64_images.append(base64_image)
 
-        print('PDF Pages Saved and Encoded')
+        log.info("PDF pages saved and encoded")
         return base64_images
 
     except Exception as e:
-        print(f'[PDF ERROR] Failed to process PDF: {e}')
+        log.error("Failed to process PDF", error=str(e))
         return False
 
     finally:
