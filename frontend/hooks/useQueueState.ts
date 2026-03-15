@@ -203,13 +203,11 @@ export function useQueueState({
 
       // Append new images to queue
       if (result.images.length > 0) {
-        const wasEmpty = queueRef.current.length === 0;
-
         setQueue(prev => {
           const newQueue = [...prev, ...result.images];
 
-          // If queue was empty, initialize currentImage and nextImage
-          if (wasEmpty && newQueue.length > 0) {
+          // If queue was empty before this update, initialize currentImage and nextImage
+          if (prev.length === 0 && newQueue.length > 0) {
             setCurrentImage(newQueue[0]);
             if (newQueue.length > 1) {
               setNextImage(newQueue[1]);
