@@ -74,7 +74,7 @@ chore(ci): add husky pre-commit hooks for lint enforcement
 
 ### Task 2: Add Commit Message Linting with commitlint
 
-**Goal:** Add `commitlint` to enforce conventional commit format on commit messages. This prevents vague "reviewer feedback" style commits, addressing Git Hygiene.
+**Goal:** Add `commitlint` to enforce conventional commit format on commit messages. This prevents vague "reviewer-feedback-style" commits, addressing Git Hygiene.
 
 **Files to Create:**
 - `.commitlintrc.json` — commitlint configuration
@@ -101,6 +101,7 @@ chore(ci): add husky pre-commit hooks for lint enforcement
    ```
 3. Create `.husky/commit-msg`:
    ```bash
+   #!/usr/bin/env sh
    npx --no -- commitlint --edit ${1}
    ```
 4. Make executable: `chmod +x .husky/commit-msg`
@@ -169,7 +170,7 @@ chore(ci): add commitlint for conventional commit enforcement
    version = "1.0.0"
    requires-python = ">=3.11"
    ```
-4. Verify locally: `cd backend && pip install -e ".[dev]" && pytest ../tests/backend -v --tb=short`
+4. Verify locally: `pip install -e "backend/.[dev]" && PYTHONPATH=backend pytest tests/backend -v --tb=short`
 
 **Verification Checklist:**
 - [x] `[project.optional-dependencies]` section in `pyproject.toml`
@@ -179,7 +180,7 @@ chore(ci): add commitlint for conventional commit enforcement
 - [x] CI workflow still works (same packages installed)
 
 **Testing Instructions:**
-- Run: `cd backend && pip install -e ".[dev]"`
+- Run: `pip install -e "backend/.[dev]"`
 - Run: `PYTHONPATH=backend pytest tests/backend -v --tb=short`
 
 **Commit Message Template:**

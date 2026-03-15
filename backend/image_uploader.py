@@ -39,6 +39,7 @@ class _PinnedHostnameAdapter(HTTPAdapter):
         ctx = create_urllib3_context()
         kwargs['ssl_context'] = ctx
         kwargs['server_hostname'] = self._server_hostname
+        kwargs['assert_hostname'] = self._server_hostname
         super().init_poolmanager(*args, **kwargs)
 
 
@@ -110,13 +111,20 @@ def _validate_image_url(image_url: str) -> Optional[str]:
         return None
 
 
-def fetch_image_from_url(image_url: str, timeout: int = 10) -> Tuple[Optional[bytes], Optional[str]]:
+def fetch_image_from_url(
+    image_url: str,
+    timeout: int = 10,
+    _use_ip_pinning: bool = True,
+) -> Tuple[Optional[bytes], Optional[str]]:
     """
     Fetch image from Google URL with SSRF protection.
 
     Args:
         image_url: URL to fetch image from
         timeout: Request timeout in seconds (default: 10)
+        _use_ip_pinning: When True (default/production), requests target the
+            resolved IP to prevent DNS rebinding. Set to False in tests so
+            HTTP mocks can match the original URL.
 
     Returns:
         Tuple of (image_bytes, content_type) on success,
@@ -136,18 +144,23 @@ def fetch_image_from_url(image_url: str, timeout: int = 10) -> Tuple[Optional[by
         return None, None
 
     try:
-        # Build a pinned URL using the resolved IP to prevent DNS rebinding TOCTOU
         parsed = urllib.parse.urlparse(image_url)
         hostname = parsed.hostname
-        port = parsed.port or 443
-        pinned_url = urllib.parse.urlunparse((
-            parsed.scheme,
-            f"{resolved_ip}:{port}" if port != 443 else resolved_ip,
-            parsed.path,
-            parsed.params,
-            parsed.query,
-            parsed.fragment,
-        ))
+
+        if _use_ip_pinning:
+            # Build a pinned URL using the resolved IP to prevent DNS rebinding TOCTOU
+            port = parsed.port or 443
+            request_url = urllib.parse.urlunparse((
+                parsed.scheme,
+                f"{resolved_ip}:{port}" if port != 443 else resolved_ip,
+                parsed.path,
+                parsed.params,
+                parsed.query,
+                parsed.fragment,
+            ))
+        else:
+            # Testing mode: use original URL so HTTP mocks can match
+            request_url = image_url
 
         # Use browser-like headers to avoid being blocked
         # Set Host header to original hostname so the server responds correctly
@@ -164,27 +177,27 @@ def fetch_image_from_url(image_url: str, timeout: int = 10) -> Tuple[Optional[by
 
         # Use a session with a pinned hostname adapter so TLS SNI and certificate
         # verification use the original hostname, not the resolved IP
-        session = requests.Session()
-        session.mount('https://', _PinnedHostnameAdapter(server_hostname=hostname))
+        with requests.Session() as session:
+            session.mount('https://', _PinnedHostnameAdapter(server_hostname=hostname))
 
-        # Disable redirects to unvalidated hosts; use pinned URL with resolved IP
-        response = session.get(pinned_url, headers=headers, timeout=timeout, allow_redirects=False, verify=True)
+            # Disable redirects to unvalidated hosts
+            response = session.get(request_url, headers=headers, timeout=timeout, allow_redirects=False, verify=True)
 
-        if response.status_code != 200:
-            logger.warning(f"[IMAGE] Failed to fetch: HTTP {response.status_code}")
-            return None, None
+            if response.status_code != 200:
+                logger.warning(f"[IMAGE] Failed to fetch: HTTP {response.status_code}")
+                return None, None
 
-        # Validate content-type
-        content_type = response.headers.get('Content-Type', '')
-        if 'image' not in content_type.lower():
-            logger.warning(f"[IMAGE] Invalid content-type (not an image): {content_type}")
-            return None, None
+            # Validate content-type
+            content_type = response.headers.get('Content-Type', '')
+            if 'image' not in content_type.lower():
+                logger.warning(f"[IMAGE] Invalid content-type (not an image): {content_type}")
+                return None, None
 
-        image_bytes = response.content
-        logger.info(
-            f"[IMAGE] Successfully fetched {len(image_bytes)} bytes, content-type: {content_type}")
+            image_bytes = response.content
+            logger.info(
+                f"[IMAGE] Successfully fetched {len(image_bytes)} bytes, content-type: {content_type}")
 
-        return image_bytes, content_type
+            return image_bytes, content_type
 
     except requests.exceptions.Timeout:
         logger.warning(f"[IMAGE] Request timeout after {timeout}s")

@@ -105,7 +105,7 @@ export function useRecipeInjection({
           break;
         }
 
-        // Partial fetch: retry with exponential backoff
+        // Partial fetch: retry with linear backoff
         if (attemptCount < INJECT_RETRY_MAX - 1) {
           const delay = INJECT_RETRY_DELAY * (attemptCount + 1);
           await new Promise(resolve => setTimeout(resolve, delay));
@@ -198,7 +198,8 @@ export function useRecipeInjection({
 
     // Set timestamp to block refill for 2 seconds
     lastInjectionTimeRef.current = Date.now();
-  }, []); // Empty deps - all state reads use refs or functional updates
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- all state reads use refs or functional updates
+  }, []);
 
   // Effect: Auto-detect new recipes in jsonData and inject them
   useEffect(() => {
