@@ -289,6 +289,33 @@ The Lambda function has permissions to:
 - Call OpenAI API
 - Call Google Custom Search API
 
+## Scaling Considerations
+
+### Current Architecture Limits
+
+SavorSwipe uses a single `combined_data.json` file in S3 as its data store.
+This design is intentional for a personal recipe collection app, but has
+known scaling limits:
+
+- **Memory:** Every Lambda invocation loads the entire JSON file into memory.
+  The Lambda is configured with 1024MB. At ~2KB per recipe, this supports
+  roughly 500,000 recipes before memory pressure becomes a concern.
+- **Concurrency:** Optimistic locking (S3 ETags) handles race conditions,
+  but high write concurrency (>10 concurrent uploads) increases retry rates.
+- **Read latency:** GET requests deserialize the full JSON on every call.
+  At 1000+ recipes, consider adding CloudFront caching for the JSON endpoint.
+
+### Migration Path (if needed)
+
+If you need to scale beyond a personal collection:
+1. **DynamoDB:** Replace S3 JSON with DynamoDB table. Each recipe becomes a row.
+   Enables per-item reads/writes and pagination.
+2. **Aurora Serverless:** For relational queries, full-text search, and joins.
+3. **OpenSearch:** For embedding-based semantic search at scale.
+
+These migrations are out of scope for the current single-user design but
+are straightforward given the clean service layer boundaries.
+
 ## Security
 
 - API keys are passed as CloudFormation parameters via CLI (encrypted in transit, never written to `samconfig.toml`)
