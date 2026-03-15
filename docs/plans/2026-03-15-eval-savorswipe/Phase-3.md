@@ -69,11 +69,11 @@ Decompose the 660-line "god hook" (`useImageQueue.ts`) into focused composable h
 5. Do NOT delete anything from `useImageQueue.ts` yet — this task creates the new hook. Task 4 will wire everything together.
 
 **Verification Checklist:**
-- [ ] `useQueueState.ts` created with all queue management logic
-- [ ] Hook accepts `UseQueueStateOptions` parameter
-- [ ] All moved functions maintain their existing behavior
-- [ ] File compiles: `cd frontend && npx tsc --noEmit`
-- [ ] No lint errors: `npm run lint`
+- [x] `useQueueState.ts` created with all queue management logic
+- [x] Hook accepts `UseQueueStateOptions` parameter
+- [x] All moved functions maintain their existing behavior
+- [x] File compiles: `cd frontend && npx tsc --noEmit`
+- [x] No lint errors: `npm run lint`
 
 **Testing Instructions:**
 - Write unit tests in `frontend/hooks/__tests__/useQueueState.test.ts` using `renderHook`:
@@ -136,11 +136,11 @@ refactor(frontend): extract useQueueState hook from useImageQueue
 5. Move `MAX_QUEUE_SIZE`, `INJECT_RETRY_MAX`, `INJECT_RETRY_DELAY` constants into this file (they are only used by injection logic).
 
 **Verification Checklist:**
-- [ ] `useRecipeInjection.ts` created with injection logic
-- [ ] `isPendingImageSelection` moved to this file
-- [ ] Injection constants moved to this file
-- [ ] File compiles: `cd frontend && npx tsc --noEmit`
-- [ ] No lint errors
+- [x] `useRecipeInjection.ts` created with injection logic
+- [x] `isPendingImageSelection` moved to this file
+- [x] Injection constants moved to this file
+- [x] File compiles: `cd frontend && npx tsc --noEmit`
+- [x] No lint errors
 
 **Testing Instructions:**
 - Write unit tests in `frontend/hooks/__tests__/useRecipeInjection.test.ts`:
@@ -200,10 +200,10 @@ refactor(frontend): extract useRecipeInjection hook from useImageQueue
 4. Move `transformErrorMessage` and `ERROR_PATTERNS` (from Phase 2, Task 11) into this file since they are only used by the confirm/delete handlers.
 
 **Verification Checklist:**
-- [ ] `useImagePicker.ts` created with modal and handler logic
-- [ ] `transformErrorMessage` and `ERROR_PATTERNS` moved here
-- [ ] File compiles: `cd frontend && npx tsc --noEmit`
-- [ ] No lint errors
+- [x] `useImagePicker.ts` created with modal and handler logic
+- [x] `transformErrorMessage` and `ERROR_PATTERNS` moved here
+- [x] File compiles: `cd frontend && npx tsc --noEmit`
+- [x] No lint errors
 
 **Testing Instructions:**
 - Write unit tests in `frontend/hooks/__tests__/useImagePicker.test.ts`:
@@ -287,13 +287,13 @@ refactor(frontend): extract useImagePicker hook from useImageQueue
 4. Run the full test suite to verify the public API hasn't changed.
 
 **Verification Checklist:**
-- [ ] `useImageQueue.ts` is under 80 lines
-- [ ] Public return type `ImageQueueHook` is unchanged
-- [ ] No consumers of `useImageQueue` need modification
-- [ ] `frontend/app/index.tsx` still works (uses `useImageQueue`)
-- [ ] `cd frontend && npx tsc --noEmit` passes
-- [ ] `npm test -- --ci --forceExit` passes (all existing hook tests)
-- [ ] `npm run lint` passes
+- [x] `useImageQueue.ts` is under 80 lines
+- [x] Public return type `ImageQueueHook` is unchanged
+- [x] No consumers of `useImageQueue` need modification
+- [x] `frontend/app/index.tsx` still works (uses `useImageQueue`)
+- [x] `cd frontend && npx tsc --noEmit` passes
+- [x] `npm test -- --ci --forceExit` passes (all existing hook tests)
+- [x] `npm run lint` passes
 
 **Testing Instructions:**
 - Run existing `useImageQueue` tests: `npm test -- --ci --forceExit --testPathPattern=useImageQueue`
@@ -368,11 +368,11 @@ refactor(frontend): compose useImageQueue from focused sub-hooks
 5. Run tests.
 
 **Verification Checklist:**
-- [ ] `ThreadPoolExecutor` used in `validate_image_urls`
-- [ ] URL order preserved (not returned in completion order)
-- [ ] `max_workers` set to a reasonable value (5)
-- [ ] `ruff check search_image.py` passes
-- [ ] Backend tests pass
+- [x] `ThreadPoolExecutor` used in `validate_image_urls`
+- [x] URL order preserved (not returned in completion order)
+- [x] `max_workers` set to a reasonable value (5)
+- [x] `ruff check search_image.py` passes
+- [x] Backend tests pass
 
 **Testing Instructions:**
 - Update or add test in `tests/backend/test_search_image.py`:
@@ -428,11 +428,11 @@ perf(backend): parallelize URL validation with ThreadPoolExecutor
    ```
 
 **Verification Checklist:**
-- [ ] `frontend/context/__tests__/RecipeContext.test.tsx` exists
-- [ ] At least 6 test cases covering all context methods
-- [ ] Stale-while-revalidate behavior tested
-- [ ] Tests pass: `npm test -- --ci --forceExit --testPathPattern=RecipeContext`
-- [ ] No lint errors
+- [x] `frontend/context/__tests__/RecipeContext.test.tsx` exists
+- [x] At least 6 test cases covering all context methods
+- [x] Stale-while-revalidate behavior tested
+- [x] Tests pass: `npm test -- --ci --forceExit --testPathPattern=RecipeContext`
+- [x] No lint errors
 
 **Testing Instructions:**
 - Run: `npm test -- --ci --forceExit --testPathPattern=RecipeContext`
