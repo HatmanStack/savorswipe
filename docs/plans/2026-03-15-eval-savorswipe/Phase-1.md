@@ -37,10 +37,10 @@ Remove dead code, unused dependencies, and manual test files that add noise, blo
 5. Run `npm run lint` to verify no lint errors.
 
 **Verification Checklist:**
-- [ ] `aws-sdk` does not appear in `package.json` `dependencies` or `devDependencies`
-- [ ] `@modelcontextprotocol/sdk` does not appear in `package.json`
-- [ ] `npm test -- --ci --forceExit` passes
-- [ ] `npm run lint` passes
+- [x] `aws-sdk` does not appear in `package.json` `dependencies` or `devDependencies`
+- [x] `@modelcontextprotocol/sdk` does not appear in `package.json`
+- [x] `npm test -- --ci --forceExit` passes
+- [x] `npm run lint` passes
 
 **Testing Instructions:**
 - No new tests needed. Existing test suite must pass without these packages.
