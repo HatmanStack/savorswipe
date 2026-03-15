@@ -74,9 +74,9 @@ chore: remove unused aws-sdk and @modelcontextprotocol/sdk dependencies
 4. Run backend tests: `PYTHONPATH=backend pytest tests/backend -v --tb=short`
 
 **Verification Checklist:**
-- [ ] `google_search_image_legacy` does not appear anywhere in the codebase
-- [ ] `ruff check .` passes in backend directory
-- [ ] `pytest tests/backend -v --tb=short` passes
+- [x] `google_search_image_legacy` does not appear anywhere in the codebase
+- [x] `ruff check .` passes in backend directory
+- [x] `pytest tests/backend -v --tb=short` passes
 
 **Testing Instructions:**
 - No new tests needed. Run existing backend tests to verify no regressions.
@@ -109,9 +109,9 @@ chore(backend): remove dead google_search_image_legacy function
 4. Run backend tests to confirm nothing breaks: `PYTHONPATH=backend pytest tests/backend -v --tb=short`
 
 **Verification Checklist:**
-- [ ] `tests/backend/test_manual.py` no longer exists
-- [ ] `pytest tests/backend -v --tb=short` passes
-- [ ] No other test files import from `test_manual`
+- [x] `tests/backend/test_manual.py` no longer exists
+- [x] `pytest tests/backend -v --tb=short` passes
+- [x] No other test files import from `test_manual`
 
 **Testing Instructions:**
 - No new tests needed. The functionality tested by this manual file is already covered by proper automated tests in `test_lambda_function.py`, `test_recipe_deletion.py`, and `test_endpoints_delete.py`.
@@ -146,10 +146,10 @@ chore(backend): remove manual test file with hardcoded credentials
 5. Run backend tests: `PYTHONPATH=backend pytest tests/backend -v --tb=short`
 
 **Verification Checklist:**
-- [ ] No reference to `tmp_image_path` or `/tmp/searchImage_` in `upload.py`
-- [ ] The `uuid` import can remain (it may be used elsewhere) — check and remove if unused
-- [ ] `put_object` still uploads `image_data` via `Body=image_data`
-- [ ] Backend tests pass
+- [x] No reference to `tmp_image_path` or `/tmp/searchImage_` in `upload.py`
+- [x] The `uuid` import can remain (it may be used elsewhere) — check and remove if unused
+- [x] `put_object` still uploads `image_data` via `Body=image_data`
+- [x] Backend tests pass
 
 **Testing Instructions:**
 - Run existing tests: `PYTHONPATH=backend pytest tests/backend/test_upload.py -v --tb=short`
