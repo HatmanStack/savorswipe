@@ -7,16 +7,15 @@ optimistic locking to prevent race conditions.
 """
 
 import json
-import logging
 import random
 import time
 from typing import Dict, Optional, Tuple
 
 from botocore.exceptions import ClientError
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from logger import StructuredLogger
+
+log = StructuredLogger("deletion")
 
 
 def delete_recipe_from_combined_data(recipe_key: str, json_data: Dict) -> Dict:
@@ -34,14 +33,14 @@ def delete_recipe_from_combined_data(recipe_key: str, json_data: Dict) -> Dict:
         Updated dictionary with recipe removed (or original if not found)
     """
     if recipe_key not in json_data:
-        logger.info(f"[DELETE] Recipe key '{recipe_key}' not found in combined_data")
+        log.info("Recipe key not found in combined_data", recipe_key=recipe_key)
         return json_data
 
     # Create a copy to avoid mutating input
     updated_data = json_data.copy()
     deleted_recipe = updated_data.pop(recipe_key)
 
-    logger.info(f"[DELETE] Removed recipe '{recipe_key}': {deleted_recipe.get('Title', 'Unknown')}")
+    log.info("Removed recipe", recipe_key=recipe_key, title=deleted_recipe.get('Title', 'Unknown'))
     return updated_data
 
 
@@ -60,18 +59,74 @@ def delete_embedding_from_store(recipe_key: str, embeddings: Dict) -> Dict:
         Updated dictionary with embedding removed (or original if not found)
     """
     if recipe_key not in embeddings:
-        logger.info(f"[DELETE] Embedding for recipe key '{recipe_key}' not found")
+        log.info("Embedding not found", recipe_key=recipe_key)
         return embeddings
 
     # Create a copy to avoid mutating input
     updated_embeddings = embeddings.copy()
     deleted_embedding = updated_embeddings.pop(recipe_key)
 
-    logger.info(
-        f"[DELETE] Removed embedding for recipe key '{recipe_key}' "
-        f"({len(deleted_embedding) if isinstance(deleted_embedding, list) else 'unknown'} dimensions)"
+    log.info(
+        "Removed embedding",
+        recipe_key=recipe_key,
+        dimensions=len(deleted_embedding) if isinstance(deleted_embedding, list) else 'unknown'
     )
     return updated_embeddings
+
+
+def _rollback_combined_data(
+    recipe_key: str,
+    deleted_recipe: Dict,
+    s3_client,
+    bucket: str,
+    combined_data_key: str
+) -> bool:
+    """
+    Best-effort rollback: restore a deleted recipe to combined_data.json.
+
+    Re-reads combined_data with a fresh ETag and writes the recipe back.
+
+    Args:
+        recipe_key: The recipe key to restore
+        deleted_recipe: The recipe data to restore
+        s3_client: Boto3 S3 client
+        bucket: S3 bucket name
+        combined_data_key: S3 key for combined_data.json
+
+    Returns:
+        True if rollback succeeded, False otherwise
+    """
+    try:
+        log.warning("Rolling back combined_data: restoring deleted recipe", recipe_key=recipe_key)
+
+        # Re-read combined_data with fresh ETag
+        response = s3_client.get_object(Bucket=bucket, Key=combined_data_key)
+        current_data = json.loads(response['Body'].read())
+        fresh_etag = response['ETag'].strip('"')
+
+        # Restore the deleted recipe
+        current_data[recipe_key] = deleted_recipe
+
+        # Write back with fresh ETag
+        s3_client.put_object(
+            Bucket=bucket,
+            Key=combined_data_key,
+            Body=json.dumps(current_data),
+            ContentType='application/json',
+            IfMatch=fresh_etag
+        )
+
+        log.info("Rollback successful: recipe restored", recipe_key=recipe_key)
+        return True
+
+    except Exception as rollback_err:
+        log.error(
+            "CRITICAL: Rollback failed - manual recovery needed",
+            recipe_key=recipe_key,
+            recipe_data=json.dumps(deleted_recipe),
+            error=str(rollback_err)
+        )
+        return False
 
 
 def delete_recipe_atomic(
@@ -85,7 +140,8 @@ def delete_recipe_atomic(
     Atomically delete recipe from both combined_data.json and recipe_embeddings.json.
 
     Uses S3 ETag-based optimistic locking with retry logic to handle race conditions.
-    Both files are updated atomically to ensure consistency.
+    Both files are updated atomically to ensure consistency. If the embeddings write
+    fails after the combined_data write succeeds, a best-effort rollback is attempted.
 
     Args:
         recipe_key: Recipe key to delete
@@ -102,48 +158,49 @@ def delete_recipe_atomic(
     MAX_RETRIES = 3
 
     for attempt in range(MAX_RETRIES):
-        logger.info(f"[DELETE] Attempt {attempt + 1}/{MAX_RETRIES} to delete recipe '{recipe_key}'")
+        log.info("Delete attempt", attempt=attempt + 1, max_retries=MAX_RETRIES, recipe_key=recipe_key)
 
         try:
             # Step 1: Load combined_data.json with ETag
-            logger.info(f"[DELETE] Loading {combined_data_key}...")
+            log.info("Loading combined_data", key=combined_data_key)
             try:
                 response = s3_client.get_object(Bucket=bucket, Key=combined_data_key)
                 combined_data = json.loads(response['Body'].read())
                 combined_data_etag = response['ETag'].strip('"')
-                logger.info(
-                    f"[DELETE] Loaded combined_data with {len(combined_data)} recipes, ETag: {combined_data_etag}")
+                log.info("Loaded combined_data", recipe_count=len(combined_data), etag=combined_data_etag)
             except ClientError as e:
                 if e.response['Error']['Code'] == 'NoSuchKey':
-                    logger.warning(f"[DELETE] {combined_data_key} not found")
+                    log.warning("combined_data not found", key=combined_data_key)
                     combined_data = {}
                     combined_data_etag = None
                 else:
                     return False, f"Error loading {combined_data_key}: {str(e)}"
 
             # Step 2: Load recipe_embeddings.json with ETag
-            logger.info(f"[DELETE] Loading {embeddings_key}...")
+            log.info("Loading embeddings", key=embeddings_key)
             try:
                 response = s3_client.get_object(Bucket=bucket, Key=embeddings_key)
                 embeddings = json.loads(response['Body'].read())
                 embeddings_etag = response['ETag'].strip('"')
-                logger.info(
-                    f"[DELETE] Loaded embeddings with {len(embeddings)} entries, ETag: {embeddings_etag}")
+                log.info("Loaded embeddings", entry_count=len(embeddings), etag=embeddings_etag)
             except ClientError as e:
                 if e.response['Error']['Code'] == 'NoSuchKey':
-                    logger.warning(f"[DELETE] {embeddings_key} not found")
+                    log.warning("Embeddings not found", key=embeddings_key)
                     embeddings = {}
                     embeddings_etag = None
                 else:
                     return False, f"Error loading {embeddings_key}: {str(e)}"
 
             # Step 3: Delete recipe from both dictionaries
-            logger.info(f"[DELETE] Removing recipe '{recipe_key}' from both files...")
+            # Save the recipe before deletion for potential rollback
+            deleted_recipe = combined_data.get(recipe_key)
+
+            log.info("Removing recipe from both files", recipe_key=recipe_key)
             updated_combined_data = delete_recipe_from_combined_data(recipe_key, combined_data)
             updated_embeddings = delete_embedding_from_store(recipe_key, embeddings)
 
-            # Step 4: Perform atomic writes
-            logger.info("[DELETE] Writing updated combined_data to S3...")
+            # Step 4: Write updated combined_data to S3
+            log.info("Writing updated combined_data to S3")
             combined_data_body = json.dumps(updated_combined_data)
 
             params_combined = {
@@ -158,14 +215,13 @@ def delete_recipe_atomic(
 
             try:
                 s3_client.put_object(**params_combined)  # type: ignore
-                logger.info("[DELETE] Successfully wrote combined_data")
+                log.info("Successfully wrote combined_data")
             except ClientError as e:
                 if e.response['Error']['Code'] == 'PreconditionFailed':
-                    logger.warning(
-                        f"[DELETE] Race condition on combined_data (attempt {attempt + 1})")
+                    log.warning("Race condition on combined_data", attempt=attempt + 1)
                     if attempt < MAX_RETRIES - 1:
                         delay = random.uniform(0.1, 0.5) * (2 ** attempt)
-                        logger.info(f"[DELETE] Retrying after {delay:.2f}s...")
+                        log.info("Retrying after delay", delay_seconds=round(delay, 2))
                         time.sleep(delay)
                         continue
                     else:
@@ -174,7 +230,7 @@ def delete_recipe_atomic(
                     return False, f"Error writing {combined_data_key}: {str(e)}"
 
             # Step 5: Write embeddings
-            logger.info("[DELETE] Writing updated embeddings to S3...")
+            log.info("Writing updated embeddings to S3")
             embeddings_body = json.dumps(updated_embeddings)
 
             params_embeddings = {
@@ -189,13 +245,24 @@ def delete_recipe_atomic(
 
             try:
                 s3_client.put_object(**params_embeddings)  # type: ignore
-                logger.info("[DELETE] Successfully wrote embeddings")
+                log.info("Successfully wrote embeddings")
             except ClientError as e:
+                # Embeddings write failed after combined_data succeeded — rollback
+                log.error(
+                    "Embeddings write failed after combined_data succeeded",
+                    recipe_key=recipe_key,
+                    error=str(e)
+                )
+
+                if deleted_recipe is not None:
+                    _rollback_combined_data(
+                        recipe_key, deleted_recipe, s3_client, bucket, combined_data_key
+                    )
+
                 if e.response['Error']['Code'] == 'PreconditionFailed':
-                    logger.warning(f"[DELETE] Race condition on embeddings (attempt {attempt + 1})")
                     if attempt < MAX_RETRIES - 1:
                         delay = random.uniform(0.1, 0.5) * (2 ** attempt)
-                        logger.info(f"[DELETE] Retrying after {delay:.2f}s...")
+                        log.info("Retrying after delay", delay_seconds=round(delay, 2))
                         time.sleep(delay)
                         continue
                     else:
@@ -204,11 +271,11 @@ def delete_recipe_atomic(
                     return False, f"Error writing {embeddings_key}: {str(e)}"
 
             # Success!
-            logger.info(f"[DELETE] Recipe '{recipe_key}' deleted successfully")
+            log.info("Recipe deleted successfully", recipe_key=recipe_key)
             return True, None
 
         except Exception as e:
-            logger.error(f"[DELETE] Unexpected error: {str(e)}")
+            log.error("Unexpected error", error=str(e))
             return False, f"Unexpected error: {str(e)}"
 
     # Should not reach here, but just in case
