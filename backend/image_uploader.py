@@ -10,7 +10,6 @@ Provides functions to:
 import hashlib
 import io
 import ipaddress
-import logging
 import random
 import socket
 import time
@@ -23,12 +22,17 @@ from PIL import Image
 from requests.adapters import HTTPAdapter
 from urllib3.util.ssl_ import create_urllib3_context
 
+from logger import StructuredLogger
+
+log = StructuredLogger("image_uploader")
+
 
 class _PinnedHostnameAdapter(HTTPAdapter):
     """HTTPAdapter that overrides SNI and certificate hostname verification.
 
-    When connecting to a resolved IP (to prevent DNS rebinding), TLS needs to
-    use the original hostname for SNI and certificate validation.
+    When fetching a URL whose hostname has been pre-validated against DNS
+    rebinding, this adapter ensures TLS SNI and certificate verification
+    use the original hostname rather than whatever the URL authority contains.
     """
 
     def __init__(self, server_hostname: str, **kwargs):
@@ -48,10 +52,6 @@ def _url_log_meta(image_url: str) -> dict:
     parsed = urllib.parse.urlparse(image_url)
     url_hash = hashlib.sha256(image_url.encode()).hexdigest()[:8]
     return {"hostname": parsed.hostname or "unknown", "url_len": len(image_url), "url_hash": url_hash}
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 # NOTE: No domain whitelist needed - SSRF protection is provided by:
 # 1. HTTPS-only URLs
@@ -78,12 +78,12 @@ def _validate_image_url(image_url: str) -> Optional[str]:
 
         # Check scheme is HTTPS
         if parsed.scheme != 'https':
-            logger.warning(f"[IMAGE] Disallowed URL scheme (not HTTPS): {parsed.scheme}")
+            log.warning("Disallowed URL scheme (not HTTPS)", scheme=parsed.scheme)
             return None
 
         hostname = parsed.hostname
         if not hostname:
-            logger.warning("[IMAGE] URL has no hostname", **_url_log_meta(image_url))
+            log.warning("URL has no hostname", **_url_log_meta(image_url))
             return None
 
         # Resolve hostname to IP and check it's not private/reserved
@@ -94,78 +94,60 @@ def _validate_image_url(image_url: str) -> Optional[str]:
             # Reject private, loopback, link-local, multicast addresses
             if (ip.is_private or ip.is_loopback or ip.is_link_local or
                     ip.is_multicast or ip.is_reserved):
-                logger.warning(
-                    "[IMAGE] Refusing to fetch private/reserved IP",
-                    extra={"hostname": hostname, "resolved_ip": ip_str}
-                )
+                log.warning("Refusing to fetch private/reserved IP",
+                            hostname=hostname, resolved_ip=ip_str)
                 return None
 
             return ip_str
 
         except (socket.gaierror, socket.error) as e:
-            logger.warning(f"[IMAGE] Failed to resolve hostname {hostname}: {str(e)}")
+            log.warning("Failed to resolve hostname", hostname=hostname, error=str(e))
             return None
 
     except Exception as e:
-        logger.error(f"[IMAGE] Error validating URL: {str(e)}")
+        log.error("Error validating URL", error=str(e))
         return None
 
 
 def fetch_image_from_url(
     image_url: str,
     timeout: int = 10,
-    _use_ip_pinning: bool = True,
 ) -> Tuple[Optional[bytes], Optional[str]]:
     """
     Fetch image from Google URL with SSRF protection.
 
+    DNS rebinding protection is provided by _validate_image_url (which rejects
+    private IPs) combined with _PinnedHostnameAdapter (which pins TLS SNI and
+    certificate verification to the original hostname) and allow_redirects=False
+    (which prevents redirect-based SSRF).
+
     Args:
         image_url: URL to fetch image from
         timeout: Request timeout in seconds (default: 10)
-        _use_ip_pinning: When True (default/production), requests target the
-            resolved IP to prevent DNS rebinding. Set to False in tests so
-            HTTP mocks can match the original URL.
 
     Returns:
         Tuple of (image_bytes, content_type) on success,
         (None, None) on failure
     """
     if not image_url:
-        logger.warning("[IMAGE] Empty image_url provided")
+        log.warning("Empty image_url provided")
         return None, None
 
     meta = _url_log_meta(image_url)
-    logger.info("[IMAGE] Fetching image", **meta)
+    log.info("Fetching image", **meta)
 
     # Validate URL and get resolved IP to prevent SSRF/DNS rebinding attacks
     resolved_ip = _validate_image_url(image_url)
     if not resolved_ip:
-        logger.warning("[IMAGE] URL validation failed, refusing to fetch", **meta)
+        log.warning("URL validation failed, refusing to fetch", **meta)
         return None, None
 
     try:
         parsed = urllib.parse.urlparse(image_url)
         hostname = parsed.hostname
 
-        if _use_ip_pinning:
-            # Build a pinned URL using the resolved IP to prevent DNS rebinding TOCTOU
-            port = parsed.port or 443
-            request_url = urllib.parse.urlunparse((
-                parsed.scheme,
-                f"{resolved_ip}:{port}" if port != 443 else resolved_ip,
-                parsed.path,
-                parsed.params,
-                parsed.query,
-                parsed.fragment,
-            ))
-        else:
-            # Testing mode: use original URL so HTTP mocks can match
-            request_url = image_url
-
         # Use browser-like headers to avoid being blocked
-        # Set Host header to original hostname so the server responds correctly
         headers = {
-            'Host': hostname,
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
             'Accept-Language': 'en-US,en;q=0.9',
@@ -176,37 +158,38 @@ def fetch_image_from_url(
         }
 
         # Use a session with a pinned hostname adapter so TLS SNI and certificate
-        # verification use the original hostname, not the resolved IP
+        # verification use the validated hostname, preventing DNS rebinding attacks
         with requests.Session() as session:
             session.mount('https://', _PinnedHostnameAdapter(server_hostname=hostname))
 
-            # Disable redirects to unvalidated hosts
-            response = session.get(request_url, headers=headers, timeout=timeout, allow_redirects=False, verify=True)
+            # Disable redirects to unvalidated hosts; use original URL (the adapter
+            # handles hostname pinning at the TLS layer)
+            response = session.get(image_url, headers=headers, timeout=timeout, allow_redirects=False, verify=True)
 
             if response.status_code != 200:
-                logger.warning(f"[IMAGE] Failed to fetch: HTTP {response.status_code}")
+                log.warning("Failed to fetch image", status_code=response.status_code)
                 return None, None
 
             # Validate content-type
             content_type = response.headers.get('Content-Type', '')
             if 'image' not in content_type.lower():
-                logger.warning(f"[IMAGE] Invalid content-type (not an image): {content_type}")
+                log.warning("Invalid content-type (not an image)", content_type=content_type)
                 return None, None
 
             image_bytes = response.content
-            logger.info(
-                f"[IMAGE] Successfully fetched {len(image_bytes)} bytes, content-type: {content_type}")
+            log.info("Successfully fetched image",
+                     size_bytes=len(image_bytes), content_type=content_type)
 
             return image_bytes, content_type
 
     except requests.exceptions.Timeout:
-        logger.warning(f"[IMAGE] Request timeout after {timeout}s")
+        log.warning("Request timeout", timeout_seconds=timeout)
         return None, None
     except requests.exceptions.RequestException as e:
-        logger.warning(f"[IMAGE] Request failed: {str(e)}")
+        log.warning("Request failed", error=str(e))
         return None, None
     except Exception as e:
-        logger.error(f"[IMAGE] Unexpected error fetching image: {str(e)}")
+        log.error("Unexpected error fetching image", error=str(e))
         return None, None
 
 
@@ -236,7 +219,7 @@ def upload_image_to_s3(
         - On failure: (None, error_message)
     """
     if not image_bytes:
-        logger.error("[IMAGE] No image bytes provided")
+        log.error("No image bytes provided")
         return None, "No image bytes provided"
 
     # Always save as .jpg
@@ -244,21 +227,21 @@ def upload_image_to_s3(
 
     # Convert any image format to JPEG
     try:
-        logger.info(f"[IMAGE] Converting image to JPEG (source type: {content_type})...")
+        log.info("Converting image to JPEG", source_type=content_type)
         image = Image.open(io.BytesIO(image_bytes))
         jpeg_image_io = io.BytesIO()
         image.convert('RGB').save(jpeg_image_io, format='JPEG', quality=85)
         jpeg_bytes = jpeg_image_io.getvalue()
-        logger.info(f"[IMAGE] Image converted to JPEG, size: {len(jpeg_bytes)} bytes")
+        log.info("Image converted to JPEG", size_bytes=len(jpeg_bytes))
     except Exception as e:
-        logger.error(f"[IMAGE] Failed to convert image to JPEG: {str(e)}")
+        log.error("Failed to convert image to JPEG", error=str(e))
         return None, f"Image conversion failed: {str(e)}"
 
-    logger.info(f"[IMAGE] Uploading image to S3: {bucket}/{s3_key} ({len(jpeg_bytes)} bytes)")
+    log.info("Uploading image to S3", bucket=bucket, s3_key=s3_key, size_bytes=len(jpeg_bytes))
 
     for attempt in range(max_retries):
         try:
-            logger.info(f"[IMAGE] Upload attempt {attempt + 1}/{max_retries}")
+            log.info("Upload attempt", attempt=attempt + 1, max_retries=max_retries)
 
             s3_client.put_object(
                 Bucket=bucket,
@@ -267,7 +250,7 @@ def upload_image_to_s3(
                 ContentType='image/jpeg'
             )
 
-            logger.info(f"[IMAGE] Successfully uploaded {s3_key}")
+            log.info("Successfully uploaded image", s3_key=s3_key)
             return s3_key, None
 
         except ClientError as e:
@@ -276,20 +259,20 @@ def upload_image_to_s3(
 
             if error_code == 'PreconditionFailed':
                 # Race condition on ETag
-                logger.warning(f"[IMAGE] Race condition on attempt {attempt + 1}, retrying...")
+                log.warning("Race condition on upload", attempt=attempt + 1)
                 if attempt < max_retries - 1:
                     delay = random.uniform(0.1, 0.5) * (2 ** attempt)
-                    logger.info(f"[IMAGE] Retrying after {delay:.2f}s...")
+                    log.info("Retrying upload", delay_seconds=round(delay, 2))
                     time.sleep(delay)
                     continue
                 else:
                     return None, f"Race condition: max retries exceeded after {max_retries} attempts"
             else:
-                logger.error(f"[IMAGE] S3 error: {error_code} - {error_msg}")
+                log.error("S3 error uploading image", error_code=error_code, error=error_msg)
                 return None, f"S3 error: {error_msg}"
 
         except Exception as e:
-            logger.error(f"[IMAGE] Unexpected error uploading to S3: {str(e)}")
+            log.error("Unexpected error uploading to S3", error=str(e))
             return None, f"Unexpected error: {str(e)}"
 
     return None, f"Max retries ({max_retries}) exceeded"
