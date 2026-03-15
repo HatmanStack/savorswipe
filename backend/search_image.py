@@ -1,5 +1,6 @@
 import os
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, List, Optional, Set
 
 import requests
@@ -53,60 +54,57 @@ def simplify_recipe_title(title: str) -> str:
 
 def validate_image_urls(image_urls: List[str], timeout: int = 5) -> List[str]:
     """
-    Validate that image URLs are actually accessible.
+    Validate that image URLs are actually accessible using parallel requests.
 
-    Checks each URL to ensure:
+    Checks each URL concurrently to ensure:
     - HTTP 200 response
     - Content-Type header contains 'image'
+
+    Uses ThreadPoolExecutor for parallel validation, preserving original URL order
+    so search result ranking is maintained.
 
     Args:
         image_urls: List of image URLs to validate
         timeout: Request timeout in seconds (default: 5)
 
     Returns:
-        List of valid image URLs (may be fewer than input)
+        List of valid image URLs in original order (may be fewer than input)
     """
     if not image_urls:
         log.info("No image URLs to validate")
         return []
 
     log.info("Validating image URLs", count=len(image_urls))
-    valid_urls = []
 
-    for url in image_urls:
+    def _validate_single(url: str) -> Optional[str]:
         if not url:
-            log.warning("Skipping empty URL")
-            continue
-
+            return None
         try:
-            log.info("Validating URL", url=url[:100])
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
             }
-
-            # Send HEAD request first (faster than GET)
             response = requests.head(url, headers=headers, timeout=timeout, allow_redirects=True)
-
             if response.status_code == 200:
-                # Verify content-type is an image
                 content_type = response.headers.get('Content-Type', '')
                 if 'image' in content_type.lower():
-                    log.info("URL validated successfully", content_type=content_type)
-                    valid_urls.append(url)
-                else:
-                    log.warning("URL has invalid content-type", content_type=content_type)
-            else:
-                log.warning("URL returned non-200 status", status_code=response.status_code)
+                    return url
+            return None
+        except Exception:
+            return None
 
-        except requests.exceptions.Timeout:
-            log.warning("URL validation timeout", timeout=timeout)
-        except requests.exceptions.RequestException as e:
-            log.warning("URL validation failed", error=str(e))
-        except Exception as e:
-            log.error("Unexpected error validating URL", error=str(e))
+    valid_urls = []
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        future_to_url = {executor.submit(_validate_single, url): url for url in image_urls}
+        for future in as_completed(future_to_url):
+            result = future.result()
+            if result:
+                valid_urls.append(result)
 
-    log.info("URL validation complete", valid=len(valid_urls), total=len(image_urls))
-    return valid_urls
+    # Preserve original order (as_completed returns in completion order)
+    ordered_valid = [url for url in image_urls if url in set(valid_urls)]
+
+    log.info("URL validation complete", valid=len(ordered_valid), total=len(image_urls))
+    return ordered_valid
 
 
 def google_search_image(title: str, count: int = 10, recipe_type: Optional[str] = None) -> List[str]:
