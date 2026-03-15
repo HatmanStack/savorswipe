@@ -80,7 +80,7 @@ def to_s3(recipe, search_results, jsonData=None):
         for existing_recipe in existing_data_json.values():
             if existing_recipe.get('Title') == recipe.get('Title'):
                 return False, existing_data_json
-        highest_key = len(existing_data_json) + 1
+        highest_key = max((int(k) for k in existing_data_json.keys()), default=0) + 1
     except ClientError as e:
         if e.response['Error']['Code'] == 'NoSuchKey':
             existing_data_json = {}
@@ -311,10 +311,10 @@ def batch_to_s3_atomic(
                 log.error("S3 error loading combined_data.json", error=str(e))
                 raise
 
-        # Find next recipe key based on total count
+        # Find next recipe key based on max existing key (handles deletions)
         if existing_data:
-            highest_key = len(existing_data)
-            log.info("Existing recipe count", count=highest_key)
+            highest_key = max((int(k) for k in existing_data.keys()), default=0)
+            log.info("Highest existing recipe key", highest_key=highest_key)
         else:
             highest_key = 0
             log.info("No existing recipes, starting from 1")
