@@ -21,6 +21,14 @@ from image_uploader import (
 class TestFetchImageFromUrl:
     """Tests for fetch_image_from_url function."""
 
+    @pytest.fixture(autouse=True)
+    def mock_dns(self, monkeypatch):
+        """Mock DNS resolution to return a public IP so SSRF validation passes."""
+        monkeypatch.setattr(
+            'image_uploader.socket.gethostbyname',
+            lambda hostname: '93.184.216.34'  # Public IP for example.com
+        )
+
     def test_successful_fetch(self, requests_mock):
         """Test successfully fetching an image."""
         image_data = b'fake image data'

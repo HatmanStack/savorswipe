@@ -231,7 +231,6 @@ export function useQueueState({
 
   // Advance to next image in queue
   const advanceQueue = useCallback(() => {
-    // Use functional state update to avoid stale closure
     setQueue(prev => {
       // Don't advance if queue is empty
       if (prev.length <= 0) {
@@ -243,6 +242,12 @@ export function useQueueState({
         ImageQueueService.cleanupImages([prev[0]]);
       }
 
+      // Mark the consumed (swiped) card as seen, not the new current
+      if (prev[0]) {
+        const recipeKey = ImageService.getRecipeKeyFromFileName(prev[0].filename);
+        seenRecipeKeysRef.current.add(recipeKey);
+      }
+
       // Shift queue
       const newQueue = prev.slice(1);
 
@@ -252,12 +257,6 @@ export function useQueueState({
 
       setCurrentImage(newCurrent);
       setNextImage(newNext);
-
-      // Mark the consumed (swiped) card as seen, not the new current
-      if (prev[0]) {
-        const recipeKey = ImageService.getRecipeKeyFromFileName(prev[0].filename);
-        seenRecipeKeysRef.current.add(recipeKey);
-      }
 
       return newQueue;
     });
@@ -306,9 +305,18 @@ export function useQueueState({
     }
   }, [jsonData, queue.length, isLoading, initializeQueue]);
 
+  // Track whether filter effect has fired once (to skip initial mount)
+  const filterEffectMountedRef = useRef(false);
+
   // Effect: Reset queue when filters change
   useEffect(() => {
-    // Skip on initial mount (jsonData will be null)
+    // Skip initial mount — the auto-init effect handles the first load
+    if (!filterEffectMountedRef.current) {
+      filterEffectMountedRef.current = true;
+      return;
+    }
+
+    // Skip if jsonData not yet available
     if (!jsonData) return;
 
     // Always reset when filters change so in-flight initializations
