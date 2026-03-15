@@ -26,6 +26,19 @@ function isPendingImageSelection(recipe: Recipe | undefined): boolean {
 }
 
 /**
+ * Declarative error pattern mapping.
+ * Order matters: more specific patterns must come before generic ones.
+ */
+const ERROR_PATTERNS: ReadonlyArray<{ pattern: RegExp; message: string }> = [
+  { pattern: /timeout|request timeout/i, message: 'Taking longer than expected. Please check your internet and try again.' },
+  { pattern: /recipe not found|404/i, message: 'Recipe not found. It may have been deleted.' },
+  { pattern: /invalid image url|invalid url|400/i, message: "Image couldn't be loaded. Please select another image." },
+  { pattern: /500|server error/i, message: 'Server error. Please try again later.' },
+  { pattern: /fetch image from google/i, message: "Image couldn't be loaded from source. Please select another image." },
+  { pattern: /network|failed/i, message: 'Unable to connect. Please check your internet connection.' },
+];
+
+/**
  * Transform raw error messages into user-friendly messages.
  * Maps technical errors to actionable, non-technical language.
  *
@@ -33,44 +46,8 @@ function isPendingImageSelection(recipe: Recipe | undefined): boolean {
  * @returns User-friendly error message
  */
 function transformErrorMessage(rawError: string): string {
-  const errorLower = rawError.toLowerCase();
-
-  // Network and timeout errors
-  if (errorLower.includes('timeout') || errorLower.includes('request timeout')) {
-    return 'Taking longer than expected. Please check your internet and try again.';
-  }
-
-  // Recipe not found - check before generic 404
-  if (errorLower.includes('recipe not found') || errorLower.includes('404')) {
-    return 'Recipe not found. It may have been deleted.';
-  }
-
-  // Invalid image URL - check before generic 400
-  if (
-    errorLower.includes('invalid image url') ||
-    errorLower.includes('invalid url') ||
-    errorLower.includes('400')
-  ) {
-    return "Image couldn't be loaded. Please select another image.";
-  }
-
-  // Server errors - check before generic "failed"
-  if (errorLower.includes('500') || errorLower.includes('server error')) {
-    return 'Server error. Please try again later.';
-  }
-
-  // Google image fetch failures - check before generic "failed"
-  if (errorLower.includes('fetch image from google')) {
-    return "Image couldn't be loaded from source. Please select another image.";
-  }
-
-  // Generic network/failed errors - check last to avoid misclassification
-  if (errorLower.includes('network') || errorLower.includes('failed')) {
-    return 'Unable to connect. Please check your internet connection.';
-  }
-
-  // Fallback for unknown errors
-  return 'An error occurred. Please try again.';
+  const match = ERROR_PATTERNS.find(({ pattern }) => pattern.test(rawError));
+  return match?.message ?? 'An error occurred. Please try again.';
 }
 
 export function useImageQueue(): ImageQueueHook {
