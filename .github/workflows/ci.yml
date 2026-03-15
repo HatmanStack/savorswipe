@@ -64,7 +64,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest pytest-mock requests-mock moto ruff
+          pip install -e ".[dev]"
 
       - name: Run ruff lint
         working-directory: ./backend
