@@ -8,6 +8,10 @@ import json
 import re
 from typing import Any, Dict
 
+from logger import StructuredLogger
+
+log = StructuredLogger("ingredients")
+
 # Unicode fraction to text mapping
 FRACTION_MAP = {
     '¼': '1/4',
@@ -205,22 +209,21 @@ def main():
     input_file = '/home/christophergalliart/combined_data.json'
     output_file = '/home/christophergalliart/combined_data_fixed.json'
 
-    print(f"Loading {input_file}...")
+    log.info("Loading file", input_file=input_file)
     with open(input_file, 'r', encoding='utf-8') as f:
         data = json.load(f)
 
-    print(f"Processing {len(data)} recipes...")
+    log.info("Processing recipes", count=len(data))
 
     # Process the data
     data = normalize_ingredients(data)
 
-    print(f"\nWriting to {output_file}...")
+    log.info("Writing output", output_file=output_file)
     with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
-    print(f"✓ Done! Fixed data written to {output_file}")
-    print("\nTo replace the original file:")
-    print(f"  mv {output_file} {input_file}")
+    log.info("Done! Fixed data written", output_file=output_file)
+    log.info("To replace the original file", command=f"mv {output_file} {input_file}")
 
 
 if __name__ == '__main__':
