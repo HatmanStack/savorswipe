@@ -39,10 +39,7 @@ describe('Upload Flow Integration', () => {
     jest.clearAllMocks()
 
     // Reset UploadService state
-    UploadService['jobQueue'] = []
-    UploadService['currentJobId'] = null
-    UploadService['isProcessing'] = false
-    UploadService['subscribers'] = new Set()
+    UploadService._resetForTests()
     UploadService._setTestApiUrl('https://mock-api-url.com')
 
     // Mock useRecipe hook

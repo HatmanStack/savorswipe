@@ -34,6 +34,26 @@ export class UploadService {
   }
 
   /**
+   * Test-only method to reset all internal state
+   * @internal
+   */
+  static _resetForTests(): void {
+    this.jobQueue = []
+    this.currentJobId = null
+    this.isProcessing = false
+    this.subscribers = new Set()
+    this._testApiUrl = null
+  }
+
+  /**
+   * Test-only method to control processing lock
+   * @internal
+   */
+  static _setProcessingForTests(value: boolean): void {
+    this.isProcessing = value
+  }
+
+  /**
    * Queue a new upload job
    * Returns job ID immediately (non-blocking)
    *
