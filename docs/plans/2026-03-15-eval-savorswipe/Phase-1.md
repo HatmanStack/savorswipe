@@ -24,14 +24,14 @@ Remove dead code, unused dependencies, and manual test files that add noise, blo
 
 **Files to Modify:**
 - `package.json` — Remove both dependencies
-- `frontend/jest.mocks.js` — Remove or update any `aws-sdk` mock if present
+- `frontend/jest.setup.js` — Remove the `jest.mock('aws-sdk')` line (line 9)
 
 **Prerequisites:**
 - None
 
 **Implementation Steps:**
 1. Open `package.json` and remove `"aws-sdk"` and `"@modelcontextprotocol/sdk"` from the `dependencies` section.
-2. Check `frontend/jest.mocks.js` for any references to `aws-sdk`. If the mock references `aws-sdk`, remove that mock entry entirely (it mocks a package the app does not use).
+2. Open `frontend/jest.setup.js` and remove the `jest.mock('aws-sdk')` line (line 9). This mocks a package the app does not use, and will cause test failures if `aws-sdk` is uninstalled but the mock call remains.
 3. Run `npm install` to regenerate `package-lock.json`.
 4. Run `npm test -- --ci --forceExit` to verify no tests depend on these packages.
 5. Run `npm run lint` to verify no lint errors.

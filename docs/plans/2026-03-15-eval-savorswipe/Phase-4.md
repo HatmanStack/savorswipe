@@ -200,7 +200,8 @@ chore(backend): declare dev dependencies in pyproject.toml
 **Implementation Steps:**
 1. Search the codebase for `EXPO_PUBLIC_` references to find all required environment variables:
    - `EXPO_PUBLIC_API_GATEWAY_URL` — Used in `UploadService.ts` and likely other services
-   - `EXPO_PUBLIC_CLOUDFRONT_URL` — Used for image loading (check `ImageService.ts` or `RecipeService.ts`)
+   - `EXPO_PUBLIC_CLOUDFRONT_BASE_URL` — Used for image loading in `ImageService.ts`, `RecipeService.ts`, `UploadPersistence.ts`, `SearchResultItem.tsx`, and `jest.setup.js`
+   - `EXPO_PUBLIC_UPLOAD_URL` — Used in `RecipeService.ts` for recipe image uploads
    - Check for any other `process.env.EXPO_PUBLIC_` or `Constants.expoConfig` references
 2. Create `.env.example`:
    ```
@@ -212,7 +213,10 @@ chore(backend): declare dev dependencies in pyproject.toml
    EXPO_PUBLIC_API_GATEWAY_URL=https://your-api-id.execute-api.us-east-1.amazonaws.com
 
    # CloudFront distribution URL (for serving recipe images)
-   EXPO_PUBLIC_CLOUDFRONT_URL=https://your-distribution-id.cloudfront.net
+   EXPO_PUBLIC_CLOUDFRONT_BASE_URL=https://your-distribution-id.cloudfront.net
+
+   # Upload endpoint URL (for recipe image uploads)
+   EXPO_PUBLIC_UPLOAD_URL=https://your-upload-endpoint-url
    ```
 3. Adjust the variable list based on what you find in step 1. Include only variables that are actually used.
 4. Verify `.env.example` is NOT in `.gitignore` (it should be committed, unlike `.env`).
