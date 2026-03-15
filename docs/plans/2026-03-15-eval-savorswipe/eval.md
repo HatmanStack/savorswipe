@@ -309,3 +309,56 @@ Merged and deduplicated targets from all 3 evaluators, prioritized by lowest sco
 | Creativity | 8 | 9 | -1 |
 | Pragmatism | 8 | 9 | -1 |
 | Onboarding | 8 | 9 | -1 |
+
+## Re-Evaluation Cycle 1
+
+All 3 evaluators re-run after 4-phase remediation (29 tasks).
+
+### Updated Scorecard
+
+| # | Lens | Pillar | Before | After | Target | Status |
+|---|------|--------|--------|-------|--------|--------|
+| 1 | Hire | Problem-Solution Fit | 8/10 | 9/10 | 9 | PASS |
+| 2 | Hire | Architecture | 7/10 | 9/10 | 9 | PASS |
+| 3 | Hire | Code Quality | 7/10 | 9/10 | 9 | PASS |
+| 4 | Hire | Creativity | 8/10 | 9/10 | 9 | PASS |
+| 5 | Stress | Pragmatism | 8/10 | 9/10 | 9 | PASS |
+| 6 | Stress | Defensiveness | 7/10 | 9/10 | 9 | PASS |
+| 7 | Stress | Performance | 7/10 | 9/10 | 9 | PASS |
+| 8 | Stress | Type Rigor | 9/10 | 9/10 | 9 | PASS |
+| 9 | Day 2 | Test Value | 7/10 | 9/10 | 9 | PASS |
+| 10 | Day 2 | Reproducibility | 7/10 | 9/10 | 9 | PASS |
+| 11 | Day 2 | Git Hygiene | 5/10 | 8/10 | 7 | PASS |
+| 12 | Day 2 | Onboarding | 8/10 | 9/10 | 9 | PASS |
+
+**All 12 pillars at or above target.**
+
+### Hire Re-Evaluation — The Pragmatist
+
+All 4 pillars improved to 9/10. Key remediations verified:
+- Unused deps (`aws-sdk`, `@modelcontextprotocol/sdk`) removed
+- God-hook decomposed from 660 lines to 48-line composition layer
+- Recipe key generation fixed to use `max(keys)` instead of `len(data)`
+- All 176 `print()` calls migrated to `StructuredLogger`
+- Thread-safe OCR client with double-checked locking
+- IIFE pattern removed, `Record<string, any>` eliminated
+- Error mapping refactored to declarative pattern array
+
+### Stress Re-Evaluation — The Oncall Engineer
+
+All 4 pillars at 9/10. Key remediations verified:
+- Delete rollback implemented in `recipe_deletion.py`
+- Silent catches now log errors in `UploadService.ts`
+- `s3_path` properly initialized, OCR parse failure logged
+- URL validation parallelized with `ThreadPoolExecutor(max_workers=5)`
+- `/tmp` file write eliminated
+- Hook decomposed, unused deps removed
+
+### Day 2 Re-Evaluation — The Team Lead
+
+All 4 pillars at or above threshold. Key remediations verified:
+- `test_manual.py` deleted, `_resetForTests()` added, RecipeContext tests added
+- Husky pre-commit hooks and commitlint enforcing quality
+- Backend dev deps declared in `pyproject.toml`
+- `.env.example` and `CONTRIBUTING.md` added
+- Git Hygiene improved from 5 to 8 (above 7 threshold) via commitlint enforcement
