@@ -40,11 +40,11 @@ Fix backend logging debt (176 `print()` calls), thread-safety issues, silent err
 5. Run: `cd backend && uvx ruff check handlepdf.py`
 
 **Verification Checklist:**
-- [ ] Zero `print()` calls in `handlepdf.py`
-- [ ] `from logger import StructuredLogger` present
-- [ ] `log = StructuredLogger("pdf")` at module level
-- [ ] `ruff check handlepdf.py` passes
-- [ ] `PYTHONPATH=backend pytest tests/backend -v --tb=short` passes
+- [x] Zero `print()` calls in `handlepdf.py`
+- [x] `from logger import StructuredLogger` present
+- [x] `log = StructuredLogger("pdf")` at module level
+- [x] `ruff check handlepdf.py` passes
+- [x] `PYTHONPATH=backend pytest tests/backend -v --tb=short` passes
 
 **Testing Instructions:**
 - Run existing backend tests. No new tests needed for this file (logging is a cross-cutting concern tested via integration).
@@ -77,9 +77,9 @@ refactor(backend): migrate print() to StructuredLogger in handlepdf.py
 4. Run: `cd backend && uvx ruff check fix_ingredients.py`
 
 **Verification Checklist:**
-- [ ] Zero `print()` calls in `fix_ingredients.py`
-- [ ] `ruff check fix_ingredients.py` passes
-- [ ] Backend tests pass
+- [x] Zero `print()` calls in `fix_ingredients.py`
+- [x] `ruff check fix_ingredients.py` passes
+- [x] Backend tests pass
 
 **Testing Instructions:**
 - Run: `PYTHONPATH=backend pytest tests/backend -v --tb=short`
@@ -129,12 +129,12 @@ refactor(backend): migrate print() to StructuredLogger in fix_ingredients.py
 6. Run linting and tests.
 
 **Verification Checklist:**
-- [ ] Zero `print()` calls in `ocr.py`
-- [ ] `_lock = threading.Lock()` present at module level
-- [ ] `get_client()` uses double-checked locking
-- [ ] No bare `traceback.print_exc()` calls
-- [ ] `ruff check ocr.py` passes
-- [ ] Backend tests pass
+- [x] Zero `print()` calls in `ocr.py`
+- [x] `_lock = threading.Lock()` present at module level
+- [x] `get_client()` uses double-checked locking
+- [x] No bare `traceback.print_exc()` calls
+- [x] `ruff check ocr.py` passes
+- [x] Backend tests pass
 
 **Testing Instructions:**
 - Run existing tests: `PYTHONPATH=backend pytest tests/backend -v --tb=short`
@@ -170,11 +170,11 @@ fix(backend): add thread-safe client init and structured logging in ocr.py
 6. Run linting and tests.
 
 **Verification Checklist:**
-- [ ] Zero `print()` calls in `search_image.py`
-- [ ] No `import logging` or stdlib `logger` usage
-- [ ] `from logger import StructuredLogger` present
-- [ ] `ruff check search_image.py` passes
-- [ ] Backend tests pass
+- [x] Zero `print()` calls in `search_image.py`
+- [x] No `import logging` or stdlib `logger` usage
+- [x] `from logger import StructuredLogger` present
+- [x] `ruff check search_image.py` passes
+- [x] Backend tests pass
 
 **Testing Instructions:**
 - Run: `PYTHONPATH=backend pytest tests/backend/test_search_image.py -v --tb=short`
@@ -213,10 +213,10 @@ refactor(backend): migrate print() and stdlib logging to StructuredLogger in sea
 6. Run linting and tests.
 
 **Verification Checklist:**
-- [ ] Zero `print()` calls in `upload.py`
-- [ ] `from logger import StructuredLogger` present
-- [ ] `ruff check upload.py` passes
-- [ ] `PYTHONPATH=backend pytest tests/backend/test_upload.py -v --tb=short` passes
+- [x] Zero `print()` calls in `upload.py`
+- [x] `from logger import StructuredLogger` present
+- [x] `ruff check upload.py` passes
+- [x] `PYTHONPATH=backend pytest tests/backend/test_upload.py -v --tb=short` passes
 
 **Testing Instructions:**
 - Run: `PYTHONPATH=backend pytest tests/backend/test_upload.py -v --tb=short`
@@ -256,13 +256,13 @@ refactor(backend): migrate print() to StructuredLogger in upload.py
 6. Run linting and tests.
 
 **Verification Checklist:**
-- [ ] Zero `print()` calls in `lambda_function.py`
-- [ ] No `traceback.print_exc()` calls
-- [ ] `s3_path = None` initialized before try block
-- [ ] `if 's3_path' in dir()` replaced with `if s3_path:`
-- [ ] `json.JSONDecodeError` in OCR parsing now logs a warning
-- [ ] `ruff check lambda_function.py` passes
-- [ ] Backend tests pass
+- [x] Zero `print()` calls in `lambda_function.py`
+- [x] No `traceback.print_exc()` calls
+- [x] `s3_path = None` initialized before try block
+- [x] `if 's3_path' in dir()` replaced with `if s3_path:`
+- [x] `json.JSONDecodeError` in OCR parsing now logs a warning
+- [x] `ruff check lambda_function.py` passes
+- [x] Backend tests pass
 
 **Testing Instructions:**
 - Run: `PYTHONPATH=backend pytest tests/backend/test_lambda_function.py -v --tb=short`
@@ -303,14 +303,14 @@ fix(backend): complete StructuredLogger migration and fix silent failures in lam
 3. The rollback is best-effort: if the rollback itself fails, log a critical error with the recipe key and the original recipe data so it can be manually recovered.
 
 **Verification Checklist:**
-- [ ] Rollback code exists after embeddings write failure
-- [ ] Rollback re-reads combined_data with fresh ETag
-- [ ] Rollback restores the recipe and writes back
-- [ ] Failure of rollback logs error with recipe key and data
-- [ ] `StructuredLogger` used instead of stdlib `logging`
-- [ ] `ruff check recipe_deletion.py` passes
-- [ ] Existing tests pass
-- [ ] New test added for rollback scenario
+- [x] Rollback code exists after embeddings write failure
+- [x] Rollback re-reads combined_data with fresh ETag
+- [x] Rollback restores the recipe and writes back
+- [x] Failure of rollback logs error with recipe key and data
+- [x] `StructuredLogger` used instead of stdlib `logging`
+- [x] `ruff check recipe_deletion.py` passes
+- [x] Existing tests pass
+- [x] New test added for rollback scenario
 
 **Testing Instructions:**
 - Add test in `tests/backend/test_recipe_deletion.py`:
