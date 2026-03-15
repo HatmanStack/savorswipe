@@ -81,15 +81,22 @@ export function useRecipeInjection({
 
     let fetchedImages: ImageFile[] = [];
     let attemptCount = 0;
+    const chunkSize = ImageQueueService.CONFIG.BATCH_SIZE;
 
     // Retry loop for S3 eventual consistency
     while (attemptCount < INJECT_RETRY_MAX) {
       try {
-        const result = await ImageQueueService.fetchBatch(recipeKeys, recipeKeys.length);
+        // Fetch in chunks respecting batch size
+        const chunkResults: ImageFile[] = [];
+        for (let i = 0; i < recipeKeys.length; i += chunkSize) {
+          const chunk = recipeKeys.slice(i, i + chunkSize);
+          const result = await ImageQueueService.fetchBatch(chunk, chunk.length);
+          chunkResults.push(...result.images);
+        }
 
         // Success: all images fetched
-        if (result.images.length === recipeKeys.length) {
-          fetchedImages = result.images;
+        if (chunkResults.length === recipeKeys.length) {
+          fetchedImages = chunkResults;
           break;
         }
 
@@ -102,7 +109,7 @@ export function useRecipeInjection({
         }
 
         // Last retry: use what we got
-        fetchedImages = result.images;
+        fetchedImages = chunkResults;
         break;
       } catch (error) {
         console.warn('[ImageQueue] Inject fetch attempt failed:', error);
@@ -227,8 +234,9 @@ export function useRecipeInjection({
           setPendingRecipeForPicker(recipeWithKey);
         }
 
-        // Don't inject pending recipe into queue yet - pause until selection is complete
-        prevJsonDataKeysRef.current = currentKeys;
+        // Mark only this specific pending key as processed so other new keys
+        // remain available for later injection
+        prevJsonDataKeysRef.current = new Set([...previousKeys, key]);
         return;
       }
     }

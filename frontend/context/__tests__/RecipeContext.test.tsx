@@ -119,9 +119,9 @@ describe('RecipeContext', () => {
 
     const { result } = renderHook(() => useRecipe(), { wrapper });
 
-    // Local data should load first (synchronous)
+    // Local data should load first (synchronous stale-while-revalidate)
     await waitFor(() => {
-      expect(result.current.jsonData).not.toBeNull();
+      expect(result.current.jsonData).toEqual(mockLocalRecipes);
     }, { timeout: 3000 });
 
     // Eventually fresh data should replace it

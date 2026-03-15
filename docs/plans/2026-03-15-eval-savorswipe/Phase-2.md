@@ -51,7 +51,7 @@ Fix backend logging debt (176 `print()` calls), thread-safety issues, silent err
 - Run: `PYTHONPATH=backend pytest tests/backend -v --tb=short`
 
 **Commit Message Template:**
-```
+```text
 refactor(backend): migrate print() to StructuredLogger in handlepdf.py
 
 - Replace 5 print() calls with structured JSON logging
@@ -85,7 +85,7 @@ refactor(backend): migrate print() to StructuredLogger in handlepdf.py
 - Run: `PYTHONPATH=backend pytest tests/backend -v --tb=short`
 
 **Commit Message Template:**
-```
+```text
 refactor(backend): migrate print() to StructuredLogger in fix_ingredients.py
 
 - Replace 6 print() calls with structured JSON logging
@@ -141,7 +141,7 @@ refactor(backend): migrate print() to StructuredLogger in fix_ingredients.py
 - Consider adding a unit test for thread-safety: create two threads that call `get_client()` concurrently with a mocked `OpenAI` constructor, verify the constructor is called exactly once.
 
 **Commit Message Template:**
-```
+```text
 fix(backend): add thread-safe client init and structured logging in ocr.py
 
 - Replace 11 print() calls with StructuredLogger
@@ -181,7 +181,7 @@ fix(backend): add thread-safe client init and structured logging in ocr.py
 - Run: `PYTHONPATH=backend pytest tests/backend -v --tb=short`
 
 **Commit Message Template:**
-```
+```text
 refactor(backend): migrate print() and stdlib logging to StructuredLogger in search_image.py
 
 - Replace 29 print() calls with structured JSON logging
@@ -223,7 +223,7 @@ refactor(backend): migrate print() and stdlib logging to StructuredLogger in sea
 - Run: `PYTHONPATH=backend pytest tests/backend -v --tb=short`
 
 **Commit Message Template:**
-```
+```text
 refactor(backend): migrate print() to StructuredLogger in upload.py
 
 - Replace 53 print() calls with structured JSON logging
@@ -269,7 +269,7 @@ refactor(backend): migrate print() to StructuredLogger in upload.py
 - Run: `PYTHONPATH=backend pytest tests/backend -v --tb=short`
 
 **Commit Message Template:**
-```
+```text
 fix(backend): complete StructuredLogger migration and fix silent failures in lambda_function.py
 
 - Replace 72 remaining print() calls with structured logging
@@ -319,7 +319,7 @@ fix(backend): complete StructuredLogger migration and fix silent failures in lam
 - Run: `PYTHONPATH=backend pytest tests/backend/test_recipe_deletion.py -v --tb=short`
 
 **Commit Message Template:**
-```
+```text
 fix(backend): add rollback for non-atomic two-file delete in recipe_deletion.py
 
 - If embeddings write fails after combined_data succeeds, restore recipe
@@ -355,17 +355,17 @@ fix(backend): add rollback for non-atomic two-file delete in recipe_deletion.py
 3. Run frontend tests.
 
 **Verification Checklist:**
-- [ ] No empty `catch` blocks in `UploadService.ts`
-- [ ] Both catch blocks log with `console.error`
-- [ ] `npm test -- --ci --forceExit` passes
-- [ ] `npm run lint` passes
+- [x] No empty `catch` blocks in `UploadService.ts`
+- [x] Both catch blocks log with `console.error`
+- [x] `npm test -- --ci --forceExit` passes
+- [x] `npm run lint` passes
 
 **Testing Instructions:**
 - Run: `npm test -- --ci --forceExit --testPathPattern=UploadService`
 - Run: `npm run lint`
 
 **Commit Message Template:**
-```
+```text
 fix(frontend): add error logging to silent catches in UploadService
 
 - Log subscriber notification failures instead of swallowing
@@ -410,7 +410,7 @@ fix(frontend): add error logging to silent catches in UploadService
 - Run: `npm run lint`
 
 **Commit Message Template:**
-```
+```text
 refactor(frontend): remove unnecessary IIFE wrapping ImagePickerModal
 
 - Replace {(() => { return (<Component />); })()} with direct JSX
@@ -446,7 +446,7 @@ refactor(frontend): remove unnecessary IIFE wrapping ImagePickerModal
 - Run: `npm run lint`
 
 **Commit Message Template:**
-```
+```text
 fix(frontend): replace Record<string, any> with proper type in IngredientScalingService
 
 - Use Record<string, string | ScalableIngredients> for type-safe scaling
@@ -498,7 +498,7 @@ fix(frontend): replace Record<string, any> with proper type in IngredientScaling
 - Run: `npm test -- --ci --forceExit`
 
 **Commit Message Template:**
-```
+```text
 refactor(frontend): convert transformErrorMessage to declarative pattern array
 
 - Replace if/else chain with ERROR_PATTERNS array + .find()
@@ -545,7 +545,7 @@ refactor(frontend): convert transformErrorMessage to declarative pattern array
 - Run: `PYTHONPATH=backend pytest tests/backend/test_upload.py -v --tb=short`
 
 **Commit Message Template:**
-```
+```text
 fix(backend): use max-key strategy for recipe key generation
 
 - Replace len(data) + 1 with max(int(k) for k in data.keys()) + 1
@@ -607,7 +607,7 @@ fix(backend): use max-key strategy for recipe key generation
 - Run: `npm test -- --ci --forceExit`
 
 **Commit Message Template:**
-```
+```text
 test(frontend): add _resetForTests() to UploadService
 
 - Add static method to reset all internal state for testing

@@ -303,7 +303,9 @@ known scaling limits:
 - **Concurrency:** Optimistic locking (S3 ETags) handles race conditions,
   but high write concurrency (>10 concurrent uploads) increases retry rates.
 - **Read latency:** GET requests deserialize the full JSON on every call.
-  At 1000+ recipes, consider adding CloudFront caching for the JSON endpoint.
+  At 1000+ recipes, consider adding CloudFront caching for the JSON endpoint
+  with a short TTL (e.g., 60s) and cache invalidation on uploads/deletes to
+  avoid serving stale recipe data.
 
 ### Migration Path (if needed)
 

@@ -415,8 +415,8 @@ class TestDeleteRecipeAtomic:
             "2": [0.2] * 10,
         }
 
-        # Track what gets written to combined_data
-        written_data = {}
+        # Track all put_object calls to verify rollback
+        put_calls = []
 
         def mock_get_object(Bucket, Key):
             body = MagicMock()
@@ -427,13 +427,11 @@ class TestDeleteRecipeAtomic:
             return {'Body': body, 'ETag': '"etag123"'}
 
         def mock_put_object(**kwargs):
+            put_calls.append(kwargs)
             if 'embeddings' in kwargs['Key']:
                 # Embeddings write always fails
                 error_response = {'Error': {'Code': 'PreconditionFailed'}}
                 raise ClientError(error_response, 'PutObject')
-            else:
-                # combined_data write succeeds; track what was written
-                written_data['body'] = kwargs['Body']
 
         mock_client.get_object.side_effect = mock_get_object
         mock_client.put_object.side_effect = mock_put_object
@@ -443,6 +441,20 @@ class TestDeleteRecipeAtomic:
         # Should fail since embeddings write failed on all retries
         assert success is False
         assert error_msg is not None
+
+        # Verify rollback was attempted: there should be a combined_data write
+        # with recipe removed, then a rollback write restoring the recipe
+        combined_puts = [c for c in put_calls if 'combined_data' in c['Key']]
+        assert len(combined_puts) >= 2, f"Expected at least 2 combined_data puts (delete + rollback), got {len(combined_puts)}"
+
+        # First combined_data put should have recipe "1" removed
+        first_put_data = json.loads(combined_puts[0]['Body'])
+        assert "1" not in first_put_data
+        assert "2" in first_put_data
+
+        # Rollback put should restore recipe "1"
+        rollback_put_data = json.loads(combined_puts[1]['Body'])
+        assert "1" in rollback_put_data
 
     def test_rollback_failure_logging(self):
         """Test that rollback failure returns (False, error_message) and doesn't raise."""
@@ -455,7 +467,7 @@ class TestDeleteRecipeAtomic:
             "1": [0.1] * 10,
         }
 
-        call_count = [0]
+        put_calls = []
 
         def mock_get_object(Bucket, Key):
             body = MagicMock()
@@ -466,7 +478,8 @@ class TestDeleteRecipeAtomic:
             return {'Body': body, 'ETag': '"etag123"'}
 
         def mock_put_object(**kwargs):
-            # All writes fail (both embeddings and rollback)
+            put_calls.append(kwargs)
+            # All writes fail (both initial combined_data, embeddings, and rollback)
             error_response = {'Error': {'Code': 'AccessDenied'}}
             raise ClientError(error_response, 'PutObject')
 
@@ -478,3 +491,6 @@ class TestDeleteRecipeAtomic:
 
         assert success is False
         assert error_msg is not None
+
+        # Verify that put_object was called (initial write attempted)
+        assert len(put_calls) >= 1, "Expected at least one put_object call"

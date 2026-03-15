@@ -1,2 +1,6 @@
-cd frontend && npx expo lint 2>/dev/null
-cd ../backend && uvx ruff check . 2>/dev/null || true
+cd frontend && npx expo lint
+if command -v uvx >/dev/null 2>&1; then
+  cd ../backend && uvx ruff check .
+elif command -v ruff >/dev/null 2>&1; then
+  cd ../backend && ruff check .
+fi

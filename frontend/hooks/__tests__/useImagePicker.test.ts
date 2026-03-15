@@ -148,6 +148,6 @@ describe('useImagePicker', () => {
       expect.stringContaining('Failed to save image')
     );
     // Modal should remain visible (pendingRecipe not cleared on error)
-    expect(mockSetPendingRecipeForPicker).not.toHaveBeenCalledWith(null);
+    expect(mockSetPendingRecipeForPicker).not.toHaveBeenCalled();
   });
 });

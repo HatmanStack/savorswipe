@@ -2,7 +2,7 @@
 
 ## Overview
 
-This plan remediates 11 of 12 evaluation pillars identified in the SavorSwipe repo evaluation (Type Rigor already at 9/10). The evaluation was conducted by three lenses: Hire (pragmatic code review), Stress (oncall engineer), and Day 2 (team lead).
+This plan remediates 11 of 12 evaluation pillars identified in the SavorSwipe repo evaluation (Type Rigor already at 9/10). The evaluation was conducted by three lenses: Hire (pragmatic code review), Stress (on-call engineer), and Day 2 (team lead).
 
 The remediation addresses code quality debt, not feature work. The primary issues are: 176 bare `print()` calls coexisting with an unused structured logger, a 660-line "god hook" violating single-responsibility, non-atomic two-file deletes with no rollback, silent error swallowing, dead code, unused 67MB dependencies, missing pre-commit hooks, and gaps in test coverage and developer documentation.
 

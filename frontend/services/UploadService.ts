@@ -30,6 +30,9 @@ export class UploadService {
    * @internal
    */
   static _setTestApiUrl(url: string | null): void {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('_setTestApiUrl is only available in test/development environments')
+    }
     this._testApiUrl = url
   }
 
@@ -38,6 +41,9 @@ export class UploadService {
    * @internal
    */
   static _resetForTests(): void {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('_resetForTests is only available in test/development environments')
+    }
     this.jobQueue = []
     this.currentJobId = null
     this.isProcessing = false
@@ -50,6 +56,9 @@ export class UploadService {
    * @internal
    */
   static _setProcessingForTests(value: boolean): void {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('_setProcessingForTests is only available in test/development environments')
+    }
     this.isProcessing = value
   }
 

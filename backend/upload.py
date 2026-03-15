@@ -233,10 +233,10 @@ def upload_user_data(prefix, content, file_type, data, app_time=None):
     try:
         log.info("Uploading to S3", bucket=bucket_name, key=image_key)
         s3_client.put_object(
-            Bucket=bucket_name,  # Replace with your bucket name
+            Bucket=bucket_name,
             Key=image_key,
             Body=data,
-            ContentType=content  # Adjust based on the actual image type
+            ContentType=content
         )
         log.info("User data uploaded successfully")
 
@@ -327,7 +327,6 @@ def batch_to_s3_atomic(
         log.info("Processing recipes", count=len(recipes), start_key=next_key)
 
         for file_idx, recipe in enumerate(recipes):
-            log.info("Processing recipe", file_idx=file_idx, recipe_type=str(type(recipe)))
             title = recipe.get('Title', '')
             log.info("Processing recipe", file_idx=file_idx, title=title)
             normalized_title = normalize_title(title)

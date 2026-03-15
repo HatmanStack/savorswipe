@@ -85,7 +85,7 @@ Decompose the 660-line "god hook" (`useImageQueue.ts`) into focused composable h
 - Run: `npm test -- --ci --forceExit --testPathPattern=useQueueState`
 
 **Commit Message Template:**
-```
+```text
 refactor(frontend): extract useQueueState hook from useImageQueue
 
 - Move queue array management, init, refill, and advance logic
@@ -151,7 +151,7 @@ refactor(frontend): extract useQueueState hook from useImageQueue
 - Run: `npm test -- --ci --forceExit --testPathPattern=useRecipeInjection`
 
 **Commit Message Template:**
-```
+```text
 refactor(frontend): extract useRecipeInjection hook from useImageQueue
 
 - Move recipe detection, injection with retry, and queue insertion
@@ -215,7 +215,7 @@ refactor(frontend): extract useRecipeInjection hook from useImageQueue
 - Run: `npm test -- --ci --forceExit --testPathPattern=useImagePicker`
 
 **Commit Message Template:**
-```
+```text
 refactor(frontend): extract useImagePicker hook from useImageQueue
 
 - Move image selection confirm/delete handlers and modal state
@@ -301,7 +301,7 @@ refactor(frontend): extract useImagePicker hook from useImageQueue
 - The existing tests should pass unchanged since the public API is preserved.
 
 **Commit Message Template:**
-```
+```text
 refactor(frontend): compose useImageQueue from focused sub-hooks
 
 - useImageQueue is now a thin composition layer (~50 lines)
@@ -382,7 +382,7 @@ refactor(frontend): compose useImageQueue from focused sub-hooks
 - Run: `PYTHONPATH=backend pytest tests/backend/test_search_image.py -v --tb=short`
 
 **Commit Message Template:**
-```
+```text
 perf(backend): parallelize URL validation with ThreadPoolExecutor
 
 - Replace sequential HEAD requests with parallel validation (5 workers)
@@ -438,7 +438,7 @@ perf(backend): parallelize URL validation with ThreadPoolExecutor
 - Run: `npm test -- --ci --forceExit --testPathPattern=RecipeContext`
 
 **Commit Message Template:**
-```
+```text
 test(frontend): add test coverage for RecipeContext
 
 - Test initial state, state updates, and stale-while-revalidate

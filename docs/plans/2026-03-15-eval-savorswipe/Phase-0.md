@@ -86,7 +86,7 @@ No new dependencies are introduced in this remediation. All work uses existing t
 
 Use conventional commits:
 
-```
+```text
 type(scope): brief description
 
 - Detail 1

@@ -37,10 +37,14 @@ Add pre-commit hooks, commit message enforcement, developer documentation, backe
 3. Run `npx husky init` to create the `.husky` directory.
 4. Create `.husky/pre-commit` with the following content:
    ```bash
-   cd frontend && npx expo lint 2>/dev/null
-   cd backend && uvx ruff check . 2>/dev/null || true
+   cd frontend && npx expo lint
+   if command -v uvx >/dev/null 2>&1; then
+     cd ../backend && uvx ruff check .
+   elif command -v ruff >/dev/null 2>&1; then
+     cd ../backend && ruff check .
+   fi
    ```
-   Note: The backend ruff check uses `|| true` because `uvx` may not be available in all developer environments. The CI pipeline is the authoritative check.
+   Note: The backend ruff check uses a conditional to fall back to `ruff` if `uvx` is not available. The hook fails on lint violations so issues are caught before commit.
 5. Make the hook executable: `chmod +x .husky/pre-commit`
 6. Test by making a small whitespace change, staging it, and committing.
 
@@ -56,7 +60,7 @@ Add pre-commit hooks, commit message enforcement, developer documentation, backe
 - Abort the test commit if needed with Ctrl+C or `git reset HEAD~1`.
 
 **Commit Message Template:**
-```
+```text
 chore(ci): add husky pre-commit hooks for lint enforcement
 
 - Install husky and configure pre-commit hook
@@ -114,7 +118,7 @@ chore(ci): add husky pre-commit hooks for lint enforcement
 - Clean up the test commit: `git reset HEAD~1` and delete test file.
 
 **Commit Message Template:**
-```
+```text
 chore(ci): add commitlint for conventional commit enforcement
 
 - Install @commitlint/cli and @commitlint/config-conventional
@@ -177,7 +181,7 @@ chore(ci): add commitlint for conventional commit enforcement
 - Run: `PYTHONPATH=backend pytest tests/backend -v --tb=short`
 
 **Commit Message Template:**
-```
+```text
 chore(backend): declare dev dependencies in pyproject.toml
 
 - Add [project.optional-dependencies] dev section
@@ -234,7 +238,7 @@ chore(backend): declare dev dependencies in pyproject.toml
   - `git status` shows `.env.example` as new file (not ignored)
 
 **Commit Message Template:**
-```
+```text
 docs: add .env.example with frontend environment variables
 
 - Document all EXPO_PUBLIC_* variables with placeholder values
@@ -284,7 +288,7 @@ docs: add .env.example with frontend environment variables
 - No automated tests. Review the file for accuracy and completeness.
 
 **Commit Message Template:**
-```
+```text
 docs: add CONTRIBUTING.md with development guidelines
 
 - Document branch naming, commit format, PR process
@@ -347,7 +351,7 @@ docs: add CONTRIBUTING.md with development guidelines
 - No automated tests. Review for accuracy.
 
 **Commit Message Template:**
-```
+```text
 docs: document scaling ceiling of single-JSON-file architecture
 
 - Add Scaling Considerations section to DEPLOYMENT.md

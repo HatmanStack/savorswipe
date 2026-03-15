@@ -125,6 +125,7 @@ Here is the partial extraction we have so far:
         ],
         temperature=0.1,  # Slightly higher to allow for completion creativity while staying accurate
         max_completion_tokens=4096,
+        timeout=120.0,
     )
 
     completed_json = response.choices[0].message.content
@@ -399,7 +400,7 @@ Example 3 - Multiple partial recipes (e.g., index page with snippets):
 
 
 def parseJSON(recipes):
-    log.info("Received recipe objects", count=len(recipes), preview=str(recipes)[:300])
+    log.info("Received recipe objects", count=len(recipes))
 
     parse_prompt = """
     # Role and Objective
@@ -537,7 +538,7 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
 
     # Parse the LLM response and normalize the recipe
     recipe_json = response.choices[0].message.content
-    log.info("GPT response received", characters=len(recipe_json), preview=recipe_json[:400])
+    log.info("GPT response received", characters=len(recipe_json))
 
     try:
         recipe_data = json.loads(recipe_json)

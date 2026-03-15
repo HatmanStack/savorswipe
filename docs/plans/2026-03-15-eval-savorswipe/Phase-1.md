@@ -47,7 +47,7 @@ Remove dead code, unused dependencies, and manual test files that add noise, blo
 - Run: `npm test -- --ci --forceExit`
 
 **Commit Message Template:**
-```
+```text
 chore: remove unused aws-sdk and @modelcontextprotocol/sdk dependencies
 
 - Remove aws-sdk (~67MB) with zero application imports
@@ -83,7 +83,7 @@ chore: remove unused aws-sdk and @modelcontextprotocol/sdk dependencies
 - Run: `PYTHONPATH=backend pytest tests/backend -v --tb=short`
 
 **Commit Message Template:**
-```
+```text
 chore(backend): remove dead google_search_image_legacy function
 
 - Remove unused legacy function with no timeout or error handling
@@ -118,7 +118,7 @@ chore(backend): remove dead google_search_image_legacy function
 - Run: `PYTHONPATH=backend pytest tests/backend -v --tb=short`
 
 **Commit Message Template:**
-```
+```text
 chore(backend): remove manual test file with hardcoded credentials
 
 - Delete tests/backend/test_manual.py
@@ -156,7 +156,7 @@ chore(backend): remove manual test file with hardcoded credentials
 - Run full backend suite: `PYTHONPATH=backend pytest tests/backend -v --tb=short`
 
 **Commit Message Template:**
-```
+```text
 refactor(backend): remove unnecessary /tmp file write in upload_image
 
 - Image bytes were written to disk then uploaded from memory anyway

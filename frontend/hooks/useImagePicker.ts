@@ -95,12 +95,8 @@ export function useImagePicker({
           imageUrl
         );
 
-        // Update local jsonData with the returned recipe
-        const updatedJsonData = {
-          ...jsonData,
-          [recipeKey]: updatedRecipe,
-        };
-        setJsonData(updatedJsonData);
+        // Update local jsonData with the returned recipe (functional updater to avoid stale closure)
+        setJsonData(prev => prev ? { ...prev, [recipeKey]: updatedRecipe } : prev);
 
         // Inject recipe into queue
         await injectRecipes([recipeKey]);
@@ -139,10 +135,12 @@ export function useImagePicker({
       // Call backend to delete recipe
       await RecipeService.deleteRecipe(recipeKey);
 
-      // Remove recipe from local jsonData
-      const updatedJsonData = { ...jsonData };
-      delete updatedJsonData[recipeKey];
-      setJsonData(updatedJsonData);
+      // Remove recipe from local jsonData (functional updater to avoid stale closure)
+      setJsonData(prev => {
+        if (!prev) return prev;
+        const { [recipeKey]: _, ...rest } = prev;
+        return rest;
+      });
 
       // Hide modal only after successful completion
       resetPendingRecipe();

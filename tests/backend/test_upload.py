@@ -376,6 +376,12 @@ class TestUploadModule(unittest.TestCase):
         self.assertIn('6', result_data)
         self.assertNotIn('4', result_data)
 
+        # Verify the recipe object stored at key '6' has expected fields
+        stored_recipe = result_data['6']
+        self.assertEqual(stored_recipe['Title'], 'New Recipe')
+        self.assertIn('flour', stored_recipe['Ingredients'])
+        self.assertEqual(stored_recipe['key'], 6)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -31,7 +31,7 @@
 **Issue 2 — Missing variable:** The plan does not include `EXPO_PUBLIC_UPLOAD_URL`, which is used in `frontend/services/RecipeService.ts:168` and throws if not configured. Add it to the `.env.example` template.
 
 **Fix:** Add the following line to the `.env.example` template:
-```
+```bash
 # Upload endpoint URL (for recipe image uploads)
 EXPO_PUBLIC_UPLOAD_URL=https://your-upload-endpoint-url
 ```

@@ -43,6 +43,7 @@ pillar_overrides:
 - **One-Line:** Solves a real problem with appropriate technology, shows genuine engineering maturity in concurrency and type safety, but carries backend logging debt.
 
 ### SCORECARD
+
 | Pillar | Score | Evidence |
 |--------|-------|----------|
 | Problem-Solution Fit | 8/10 | `package.json:46-77` — Expo + Lambda is proportional for a personal recipe app; `backend/template.yaml:1-33` — SAM template provisions exactly the right AWS resources (S3, CloudFront, API Gateway, Lambda) without over-engineering |
@@ -103,6 +104,7 @@ pillar_overrides:
 - **One-Line:** "Solid production instincts with good race condition handling, but the non-atomic two-file delete would eventually wake me up."
 
 ### SCORECARD
+
 | Pillar | Score | Evidence |
 |--------|-------|----------|
 | Pragmatism | 8/10 | `backend/lambda_function.py:1-38` — Thoughtful auth-omission rationale with clear upgrade path; `package.json:50-51` — `aws-sdk` v2 (~67MB) and `@modelcontextprotocol/sdk` bundled in frontend with zero application imports |
@@ -174,6 +176,7 @@ pillar_overrides:
 - **One-Line:** "Writes tests that document behavior and ships CI that enforces quality — but review cycles leave noise in the git history."
 
 ### SCORECARD
+
 | Pillar | Score | Evidence |
 |--------|-------|----------|
 | Test Value | 7/10 | `frontend/services/__tests__/IngredientScalingService.test.ts` — behavior-driven tests covering fractions, ranges, abbreviations, edge cases; `tests/backend/test_embeddings.py` — thorough S3 optimistic locking/retry coverage. However, `tests/backend/test_manual.py` is a manual test script with hardcoded credentials, not a proper automated test. |
@@ -280,6 +283,7 @@ Merged and deduplicated targets from all 3 evaluators, prioritized by lowest sco
   - Problem-Solution Fit (Hire: 8) ↔ Pragmatism (Stress: 8) — aligned on unused dependency concerns
 
 ### Effective Thresholds
+
 | Pillar | Target | Source |
 |--------|--------|--------|
 | Problem-Solution Fit | 9 | default |
@@ -296,6 +300,7 @@ Merged and deduplicated targets from all 3 evaluators, prioritized by lowest sco
 | Onboarding | 9 | default |
 
 ### Pillars Requiring Remediation
+
 | Pillar | Current | Target | Gap |
 |--------|---------|--------|-----|
 | Git Hygiene | 5 | 7 | -2 |

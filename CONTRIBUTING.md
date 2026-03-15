@@ -34,7 +34,7 @@ Format: `type(scope): description`
 **Valid types:** `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `perf`, `ci`, `style`
 
 **Examples:**
-```
+```text
 feat(frontend): add recipe search filters
 fix(backend): handle missing S3 key in upload
 chore: update dependencies

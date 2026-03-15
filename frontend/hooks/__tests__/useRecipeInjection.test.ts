@@ -59,11 +59,18 @@ describe('useRecipeInjection', () => {
 
     expect(ImageQueueService.fetchBatch).toHaveBeenCalledWith(['new1'], 1);
     expect(mockSetQueue).toHaveBeenCalled();
+
+    // Execute the functional updater to verify queue insertion logic
+    const updater = (mockSetQueue as unknown as jest.Mock).mock.calls[0][0];
+    const seedQueue: ImageFile[] = [
+      { filename: 'images/existing1.jpg', file: 'blob:existing1' },
+    ];
+    const newQueue = updater(seedQueue);
+    expect(newQueue.length).toBe(2);
+    expect(newQueue[1].filename).toBe('images/new1.jpg');
   });
 
   it('does not re-add duplicate recipes already in queue', async () => {
-    // The setQueue functional update handles deduplication internally.
-    // We test that fetchBatch is called but the queue updater is called.
     (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValueOnce({
       images: [
         { filename: 'images/recipe1.jpg', file: 'blob:dup1' },
@@ -77,8 +84,14 @@ describe('useRecipeInjection', () => {
       await result.current.injectRecipes(['recipe1']);
     });
 
-    // setQueue should be called (the functional updater inside handles dedup)
-    expect(mockSetQueue).toHaveBeenCalled();
+    // Execute the functional updater with a queue that already contains recipe1
+    const updater = (mockSetQueue as unknown as jest.Mock).mock.calls[0][0];
+    const seedQueue: ImageFile[] = [
+      { filename: 'images/recipe1.jpg', file: 'blob:existing' },
+    ];
+    const newQueue = updater(seedQueue);
+    // Duplicate should be filtered out, queue unchanged
+    expect(newQueue).toEqual(seedQueue);
   });
 
   it('auto-detects new keys in jsonData and triggers injection', async () => {

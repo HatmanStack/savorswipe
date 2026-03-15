@@ -55,6 +55,7 @@ export function useQueueState({
   const nextImageRef = useRef<ImageFile | null>(null);
   const lastInjectionTimeRef = useRef<number>(0);
   const seenRecipeKeysRef = useRef<Set<string>>(new Set());
+  const generationRef = useRef(0);
 
   // Keep queueRef and nextImageRef in sync with state
   useEffect(() => {
@@ -92,6 +93,7 @@ export function useQueueState({
     if (isInitializingRef.current) return;
 
     isInitializingRef.current = true;
+    const currentGeneration = ++generationRef.current;
     setIsLoading(true);
 
     try {
@@ -111,11 +113,11 @@ export function useQueueState({
         ImageQueueService.fetchBatch(recipeKeyPool.slice(batchSize * 2, batchSize * 3), batchSize),
       ]);
 
+      // Bail if generation changed (stale async result)
+      if (generationRef.current !== currentGeneration || !isMountedRef.current) return;
+
       // Combine all successfully fetched images
       const allImages = [...batch1.images, ...batch2.images, ...batch3.images];
-
-      // Only update state if component is still mounted
-      if (!isMountedRef.current) return;
 
       // Update queue
       setQueue(allImages);
@@ -138,7 +140,7 @@ export function useQueueState({
       console.error('[ImageQueue] Queue initialization failed:', error);
     } finally {
       isInitializingRef.current = false;
-      if (isMountedRef.current) {
+      if (isMountedRef.current && generationRef.current === currentGeneration) {
         setIsLoading(false);
       }
     }
@@ -164,9 +166,14 @@ export function useQueueState({
       // Create new shuffled pool
       const allKeys = ImageQueueService.createRecipeKeyPool(jsonData, mealTypeFilters);
 
-      // Separate seen and unseen recipes
-      const unseenKeys = allKeys.filter(key => !seenRecipeKeysRef.current.has(key));
-      const seenKeys = allKeys.filter(key => seenRecipeKeysRef.current.has(key));
+      // Exclude keys already in the queue to avoid duplicates
+      const queuedKeys = new Set(
+        queueRef.current.map(img => ImageService.getRecipeKeyFromFileName(img.filename))
+      );
+
+      // Separate seen and unseen recipes, excluding already-queued keys
+      const unseenKeys = allKeys.filter(key => !seenRecipeKeysRef.current.has(key) && !queuedKeys.has(key));
+      const seenKeys = allKeys.filter(key => seenRecipeKeysRef.current.has(key) && !queuedKeys.has(key));
 
       // Put unseen recipes first, then seen recipes at the end
       recipeKeyPoolRef.current = [...unseenKeys, ...seenKeys];
@@ -178,6 +185,7 @@ export function useQueueState({
     }
 
     isRefillingRef.current = true;
+    const currentGeneration = generationRef.current;
 
     try {
       const result = await ImageQueueService.fetchBatch(
@@ -185,8 +193,8 @@ export function useQueueState({
         ImageQueueService.CONFIG.BATCH_SIZE
       );
 
-      // Only update if component is still mounted
-      if (!isMountedRef.current) return;
+      // Bail if generation changed or unmounted (stale async result)
+      if (!isMountedRef.current || generationRef.current !== currentGeneration) return;
 
       // Append new images to queue
       if (result.images.length > 0) {
@@ -254,6 +262,9 @@ export function useQueueState({
 
   // Reset queue (called on filter change)
   const resetQueue = useCallback(async () => {
+    // Increment generation to invalidate any in-flight async operations
+    generationRef.current++;
+
     // Clean up existing queue using ref to avoid stale closure
     ImageQueueService.cleanupImages(queueRef.current);
 

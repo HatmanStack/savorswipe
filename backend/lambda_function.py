@@ -871,7 +871,8 @@ def handle_post_image_request(event, context, recipe_key=None):
             })
         }
 
-    log.info("Fetching and uploading image", url=image_url[:100])
+    from urllib.parse import urlparse
+    log.info("Fetching and uploading image", host=urlparse(image_url).netloc, url_length=len(image_url))
 
     s3_path = None
     try:

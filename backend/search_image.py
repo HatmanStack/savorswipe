@@ -89,7 +89,8 @@ def validate_image_urls(image_urls: List[str], timeout: int = 5) -> List[str]:
                 if 'image' in content_type.lower():
                     return url
             return None
-        except Exception:
+        except Exception as e:
+            log.debug("URL validation failed", url=url, error=str(e))
             return None
 
     valid_urls = []
