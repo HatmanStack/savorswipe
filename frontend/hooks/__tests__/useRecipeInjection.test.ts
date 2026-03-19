@@ -106,7 +106,7 @@ describe('useRecipeInjection', () => {
 
     const options = createDefaultOptions({ jsonData: initialData });
     const { rerender } = renderHook(
-      ({ opts }) => useRecipeInjection(opts),
+      ({ opts }: { opts: any }) => useRecipeInjection(opts),
       { initialProps: { opts: options } }
     );
 
@@ -132,7 +132,7 @@ describe('useRecipeInjection', () => {
 
     const options = createDefaultOptions({ jsonData: pendingData });
     const { rerender } = renderHook(
-      ({ opts }) => useRecipeInjection(opts),
+      ({ opts }: { opts: any }) => useRecipeInjection(opts),
       { initialProps: { opts: options } }
     );
 
