@@ -11,7 +11,7 @@
     "android": "cp .env frontend/.env 2>/dev/null || true; cd frontend && expo start --android",
     "ios": "cp .env frontend/.env 2>/dev/null || true; cd frontend && expo start --ios",
     "web": "cp .env frontend/.env 2>/dev/null || true; cd frontend && expo start --web",
-    "test": "jest",
+    "test": "jest --forceExit",
     "test:backend": "PYTHONPATH=backend pytest tests/backend -v --tb=short",
     "lint": "cd frontend && expo lint && npx tsc --noEmit",
     "lint:backend": "cd backend && uvx ruff check .",
@@ -35,6 +35,7 @@
       "/tests/backend/"
     ],
     "setupFiles": [
+      "<rootDir>/jest.globals.js",
       "<rootDir>/frontend/jest.mocks.js"
     ],
     "setupFilesAfterEnv": [
@@ -65,8 +66,8 @@
     "expo-system-ui": "~55.0.10",
     "expo-web-browser": "~55.0.10",
     "pdf-lib": "^1.17.1",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
     "react-native": "^0.84.1",
     "react-native-gesture-handler": "~2.30.0",
     "react-native-reanimated": "~4.2.2",
@@ -81,7 +82,7 @@
     "@babel/core": "^7.29.0",
     "@commitlint/cli": "^20.5.0",
     "@commitlint/config-conventional": "^20.5.0",
-    "@eslint/js": "^10.0.1",
+    "@eslint/js": "^9.7.0",
     "@testing-library/jest-native": "^5.4.0",
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^30.0.0",
@@ -93,7 +94,7 @@
     "husky": "^9.1.7",
     "jest": "^30.3.0",
     "jest-expo": "~55.0.10",
-    "react-test-renderer": "^19.1.0",
+    "react-test-renderer": "19.2.3",
     "typescript": "~5.9.2",
     "typescript-eslint": "^8.57.1"
   },
