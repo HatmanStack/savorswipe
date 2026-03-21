@@ -57,11 +57,11 @@ Fix three related bugs in the upload-to-frontend propagation pipeline: (1) seque
 5. Update the `useMemo` provider value to include all new fields.
 
 **Verification Checklist:**
-- [ ] `pendingRecipesForPicker` is an array state
-- [ ] `enqueuePendingRecipe` appends to array, prevents duplicate keys
-- [ ] `dequeuePendingRecipe` removes first element
-- [ ] `pendingRecipeForPicker` derived as first element or null
-- [ ] TypeScript compiles: `npx tsc --noEmit` (will have errors in consumers -- that's expected, fixed in later tasks)
+- [x] `pendingRecipesForPicker` is an array state
+- [x] `enqueuePendingRecipe` appends to array, prevents duplicate keys
+- [x] `dequeuePendingRecipe` removes first element
+- [x] `pendingRecipeForPicker` derived as first element or null
+- [x] TypeScript compiles: `npx tsc --noEmit` (will have errors in consumers -- that's expected, fixed in later tasks)
 
 **Testing Instructions:**
 
@@ -124,12 +124,12 @@ fix(context): convert pendingRecipeForPicker to queue
 5. Remove `pendingRecipe` from the effect's dependency array entirely. The effect no longer needs to re-run when pending state changes; it only runs when `jsonData` changes.
 
 **Verification Checklist:**
-- [ ] `prevJsonDataKeysRef` is always set to the full current key set, not a partial update
-- [ ] No early return based on `pendingRecipe` state
-- [ ] New keys are accumulated in `unprocessedKeysRef` and drained in a single pass
-- [ ] Pending recipes are enqueued (not set), allowing multiple to coexist
-- [ ] Ready recipes are injected as before
-- [ ] TypeScript compiles after this task + Task 1
+- [x] `prevJsonDataKeysRef` is always set to the full current key set, not a partial update
+- [x] No early return based on `pendingRecipe` state
+- [x] New keys are accumulated in `unprocessedKeysRef` and drained in a single pass
+- [x] Pending recipes are enqueued (not set), allowing multiple to coexist
+- [x] Ready recipes are injected as before
+- [x] TypeScript compiles after this task + Task 1
 
 **Testing Instructions:**
 
@@ -197,10 +197,10 @@ fix(hooks): prevent useRecipeInjection from dropping new recipe keys
 5. The `showImagePickerModal` derivation remains the same: `pendingRecipeForPicker !== null`.
 
 **Verification Checklist:**
-- [ ] `resetPendingRecipe` calls `dequeuePendingRecipe`
-- [ ] After confirming image for recipe A, if recipe B is queued, modal remains visible with recipe B
-- [ ] After deleting recipe A, if recipe B is queued, modal shows recipe B
-- [ ] If queue is empty after dequeue, modal closes
+- [x] `resetPendingRecipe` calls `dequeuePendingRecipe`
+- [x] After confirming image for recipe A, if recipe B is queued, modal remains visible with recipe B
+- [x] After deleting recipe A, if recipe B is queued, modal shows recipe B
+- [x] If queue is empty after dequeue, modal closes
 
 **Testing Instructions:**
 
@@ -252,9 +252,9 @@ fix(hooks): update useImagePicker to dequeue from pending recipe queue
    - Keep `pendingRecipeForPicker` for modal visibility derivation
 
 **Verification Checklist:**
-- [ ] TypeScript compiles with no errors: `npx tsc --noEmit`
-- [ ] All three hooks are wired together correctly
-- [ ] No references to old `setPendingRecipeForPicker` remain
+- [x] TypeScript compiles with no errors: `npx tsc --noEmit`
+- [x] All three hooks are wired together correctly
+- [x] No references to old `setPendingRecipeForPicker` remain
 
 **Testing Instructions:**
 
@@ -372,13 +372,13 @@ fix(hooks): wire useImageQueue to new pending recipe queue API
 - *Calling `injectRecipes` via a context ref*: Rejected as overly complex; the pending keys pattern is simpler and testable.
 
 **Verification Checklist:**
-- [ ] `RecipeContextType` includes `pendingInjectionKeys`, `addPendingInjectionKey`, `consumePendingInjectionKeys`
-- [ ] `UseImagePickerOptions.injectRecipes` is replaced with `onRecipeConfirmed: (key: string) => void`
-- [ ] `GlobalImagePicker` renders `ImagePickerModal` and calls `useImagePicker` with context values
-- [ ] `ImagePickerModal` renders in layout, not in HomeScreen
-- [ ] Image picker modal appears when upload completes on any route (home, search, recipe detail)
-- [ ] After confirming an image, the recipe key is added to `pendingInjectionKeys` and injected into the swipe queue when `useRecipeInjection` next runs
-- [ ] No duplicate ImagePickerModal renderings
+- [x] `RecipeContextType` includes `pendingInjectionKeys`, `addPendingInjectionKey`, `consumePendingInjectionKeys`
+- [x] `UseImagePickerOptions.injectRecipes` is replaced with `onRecipeConfirmed: (key: string) => void`
+- [x] `GlobalImagePicker` renders `ImagePickerModal` and calls `useImagePicker` with context values
+- [x] `ImagePickerModal` renders in layout, not in HomeScreen
+- [x] Image picker modal appears when upload completes on any route (home, search, recipe detail)
+- [x] After confirming an image, the recipe key is added to `pendingInjectionKeys` and injected into the swipe queue when `useRecipeInjection` next runs
+- [x] No duplicate ImagePickerModal renderings
 
 **Testing Instructions:**
 
@@ -441,11 +441,11 @@ refactor(layout): move ImagePickerModal to layout level via GlobalImagePicker
    - After removing UploadModal rendering, UploadFiles has no live consumers
 
 **Verification Checklist:**
-- [ ] Clicking "Upload Recipe" from any route on web opens the document picker
-- [ ] The document picker opens without delay (synchronous from gesture)
-- [ ] Upload progress is still shown via Toast (handled by UploadListener)
-- [ ] Upload completion still triggers `refetchRecipes` (handled by UploadListener)
-- [ ] TypeScript compiles
+- [x] Clicking "Upload Recipe" from any route on web opens the document picker
+- [x] The document picker opens without delay (synchronous from gesture)
+- [x] Upload progress is still shown via Toast (handled by UploadListener)
+- [x] Upload completion still triggers `refetchRecipes` (handled by UploadListener)
+- [x] TypeScript compiles
 
 **Testing Instructions:**
 
@@ -491,9 +491,9 @@ fix(upload): call document picker synchronously from gesture handler
 3. Check if `UploadFiles` default export from `UploadRecipe.tsx` has any remaining consumers. If not, remove the component (keep the `selectAndUploadImage` function export).
 
 **Verification Checklist:**
-- [ ] No import errors after deletion: `npx tsc --noEmit`
-- [ ] All tests pass: `npm test -- --ci --forceExit`
-- [ ] `npm run check` passes
+- [x] No import errors after deletion: `npx tsc --noEmit`
+- [x] All tests pass: `npm test -- --ci --forceExit`
+- [x] `npm run check` passes
 
 **Testing Instructions:**
 ```bash
@@ -541,9 +541,9 @@ chore(cleanup): remove dead code (old Menu.tsx, UploadModal)
 3. Mock the same dependencies as the existing test file (ImageQueueService, ImageService).
 
 **Verification Checklist:**
-- [ ] Sequential upload test passes
-- [ ] Concurrent upload test passes
-- [ ] Tests demonstrate the specific bug that was fixed (would have failed before the fix)
+- [x] Sequential upload test passes
+- [x] Concurrent upload test passes
+- [x] Tests demonstrate the specific bug that was fixed (would have failed before the fix)
 
 **Testing Instructions:**
 ```bash
