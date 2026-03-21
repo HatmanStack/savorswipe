@@ -30,10 +30,11 @@ export function UploadListener() {
 
       // Show error details if any files failed
       if (job.errors && job.errors.length > 0) {
-        setErrorDetails(job.errors);
-        // Show toast that's tappable to open error details
+        const capturedErrors = job.errors;
+        // Accumulate errors until modal is dismissed
+        setErrorDetails(prev => [...prev, ...capturedErrors]);
         ToastQueue.show(
-          `${job.errors.length} file(s) failed. Tap for details.`,
+          `${capturedErrors.length} file(s) failed. Tap for details.`,
           {
             onTap: () => setErrorModalVisible(true),
             tappable: true,
@@ -60,7 +61,7 @@ export function UploadListener() {
     <ErrorDetailModal
       visible={errorModalVisible}
       errors={errorDetails}
-      onClose={() => setErrorModalVisible(false)}
+      onClose={() => { setErrorModalVisible(false); setErrorDetails([]); }}
     />
   );
 }

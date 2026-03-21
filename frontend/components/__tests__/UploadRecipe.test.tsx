@@ -100,17 +100,14 @@ describe('UploadRecipe', () => {
   })
 
   // Test 4: Handle cancelled selection
-  it('test_handles_cancelled_selection: should close modal when user cancels', async () => {
-    ;(ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock).mockResolvedValue({
-      status: 'granted',
-    })
+  it('test_handles_cancelled_selection: should not upload when user cancels', async () => {
     ;(DocumentPicker.getDocumentAsync as jest.Mock).mockResolvedValue({
       canceled: true,
     })
 
     await selectAndUploadImage()
 
-
+    expect(ImagePicker.requestMediaLibraryPermissionsAsync).not.toHaveBeenCalled()
     expect(UploadService.queueUpload).not.toHaveBeenCalled()
   })
 

@@ -101,7 +101,7 @@ fix(context): convert pendingRecipeForPicker to queue
 
 3. Rewrite the auto-detection effect (the `useEffect` at line 204):
 
-   ```
+   ```text
    Effect logic (pseudocode):
 
    a. If !jsonData, return
@@ -412,7 +412,7 @@ refactor(layout): move ImagePickerModal to layout level via GlobalImagePicker
 **Implementation Steps:**
 
 1. In `MenuContainer.tsx`, update `handleUploadPress`:
-   ```
+   ```text
    Current: setMenuVisible(false) -> setUploadCount++ -> setUploadVisible(true)
             (which renders UploadModal -> which renders UploadFiles -> useEffect -> picker)
 
