@@ -1,4 +1,3 @@
-import { useCallback } from 'react';
 import { useRecipe } from '@/context/RecipeContext';
 import { ImageQueueHook } from '@/types/queue';
 import { useQueueState } from './useQueueState';
@@ -12,6 +11,8 @@ export function useImageQueue(): ImageQueueHook {
     pendingRecipeForPicker,
     enqueuePendingRecipe,
     dequeuePendingRecipe,
+    addPendingInjectionKey,
+    consumePendingInjectionKeys,
   } = useRecipe();
 
   const queueState = useQueueState({ jsonData, mealTypeFilters, setCurrentRecipe });
@@ -26,18 +27,14 @@ export function useImageQueue(): ImageQueueHook {
     lastInjectionTimeRef: queueState.lastInjectionTimeRef,
     nextImageRef: queueState.nextImageRef,
     enqueuePendingRecipe,
+    consumePendingInjectionKeys,
   });
-
-  // Wrap injectRecipes as a single-key callback for useImagePicker
-  const onRecipeConfirmed = useCallback((recipeKey: string) => {
-    injectRecipes([recipeKey]);
-  }, [injectRecipes]);
 
   const imagePicker = useImagePicker({
     jsonData, setJsonData,
     pendingRecipeForPicker,
     dequeuePendingRecipe,
-    onRecipeConfirmed,
+    onRecipeConfirmed: addPendingInjectionKey,
   });
 
   return {

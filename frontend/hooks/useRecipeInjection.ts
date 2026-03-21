@@ -47,6 +47,7 @@ export interface UseRecipeInjectionOptions {
   lastInjectionTimeRef: React.MutableRefObject<number>;
   nextImageRef: React.MutableRefObject<ImageFile | null>;
   enqueuePendingRecipe: (recipe: Recipe) => void;
+  consumePendingInjectionKeys?: () => string[];
 }
 
 export interface RecipeInjectionReturn {
@@ -67,6 +68,7 @@ export function useRecipeInjection({
   lastInjectionTimeRef,
   nextImageRef,
   enqueuePendingRecipe,
+  consumePendingInjectionKeys,
 }: UseRecipeInjectionOptions): RecipeInjectionReturn {
   const prevJsonDataKeysRef = useRef<Set<string>>(new Set());
   const unprocessedKeysRef = useRef<string[]>([]);
@@ -258,7 +260,22 @@ export function useRecipeInjection({
 
     // Clear unprocessed keys (all have been dispatched)
     unprocessedKeysRef.current = [];
-  }, [jsonData, injectRecipes, enqueuePendingRecipe]);
+
+    // Also consume any pending injection keys (from image picker confirmations on other routes)
+    if (consumePendingInjectionKeys) {
+      const confirmedKeys = consumePendingInjectionKeys();
+      if (confirmedKeys.length > 0) {
+        // Only inject keys that exist in jsonData and have image URLs
+        const injectableKeys = confirmedKeys.filter(key => {
+          const recipe = jsonData[key];
+          return recipe && recipe.image_url;
+        });
+        if (injectableKeys.length > 0) {
+          injectRecipes(injectableKeys);
+        }
+      }
+    }
+  }, [jsonData, injectRecipes, enqueuePendingRecipe, consumePendingInjectionKeys]);
 
   return { injectRecipes };
 }

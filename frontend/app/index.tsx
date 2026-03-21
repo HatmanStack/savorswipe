@@ -9,7 +9,6 @@ import { useImageQueue } from '@/hooks/useImageQueue';
 import { useResponsiveLayout } from '@/hooks';
 import { isNewRecipe } from '@/services/RecipeService';
 import NewRecipeBanner from '@/components/NewRecipeBanner';
-import { ImagePickerModal } from '@/components/ImagePickerModal';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const holderImg = require('@/assets/images/skillet.png');
 
@@ -29,11 +28,7 @@ export default function HomeScreen() {
     currentImage,
     advanceQueue,
     isLoading,
-    pendingRecipe,
     showImagePickerModal,
-    onConfirmImage,
-    onDeleteRecipe,
-    resetPendingRecipe,
   } = useImageQueue();
 
 
@@ -138,14 +133,6 @@ export default function HomeScreen() {
           source={holderImg}
           style={{ width: 200, height: 200 }}
         />
-        {/* Render modal even during loading */}
-        <ImagePickerModal
-          isVisible={showImagePickerModal}
-          recipe={pendingRecipe}
-          onConfirm={onConfirmImage}
-          onDelete={onDeleteRecipe}
-          onCancel={resetPendingRecipe}
-        />
       </View>
     );
   }
@@ -184,15 +171,6 @@ export default function HomeScreen() {
         </Animated.View>
       </PanGestureHandler>
       <NewRecipeBanner visible={showBanner} />
-
-      {/* Image Picker Modal for recipes pending image selection */}
-      <ImagePickerModal
-        isVisible={showImagePickerModal}
-        recipe={pendingRecipe}
-        onConfirm={onConfirmImage}
-        onDelete={onDeleteRecipe}
-        onCancel={resetPendingRecipe}
-      />
     </View>
   );
 }
