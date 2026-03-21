@@ -27,7 +27,11 @@ describe('Integration: Edge Cases & Data Integrity', () => {
       setCurrentRecipe: mockSetCurrentRecipe,
       mealTypeFilters: ['main dish', 'dessert'],
       pendingRecipeForPicker: null,
-      setPendingRecipeForPicker: jest.fn(),
+      pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
     });
 
     // Setup ImageQueueService mocks
@@ -60,7 +64,11 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
         pendingRecipeForPicker: null,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       const { result, rerender } = renderHook(() => useImageQueue());
@@ -78,7 +86,11 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
         pendingRecipeForPicker: null,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       rerender({});
@@ -110,7 +122,11 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
         pendingRecipeForPicker: null,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
@@ -139,7 +155,11 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       rerender({});
@@ -171,7 +191,11 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
         pendingRecipeForPicker: null,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
@@ -199,7 +223,11 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       rerender({});
@@ -230,7 +258,11 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
         pendingRecipeForPicker: null,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
@@ -252,7 +284,11 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       rerender({});
@@ -371,7 +407,11 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
         pendingRecipeForPicker: null,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
@@ -398,7 +438,11 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       rerender({});
@@ -452,7 +496,11 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: [],
         pendingRecipeForPicker: null,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({

@@ -30,7 +30,11 @@ describe('Integration: Error Scenario Testing', () => {
       setCurrentRecipe: mockSetCurrentRecipe,
       mealTypeFilters: ['main dish', 'dessert'],
       pendingRecipeForPicker: null,
-      setPendingRecipeForPicker: jest.fn(),
+      pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
     });
 
     (ImageQueueService.createRecipeKeyPool as jest.Mock).mockReturnValue(['recipe1']);
@@ -74,7 +78,11 @@ describe('Integration: Error Scenario Testing', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (RecipeService.selectRecipeImage as jest.Mock).mockRejectedValue(
@@ -125,7 +133,11 @@ describe('Integration: Error Scenario Testing', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (RecipeService.deleteRecipe as jest.Mock).mockRejectedValue(
@@ -177,7 +189,11 @@ describe('Integration: Error Scenario Testing', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (RecipeService.selectRecipeImage as jest.Mock).mockRejectedValue(
@@ -227,7 +243,11 @@ describe('Integration: Error Scenario Testing', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (RecipeService.selectRecipeImage as jest.Mock).mockRejectedValue(
@@ -277,7 +297,11 @@ describe('Integration: Error Scenario Testing', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (RecipeService.selectRecipeImage as jest.Mock).mockRejectedValue(
@@ -327,7 +351,11 @@ describe('Integration: Error Scenario Testing', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (RecipeService.deleteRecipe as jest.Mock).mockRejectedValue(
@@ -379,7 +407,11 @@ describe('Integration: Error Scenario Testing', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (RecipeService.selectRecipeImage as jest.Mock).mockRejectedValue(
@@ -427,7 +459,11 @@ describe('Integration: Error Scenario Testing', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (RecipeService.selectRecipeImage as jest.Mock).mockRejectedValue(
@@ -448,7 +484,11 @@ describe('Integration: Error Scenario Testing', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe, // Still in state but gone from jsonData
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       await act(async () => {
@@ -486,7 +526,11 @@ describe('Integration: Error Scenario Testing', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (RecipeService.selectRecipeImage as jest.Mock).mockRejectedValue(
@@ -537,7 +581,11 @@ describe('Integration: Error Scenario Testing', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (RecipeService.deleteRecipe as jest.Mock).mockRejectedValue(
@@ -589,7 +637,11 @@ describe('Integration: Error Scenario Testing', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (RecipeService.selectRecipeImage as jest.Mock).mockRejectedValue(
