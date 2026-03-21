@@ -18,7 +18,7 @@ export const MenuContainer: React.FC = () => {
     setMenuVisible(false);
     // Call document picker synchronously from gesture handler to preserve
     // browser's user gesture trust chain on web
-    selectAndUploadImage(() => {});
+    selectAndUploadImage();
   };
 
   return (

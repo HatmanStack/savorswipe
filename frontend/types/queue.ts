@@ -1,4 +1,4 @@
-import { ImageFile, Recipe } from './index';
+import { ImageFile } from './index';
 
 // ============================================================================
 // Configuration
@@ -79,17 +79,9 @@ export interface ImageQueueHook {
   /** Inject new recipes into queue at high priority */
   injectRecipes: (recipeKeys: string[]) => Promise<void>;
 
-  // Image picker modal state
-  /** Recipe awaiting image selection */
-  pendingRecipe: Recipe | null;
-  /** Whether image picker modal should be visible */
+  // Image picker modal state (modal interactions handled by GlobalImagePicker)
+  /** Whether image picker modal should be visible (used for swipe guard) */
   showImagePickerModal: boolean;
-  /** Clear pending recipe state */
-  resetPendingRecipe: () => void;
-  /** Handle image selection confirmation */
-  onConfirmImage: (imageUrl: string) => Promise<void>;
-  /** Handle recipe deletion from picker */
-  onDeleteRecipe: () => Promise<void>;
 }
 
 // ============================================================================

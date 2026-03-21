@@ -49,9 +49,7 @@ export const pdfToBase64 = async (pdfUri: string): Promise<string> => {
  * DocumentPicker is called first to preserve the browser's user gesture trust
  * chain on web — awaiting permissions before the picker breaks the chain.
  */
-export const selectAndUploadImage = async (
-  setUploadVisible: (visible: boolean) => void
-): Promise<void> => {
+export const selectAndUploadImage = async (): Promise<void> => {
   // Constants
   const IMAGE_MAX_SIZE_MB = 10
   const IMAGE_MAX_SIZE_BYTES = IMAGE_MAX_SIZE_MB * 1024 * 1024
@@ -68,7 +66,6 @@ export const selectAndUploadImage = async (
 
   // Handle cancellation
   if (result.canceled || !result.assets || result.assets.length === 0) {
-    setUploadVisible(false)
     return
   }
 
@@ -79,7 +76,6 @@ export const selectAndUploadImage = async (
       'Permission Required',
       'Sorry, we need media library permissions to process files.'
     )
-    setUploadVisible(false)
     return
   }
 
@@ -145,7 +141,6 @@ export const selectAndUploadImage = async (
   // Check if any files to upload
   if (files.length === 0) {
     Alert.alert('No Files', 'No valid files to upload.')
-    setUploadVisible(false)
     return
   }
 
@@ -154,8 +149,5 @@ export const selectAndUploadImage = async (
 
   // Show processing toast
   ToastQueue.show('Processing...')
-
-  // Close modal immediately
-  setUploadVisible(false)
 }
 

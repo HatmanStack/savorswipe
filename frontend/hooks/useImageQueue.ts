@@ -2,15 +2,13 @@ import { useRecipe } from '@/context/RecipeContext';
 import { ImageQueueHook } from '@/types/queue';
 import { useQueueState } from './useQueueState';
 import { useRecipeInjection } from './useRecipeInjection';
-import { useImagePicker } from './useImagePicker';
 
 export function useImageQueue(): ImageQueueHook {
   const {
-    jsonData, setCurrentRecipe, setJsonData,
+    jsonData, setCurrentRecipe,
     mealTypeFilters,
     pendingRecipeForPicker,
     enqueuePendingRecipe,
-    dequeuePendingRecipe,
     addPendingInjectionKey,
     consumePendingInjectionKeys,
   } = useRecipe();
@@ -30,12 +28,8 @@ export function useImageQueue(): ImageQueueHook {
     consumePendingInjectionKeys,
   });
 
-  const imagePicker = useImagePicker({
-    jsonData, setJsonData,
-    pendingRecipeForPicker,
-    dequeuePendingRecipe,
-    onRecipeConfirmed: addPendingInjectionKey,
-  });
+  // Derive modal visibility from context (GlobalImagePicker handles all modal interactions)
+  const showImagePickerModal = pendingRecipeForPicker !== null;
 
   return {
     currentImage: queueState.currentImage,
@@ -45,10 +39,6 @@ export function useImageQueue(): ImageQueueHook {
     advanceQueue: queueState.advanceQueue,
     resetQueue: queueState.resetQueue,
     injectRecipes,
-    pendingRecipe: imagePicker.pendingRecipe,
-    showImagePickerModal: imagePicker.showImagePickerModal,
-    resetPendingRecipe: imagePicker.resetPendingRecipe,
-    onConfirmImage: imagePicker.onConfirmImage,
-    onDeleteRecipe: imagePicker.onDeleteRecipe,
+    showImagePickerModal,
   };
 }

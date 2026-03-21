@@ -27,8 +27,6 @@ import { UploadService } from '@/services/UploadService'
 import { UploadFile } from '@/types/upload'
 
 describe('UploadRecipe', () => {
-  const mockSetUploadVisible = jest.fn()
-
   beforeEach(() => {
     jest.clearAllMocks()
     jest.spyOn(Alert, 'alert').mockImplementation(() => {})
@@ -52,7 +50,7 @@ describe('UploadRecipe', () => {
       base64: 'base64data',
     })
 
-    await selectAndUploadImage(mockSetUploadVisible)
+    await selectAndUploadImage()
 
     // Document picker called first (preserves browser gesture trust chain)
     expect(DocumentPicker.getDocumentAsync).toHaveBeenCalled()
@@ -70,7 +68,7 @@ describe('UploadRecipe', () => {
       status: 'denied',
     })
 
-    await selectAndUploadImage(mockSetUploadVisible)
+    await selectAndUploadImage()
 
     // Document picker opens first (gesture chain preserved)
     expect(DocumentPicker.getDocumentAsync).toHaveBeenCalled()
@@ -78,7 +76,7 @@ describe('UploadRecipe', () => {
       expect.any(String),
       expect.stringContaining('permissions')
     )
-    expect(mockSetUploadVisible).toHaveBeenCalledWith(false)
+
   })
 
   // Test 3: Launch multi-select document picker
@@ -90,7 +88,7 @@ describe('UploadRecipe', () => {
       canceled: true,
     })
 
-    await selectAndUploadImage(mockSetUploadVisible)
+    await selectAndUploadImage()
 
     expect(DocumentPicker.getDocumentAsync).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -110,9 +108,9 @@ describe('UploadRecipe', () => {
       canceled: true,
     })
 
-    await selectAndUploadImage(mockSetUploadVisible)
+    await selectAndUploadImage()
 
-    expect(mockSetUploadVisible).toHaveBeenCalledWith(false)
+
     expect(UploadService.queueUpload).not.toHaveBeenCalled()
   })
 
@@ -148,7 +146,7 @@ describe('UploadRecipe', () => {
       base64: 'base64data',
     })
 
-    await selectAndUploadImage(mockSetUploadVisible)
+    await selectAndUploadImage()
 
     expect(UploadService.queueUpload).toHaveBeenCalledWith(
       expect.arrayContaining([
@@ -188,7 +186,7 @@ describe('UploadRecipe', () => {
       base64: 'base64data',
     })
 
-    await selectAndUploadImage(mockSetUploadVisible)
+    await selectAndUploadImage()
 
     expect(Alert.alert).toHaveBeenCalledWith(
       expect.any(String),
@@ -248,7 +246,7 @@ describe('UploadRecipe', () => {
       arrayBuffer: jest.fn().mockResolvedValue(mockArrayBuffer),
     })
 
-    await selectAndUploadImage(mockSetUploadVisible)
+    await selectAndUploadImage()
 
     const uploadCall = (UploadService.queueUpload as jest.Mock).mock.calls[0][0]
     expect(uploadCall).toHaveLength(1) // Single PDF file, not chunked
@@ -280,7 +278,7 @@ describe('UploadRecipe', () => {
       base64: 'base64data',
     })
 
-    await selectAndUploadImage(mockSetUploadVisible)
+    await selectAndUploadImage()
 
     expect(ImageManipulator.manipulateAsync).toHaveBeenCalledWith(
       'file://img.jpg',
@@ -309,7 +307,7 @@ describe('UploadRecipe', () => {
       base64: 'base64data',
     })
 
-    await selectAndUploadImage(mockSetUploadVisible)
+    await selectAndUploadImage()
 
     expect(UploadService.queueUpload).toHaveBeenCalledWith(
       expect.arrayContaining([
@@ -342,9 +340,9 @@ describe('UploadRecipe', () => {
       base64: 'base64data',
     })
 
-    await selectAndUploadImage(mockSetUploadVisible)
+    await selectAndUploadImage()
 
-    expect(mockSetUploadVisible).toHaveBeenCalledWith(false)
+
   })
 
   // Test 13: Mixed files (images + PDF)
@@ -387,7 +385,7 @@ describe('UploadRecipe', () => {
       arrayBuffer: jest.fn().mockResolvedValue(mockArrayBuffer),
     })
 
-    await selectAndUploadImage(mockSetUploadVisible)
+    await selectAndUploadImage()
 
     const uploadCall = (UploadService.queueUpload as jest.Mock).mock.calls[0][0]
     expect(uploadCall).toHaveLength(3) // 2 images + 1 PDF
@@ -429,7 +427,7 @@ describe('UploadRecipe', () => {
       base64: 'base64data',
     })
 
-    await selectAndUploadImage(mockSetUploadVisible)
+    await selectAndUploadImage()
 
     expect(Alert.alert).toHaveBeenCalledWith(
       expect.any(String),
@@ -462,13 +460,13 @@ describe('UploadRecipe', () => {
       ],
     })
 
-    await selectAndUploadImage(mockSetUploadVisible)
+    await selectAndUploadImage()
 
     expect(Alert.alert).toHaveBeenCalledWith(
       expect.any(String),
       expect.stringContaining('No valid files to upload')
     )
-    expect(mockSetUploadVisible).toHaveBeenCalledWith(false)
+
     expect(UploadService.queueUpload).not.toHaveBeenCalled()
   })
 

@@ -1,5 +1,6 @@
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { useImageQueue } from '@/hooks/useImageQueue';
+import { useImagePicker } from '@/hooks/useImagePicker';
 import { RecipeService } from '@/services/RecipeService';
 import { ImageQueueService } from '@/services/ImageQueueService';
 import { useRecipe } from '@/context/RecipeContext';
@@ -11,6 +12,20 @@ jest.mock('@/services/RecipeService');
 jest.mock('@/services/ImageQueueService');
 jest.mock('@/context/RecipeContext');
 jest.mock('@/components/Toast');
+
+// Combined hook that merges useImageQueue (queue state) and useImagePicker (picker interactions)
+function useCombinedHook() {
+  const queue = useImageQueue();
+  const recipeCtx = useRecipe();
+  const picker = useImagePicker({
+    jsonData: recipeCtx.jsonData,
+    setJsonData: recipeCtx.setJsonData,
+    pendingRecipeForPicker: recipeCtx.pendingRecipeForPicker,
+    dequeuePendingRecipe: recipeCtx.dequeuePendingRecipe,
+    onRecipeConfirmed: recipeCtx.addPendingInjectionKey,
+  });
+  return { ...queue, ...picker };
+}
 
 describe('Integration: Edge Cases & Data Integrity', () => {
   jest.setTimeout(15000); // Increase timeout for all tests in this file
@@ -71,7 +86,7 @@ describe('Integration: Edge Cases & Data Integrity', () => {
       consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
-      const { result, rerender } = renderHook(() => useImageQueue());
+      const { result, rerender } = renderHook(() => useCombinedHook());
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -140,7 +155,7 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         image_url: 'https://google.com/img1.jpg',
       });
 
-      const { result, rerender } = renderHook(() => useImageQueue());
+      const { result, rerender } = renderHook(() => useCombinedHook());
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -209,7 +224,7 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         image_url: 'https://google.com/img1.jpg',
       });
 
-      const { result, rerender } = renderHook(() => useImageQueue());
+      const { result, rerender } = renderHook(() => useCombinedHook());
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -270,7 +285,7 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         failedKeys: [],
       });
 
-      const { result, rerender } = renderHook(() => useImageQueue());
+      const { result, rerender } = renderHook(() => useCombinedHook());
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -342,7 +357,7 @@ describe('Integration: Edge Cases & Data Integrity', () => {
 
       (RecipeService.deleteRecipe as jest.Mock).mockResolvedValue(true);
 
-      const { result, rerender } = renderHook(() => useImageQueue());
+      const { result, rerender } = renderHook(() => useCombinedHook());
 
       // Wait for fetchBatch to be called to ensure initialization started
       await waitFor(() => {
@@ -425,7 +440,7 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         image_url: 'https://google.com/img1.jpg',
       });
 
-      const { result, rerender } = renderHook(() => useImageQueue());
+      const { result, rerender } = renderHook(() => useCombinedHook());
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -466,7 +481,7 @@ describe('Integration: Edge Cases & Data Integrity', () => {
 
   describe('Null/Undefined Safety', () => {
     it('should handle undefined recipe gracefully', async () => {
-      const { result } = renderHook(() => useImageQueue());
+      const { result } = renderHook(() => useCombinedHook());
 
       // pendingRecipe should start as null
       expect(result.current.pendingRecipe).toBeNull();
@@ -508,7 +523,7 @@ describe('Integration: Edge Cases & Data Integrity', () => {
         failedKeys: [],
       });
 
-      const { result } = renderHook(() => useImageQueue());
+      const { result } = renderHook(() => useCombinedHook());
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
