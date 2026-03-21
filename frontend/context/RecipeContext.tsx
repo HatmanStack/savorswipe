@@ -11,7 +11,9 @@ interface RecipeContextType {
   mealTypeFilters: MealType[];
   setMealTypeFilters: (filters: MealType[]) => void;
   pendingRecipeForPicker: Recipe | null;
-  setPendingRecipeForPicker: (recipe: Recipe | null) => void;
+  pendingRecipesForPicker: Recipe[];
+  enqueuePendingRecipe: (recipe: Recipe) => void;
+  dequeuePendingRecipe: () => void;
   refetchRecipes: () => Promise<void>;
 }
 
@@ -33,7 +35,19 @@ export const RecipeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     'side dish',
     'beverage'
   ]);
-  const [pendingRecipeForPicker, setPendingRecipeForPicker] = useState<Recipe | null>(null);
+  const [pendingRecipesForPicker, setPendingRecipesForPicker] = useState<Recipe[]>([]);
+  const pendingRecipeForPicker = pendingRecipesForPicker[0] ?? null;
+
+  const enqueuePendingRecipe = useCallback((recipe: Recipe) => {
+    setPendingRecipesForPicker(prev => {
+      if (prev.some(r => r.key === recipe.key)) return prev;
+      return [...prev, recipe];
+    });
+  }, []);
+
+  const dequeuePendingRecipe = useCallback(() => {
+    setPendingRecipesForPicker(prev => prev.slice(1));
+  }, []);
 
   // Fetch fresh data from Lambda (replaces local data entirely)
   const refetchRecipes = useCallback(async () => {
@@ -68,9 +82,11 @@ export const RecipeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     mealTypeFilters,
     setMealTypeFilters,
     pendingRecipeForPicker,
-    setPendingRecipeForPicker,
+    pendingRecipesForPicker,
+    enqueuePendingRecipe,
+    dequeuePendingRecipe,
     refetchRecipes
-  }), [currentRecipe, jsonData, mealTypeFilters, pendingRecipeForPicker, refetchRecipes]);
+  }), [currentRecipe, jsonData, mealTypeFilters, pendingRecipeForPicker, pendingRecipesForPicker, enqueuePendingRecipe, dequeuePendingRecipe, refetchRecipes]);
 
   return (
     <RecipeContext.Provider value={value}>
