@@ -202,6 +202,21 @@ export function useRecipeInjection({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- all state reads use refs or functional updates
   }, []);
 
+  // Helper: consume confirmed injection keys and inject them into the queue
+  const consumeAndInjectConfirmedKeys = useCallback((data: S3JsonData) => {
+    if (!consumePendingInjectionKeys) return;
+    const confirmedKeys = consumePendingInjectionKeys();
+    if (confirmedKeys.length > 0) {
+      const injectableKeys = confirmedKeys.filter(key => {
+        const recipe = data[key];
+        return recipe && recipe.image_url;
+      });
+      if (injectableKeys.length > 0) {
+        injectRecipes(injectableKeys);
+      }
+    }
+  }, [consumePendingInjectionKeys, injectRecipes]);
+
   // Effect: Auto-detect new recipes in jsonData and inject them
   useEffect(() => {
     if (!jsonData) return;
@@ -212,6 +227,8 @@ export function useRecipeInjection({
     // Skip injection on first mount (prevJsonDataKeysRef is empty Set)
     if (previousKeys.size === 0) {
       prevJsonDataKeysRef.current = currentKeys;
+      // Still consume confirmed keys on first mount (recipes confirmed before queue initialized)
+      consumeAndInjectConfirmedKeys(jsonData);
       return;
     }
 
@@ -230,6 +247,9 @@ export function useRecipeInjection({
         }
       }
     }
+
+    // Consume confirmed injection keys regardless of whether there are new keys
+    consumeAndInjectConfirmedKeys(jsonData);
 
     // Nothing to process
     if (unprocessedKeysRef.current.length === 0) return;
@@ -260,22 +280,7 @@ export function useRecipeInjection({
 
     // Clear unprocessed keys (all have been dispatched)
     unprocessedKeysRef.current = [];
-
-    // Also consume any pending injection keys (from image picker confirmations on other routes)
-    if (consumePendingInjectionKeys) {
-      const confirmedKeys = consumePendingInjectionKeys();
-      if (confirmedKeys.length > 0) {
-        // Only inject keys that exist in jsonData and have image URLs
-        const injectableKeys = confirmedKeys.filter(key => {
-          const recipe = jsonData[key];
-          return recipe && recipe.image_url;
-        });
-        if (injectableKeys.length > 0) {
-          injectRecipes(injectableKeys);
-        }
-      }
-    }
-  }, [jsonData, injectRecipes, enqueuePendingRecipe, consumePendingInjectionKeys]);
+  }, [jsonData, injectRecipes, enqueuePendingRecipe, consumeAndInjectConfirmedKeys]);
 
   return { injectRecipes };
 }

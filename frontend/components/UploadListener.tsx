@@ -4,16 +4,21 @@
  * Persistent listener for upload completions that updates RecipeContext
  * when new recipes are successfully added. This component is always mounted
  * in the root layout, ensuring it receives completion callbacks even if
- * the UploadModal is closed.
+ * the upload UI is closed. Also displays ErrorDetailModal for per-file
+ * upload/OCR failure details.
  */
 
-import { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRecipe } from '@/context/RecipeContext';
 import { UploadService } from '@/services/UploadService';
-import { UploadJob } from '@/types/upload';
+import { UploadJob, UploadError } from '@/types/upload';
+import { ErrorDetailModal } from '@/components/ErrorDetailModal';
+import { ToastQueue } from '@/components/Toast';
 
 export function UploadListener() {
   const { refetchRecipes } = useRecipe();
+  const [errorDetails, setErrorDetails] = useState<UploadError[]>([]);
+  const [errorModalVisible, setErrorModalVisible] = useState(false);
 
   useEffect(() => {
     const unsubscribe = UploadService.subscribe((job: UploadJob) => {
@@ -23,6 +28,18 @@ export function UploadListener() {
         return;
       }
 
+      // Show error details if any files failed
+      if (job.errors && job.errors.length > 0) {
+        setErrorDetails(job.errors);
+        // Show toast that's tappable to open error details
+        ToastQueue.show(
+          `${job.errors.length} file(s) failed. Tap for details.`,
+          {
+            onTap: () => setErrorModalVisible(true),
+            tappable: true,
+          }
+        );
+      }
 
       // Refetch recipes from S3 to get the latest data
       // This triggers useImageQueue's auto-detection for pending recipes
@@ -39,6 +56,11 @@ export function UploadListener() {
     };
   }, [refetchRecipes]);
 
-  // This component doesn't render anything
-  return null;
+  return (
+    <ErrorDetailModal
+      visible={errorModalVisible}
+      errors={errorDetails}
+      onClose={() => setErrorModalVisible(false)}
+    />
+  );
 }

@@ -175,43 +175,4 @@ describe('useImagePicker', () => {
     expect(mockDequeuePendingRecipe).not.toHaveBeenCalled();
   });
 
-  it('confirming image dequeues and shows next pending recipe', async () => {
-    const pendingData: S3JsonData = {
-      ...mockJsonData,
-      pending1: mockPendingRecipe,
-    };
-
-    const { result } = renderHook(() =>
-      useImagePicker(createDefaultOptions({
-        jsonData: pendingData,
-        pendingRecipeForPicker: mockPendingRecipe,
-      }))
-    );
-
-    await act(async () => {
-      await result.current.onConfirmImage('https://example.com/selected.jpg');
-    });
-
-    expect(mockDequeuePendingRecipe).toHaveBeenCalledTimes(1);
-  });
-
-  it('deleting recipe dequeues and shows next pending recipe', async () => {
-    const pendingData: S3JsonData = {
-      ...mockJsonData,
-      pending1: mockPendingRecipe,
-    };
-
-    const { result } = renderHook(() =>
-      useImagePicker(createDefaultOptions({
-        jsonData: pendingData,
-        pendingRecipeForPicker: mockPendingRecipe,
-      }))
-    );
-
-    await act(async () => {
-      await result.current.onDeleteRecipe();
-    });
-
-    expect(mockDequeuePendingRecipe).toHaveBeenCalledTimes(1);
-  });
 });

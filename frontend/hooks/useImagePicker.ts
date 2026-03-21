@@ -142,8 +142,8 @@ export function useImagePicker({
         return rest;
       });
 
-      // Hide modal only after successful completion
-      resetPendingRecipe();
+      // Dequeue to show next pending recipe (or close modal)
+      dequeuePendingRecipe();
 
       ToastQueue.show('Recipe deleted');
     } catch (error) {
@@ -156,7 +156,7 @@ export function useImagePicker({
     } finally {
       setIsSubmitting(false);
     }
-  }, [pendingRecipe, jsonData, isSubmitting, setJsonData, resetPendingRecipe]);
+  }, [pendingRecipe, jsonData, isSubmitting, setJsonData, dequeuePendingRecipe]);
 
   return {
     pendingRecipe,

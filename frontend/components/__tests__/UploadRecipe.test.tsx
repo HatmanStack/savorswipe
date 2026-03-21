@@ -39,34 +39,46 @@ describe('UploadRecipe', () => {
     jest.restoreAllMocks()
   })
 
-  // Test 1: Verify permissions are requested
-  it('test_requests_permissions: should request media library permissions', async () => {
+  // Test 1: Verify permissions are requested after document selection
+  it('test_requests_permissions: should request media library permissions after document picker', async () => {
+    ;(DocumentPicker.getDocumentAsync as jest.Mock).mockResolvedValue({
+      canceled: false,
+      assets: [{ uri: 'file://img.jpg', name: 'img.jpg', mimeType: 'image/jpeg', size: 1024 }],
+    })
     ;(ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock).mockResolvedValue({
       status: 'granted',
     })
-    ;(DocumentPicker.getDocumentAsync as jest.Mock).mockResolvedValue({
-      canceled: true,
+    ;(ImageManipulator.manipulateAsync as jest.Mock).mockResolvedValue({
+      base64: 'base64data',
     })
 
     await selectAndUploadImage(mockSetUploadVisible)
 
+    // Document picker called first (preserves browser gesture trust chain)
+    expect(DocumentPicker.getDocumentAsync).toHaveBeenCalled()
+    // Permissions requested after selection
     expect(ImagePicker.requestMediaLibraryPermissionsAsync).toHaveBeenCalled()
   })
 
-  // Test 2: Handle denied permissions
+  // Test 2: Handle denied permissions (after document selection)
   it('test_permissions_denied: should close modal and alert when permissions denied', async () => {
+    ;(DocumentPicker.getDocumentAsync as jest.Mock).mockResolvedValue({
+      canceled: false,
+      assets: [{ uri: 'file://img.jpg', name: 'img.jpg', mimeType: 'image/jpeg', size: 1024 }],
+    })
     ;(ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock).mockResolvedValue({
       status: 'denied',
     })
 
     await selectAndUploadImage(mockSetUploadVisible)
 
+    // Document picker opens first (gesture chain preserved)
+    expect(DocumentPicker.getDocumentAsync).toHaveBeenCalled()
     expect(Alert.alert).toHaveBeenCalledWith(
       expect.any(String),
       expect.stringContaining('permissions')
     )
     expect(mockSetUploadVisible).toHaveBeenCalledWith(false)
-    expect(DocumentPicker.getDocumentAsync).not.toHaveBeenCalled()
   })
 
   // Test 3: Launch multi-select document picker

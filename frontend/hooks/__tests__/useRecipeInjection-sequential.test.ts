@@ -27,21 +27,29 @@ describe('useRecipeInjection - sequential upload scenarios', () => {
   const mockSetIsLoading = jest.fn() as unknown as React.Dispatch<React.SetStateAction<boolean>>;
   const mockEnqueuePendingRecipe = jest.fn();
 
+  // Create refs ONCE so they persist across rerenders like production
+  const recipeKeyPoolRef = { current: [] as string[] };
+  const lastInjectionTimeRef = { current: 0 };
+  const nextImageRef = { current: null as ImageFile | null };
+
   const createDefaultOptions = (overrides: Record<string, unknown> = {}) => ({
     jsonData: null as S3JsonData | null,
     setQueue: mockSetQueue,
     setCurrentImage: mockSetCurrentImage,
     setNextImage: mockSetNextImage,
     setIsLoading: mockSetIsLoading,
-    recipeKeyPoolRef: { current: [] as string[] },
-    lastInjectionTimeRef: { current: 0 },
-    nextImageRef: { current: null as ImageFile | null },
+    recipeKeyPoolRef,
+    lastInjectionTimeRef,
+    nextImageRef,
     enqueuePendingRecipe: mockEnqueuePendingRecipe,
     ...overrides,
   });
 
   beforeEach(() => {
     jest.clearAllMocks();
+    recipeKeyPoolRef.current = [];
+    lastInjectionTimeRef.current = 0;
+    nextImageRef.current = null;
     (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
       images: [],
       failedKeys: [],

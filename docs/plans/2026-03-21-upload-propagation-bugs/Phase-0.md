@@ -85,7 +85,7 @@ npm run check
 ## Commit Message Format
 
 Use conventional commits:
-```
+```text
 fix(hooks): description of hook fix
 refactor(upload): description of upload refactor
 test(hooks): description of test changes

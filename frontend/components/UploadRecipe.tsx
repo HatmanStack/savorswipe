@@ -45,7 +45,9 @@ export const pdfToBase64 = async (pdfUri: string): Promise<string> => {
 
 /**
  * Select and upload multiple files (images and PDFs)
- * Handles file validation, PDF chunking, and background upload
+ * Handles file validation, PDF chunking, and background upload.
+ * DocumentPicker is called first to preserve the browser's user gesture trust
+ * chain on web — awaiting permissions before the picker breaks the chain.
  */
 export const selectAndUploadImage = async (
   setUploadVisible: (visible: boolean) => void
@@ -56,18 +58,8 @@ export const selectAndUploadImage = async (
   const PDF_MAX_SIZE_MB = 50
   const PDF_MAX_SIZE_BYTES = PDF_MAX_SIZE_MB * 1024 * 1024
 
-  // Request permissions
-  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
-  if (status !== 'granted') {
-    Alert.alert(
-      'Permission Required',
-      'Sorry, we need media library permissions to select files.'
-    )
-    setUploadVisible(false)
-    return
-  }
-
-  // Launch document picker for multiple files
+  // Launch document picker FIRST to preserve browser gesture trust chain.
+  // On web, awaiting permissions before this call breaks the gesture context.
   const result = await DocumentPicker.getDocumentAsync({
     type: ['image/*', 'application/pdf'],
     multiple: true,
@@ -76,6 +68,17 @@ export const selectAndUploadImage = async (
 
   // Handle cancellation
   if (result.canceled || !result.assets || result.assets.length === 0) {
+    setUploadVisible(false)
+    return
+  }
+
+  // Request permissions after document selection (non-blocking on web)
+  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+  if (status !== 'granted') {
+    Alert.alert(
+      'Permission Required',
+      'Sorry, we need media library permissions to process files.'
+    )
     setUploadVisible(false)
     return
   }

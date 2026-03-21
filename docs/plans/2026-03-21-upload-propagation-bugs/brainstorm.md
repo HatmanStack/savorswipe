@@ -60,4 +60,4 @@ Finally, the system should be hardened to handle concurrent/back-to-back uploads
 - Browser security: File input dialogs on web must originate from a synchronous user gesture handler. Cannot be deferred through React lifecycle (`useEffect`, `setTimeout`, etc.) beyond the browser's gesture timeout.
 - React 18 automatic batching: State updates within async functions may or may not batch, affecting the order effects see state changes. The `onConfirmImage` async flow (`setJsonData` → `await injectRecipes` → `resetPendingRecipe`) creates multiple render cycles with different state snapshots.
 - Stack navigator screen lifecycle: `HomeScreen` may remain mounted when navigating to `/recipe/[id]`, meaning `useImageQueue` stays active. This is currently relied upon for injection to work but is fragile.
-- `UploadModal.tsx` appears to be dead code — `UploadListener` replaced its role. Should be confirmed and cleaned up if so.
+- The `UploadModal.tsx` file was confirmed as dead code — `UploadListener` replaced its role for upload completion handling. It has been removed along with its tests.

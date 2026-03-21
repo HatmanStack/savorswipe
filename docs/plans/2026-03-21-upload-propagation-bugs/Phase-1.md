@@ -72,7 +72,7 @@ No separate test file for RecipeContext currently exists. The context will be te
 - Verify `pendingRecipeForPicker` reflects queue head
 
 **Commit Message Template:**
-```
+```text
 fix(context): convert pendingRecipeForPicker to queue
 
 - Replace single Recipe slot with Recipe[] array
@@ -158,7 +158,7 @@ Update `frontend/hooks/__tests__/useRecipeInjection.test.ts`:
 Run: `npx jest frontend/hooks/__tests__/useRecipeInjection.test.ts --no-watch`
 
 **Commit Message Template:**
-```
+```text
 fix(hooks): prevent useRecipeInjection from dropping new recipe keys
 
 - Always update prevJsonDataKeysRef to full current key set
@@ -219,7 +219,7 @@ Update `frontend/hooks/__tests__/useImagePicker.test.ts`:
 Run: `npx jest frontend/hooks/__tests__/useImagePicker.test.ts --no-watch`
 
 **Commit Message Template:**
-```
+```text
 fix(hooks): update useImagePicker to dequeue from pending recipe queue
 
 - Replace setPendingRecipeForPicker(null) with dequeuePendingRecipe
@@ -264,7 +264,7 @@ npx jest frontend/hooks/__tests__/ --no-watch
 ```
 
 **Commit Message Template:**
-```
+```text
 fix(hooks): wire useImageQueue to new pending recipe queue API
 
 - Pass enqueuePendingRecipe to useRecipeInjection
@@ -387,7 +387,7 @@ fix(hooks): wire useImageQueue to new pending recipe queue API
 - Add a test for `GlobalImagePicker` if time permits (render with mock context, verify modal appears when queue has items)
 
 **Commit Message Template:**
-```
+```text
 refactor(layout): move ImagePickerModal to layout level via GlobalImagePicker
 
 - Create GlobalImagePicker component for route-independent image selection
@@ -454,7 +454,7 @@ refactor(layout): move ImagePickerModal to layout level via GlobalImagePicker
 - Run: `npm run check`
 
 **Commit Message Template:**
-```
+```text
 fix(upload): call document picker synchronously from gesture handler
 
 - Move DocumentPicker.getDocumentAsync call to MenuContainer.handleUploadPress
@@ -501,7 +501,7 @@ npm run check
 ```
 
 **Commit Message Template:**
-```
+```text
 chore(cleanup): remove dead code (old Menu.tsx, UploadModal)
 
 - Delete monolithic Menu.tsx (replaced by Menu/MenuContainer.tsx)
@@ -551,7 +551,7 @@ npx jest frontend/hooks/__tests__/useRecipeInjection-sequential.test.ts --no-wat
 ```
 
 **Commit Message Template:**
-```
+```text
 test(hooks): add sequential and concurrent upload scenario tests
 
 - Verify sequential uploads both present image pickers

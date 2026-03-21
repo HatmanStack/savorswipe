@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useMemo, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useRef, useMemo, useEffect, useCallback, ReactNode } from 'react';
 import { Recipe, S3JsonData, MealType } from '@/types';
 import { RecipeService } from '@/services/RecipeService';
 
@@ -53,20 +53,19 @@ export const RecipeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   }, []);
 
   const [pendingInjectionKeys, setPendingInjectionKeys] = useState<string[]>([]);
+  const pendingInjectionKeysRef = useRef<string[]>([]);
 
   const addPendingInjectionKey = useCallback((key: string) => {
-    setPendingInjectionKeys(prev => {
-      if (prev.includes(key)) return prev;
-      return [...prev, key];
-    });
+    if (!pendingInjectionKeysRef.current.includes(key)) {
+      pendingInjectionKeysRef.current = [...pendingInjectionKeysRef.current, key];
+      setPendingInjectionKeys(pendingInjectionKeysRef.current);
+    }
   }, []);
 
   const consumePendingInjectionKeys = useCallback((): string[] => {
-    let keys: string[] = [];
-    setPendingInjectionKeys(prev => {
-      keys = prev;
-      return [];
-    });
+    const keys = pendingInjectionKeysRef.current;
+    pendingInjectionKeysRef.current = [];
+    setPendingInjectionKeys([]);
     return keys;
   }, []);
 
