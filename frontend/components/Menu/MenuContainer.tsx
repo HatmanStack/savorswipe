@@ -3,13 +3,11 @@ import { StyleSheet } from 'react-native';
 import { MenuButton } from './MenuButton';
 import { MainMenuModal } from './MainMenuModal';
 import { InfoModal } from './InfoModal';
-import { UploadModal } from './UploadModal';
+import { selectAndUploadImage } from '@/components/UploadRecipe';
 
 export const MenuContainer: React.FC = () => {
   const [menuVisible, setMenuVisible] = useState(false);
   const [infoVisible, setInfoVisible] = useState(false);
-  const [uploadVisible, setUploadVisible] = useState(false);
-  const [uploadCount, setUploadCount] = useState(0);
 
   const handleInfoPress = () => {
     setMenuVisible(false);
@@ -18,12 +16,9 @@ export const MenuContainer: React.FC = () => {
 
   const handleUploadPress = () => {
     setMenuVisible(false);
-    setUploadCount((prevCount) => prevCount + 1);
-    setUploadVisible(true);
-  };
-
-  const closeUpload = () => {
-    setUploadVisible(false);
+    // Call document picker synchronously from gesture handler to preserve
+    // browser's user gesture trust chain on web
+    selectAndUploadImage(() => {});
   };
 
   return (
@@ -41,13 +36,6 @@ export const MenuContainer: React.FC = () => {
       <InfoModal
         visible={infoVisible}
         onClose={() => setInfoVisible(false)}
-        styles={styles}
-      />
-
-      <UploadModal
-        visible={uploadVisible}
-        onClose={closeUpload}
-        uploadCount={uploadCount}
         styles={styles}
       />
     </>
