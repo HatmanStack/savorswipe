@@ -40,8 +40,8 @@ export interface UseImagePickerOptions {
   jsonData: S3JsonData | null;
   setJsonData: React.Dispatch<React.SetStateAction<S3JsonData | null>>;
   pendingRecipeForPicker: Recipe | null;
-  setPendingRecipeForPicker: (recipe: Recipe | null) => void;
-  injectRecipes: (recipeKeys: string[]) => Promise<void>;
+  dequeuePendingRecipe: () => void;
+  onRecipeConfirmed: (recipeKey: string) => void;
 }
 
 export interface ImagePickerReturn {
@@ -61,8 +61,8 @@ export function useImagePicker({
   jsonData,
   setJsonData,
   pendingRecipeForPicker,
-  setPendingRecipeForPicker,
-  injectRecipes,
+  dequeuePendingRecipe,
+  onRecipeConfirmed,
 }: UseImagePickerOptions): ImagePickerReturn {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -70,10 +70,10 @@ export function useImagePicker({
   const showImagePickerModal = useMemo(() => pendingRecipeForPicker !== null, [pendingRecipeForPicker]);
   const pendingRecipe = useMemo(() => pendingRecipeForPicker, [pendingRecipeForPicker]);
 
-  // Reset pending recipe state
+  // Reset pending recipe state (dequeue from front of queue)
   const resetPendingRecipe = useCallback(() => {
-    setPendingRecipeForPicker(null);
-  }, [setPendingRecipeForPicker]);
+    dequeuePendingRecipe();
+  }, [dequeuePendingRecipe]);
 
   // Handle image selection confirmation
   const onConfirmImage = useCallback(
@@ -98,11 +98,11 @@ export function useImagePicker({
         // Update local jsonData with the returned recipe (functional updater to avoid stale closure)
         setJsonData(prev => prev ? { ...prev, [recipeKey]: updatedRecipe } : prev);
 
-        // Inject recipe into queue
-        await injectRecipes([recipeKey]);
+        // Signal that this recipe's image was confirmed
+        onRecipeConfirmed(recipeKey);
 
-        // Hide modal only after successful completion
-        resetPendingRecipe();
+        // Dequeue to show next pending recipe (or close modal)
+        dequeuePendingRecipe();
 
         ToastQueue.show('Image saved');
       } catch (error) {
@@ -116,7 +116,7 @@ export function useImagePicker({
         setIsSubmitting(false);
       }
     },
-    [pendingRecipe, jsonData, isSubmitting, setJsonData, injectRecipes, resetPendingRecipe]
+    [pendingRecipe, jsonData, isSubmitting, setJsonData, onRecipeConfirmed, dequeuePendingRecipe]
   );
 
   // Handle recipe deletion
