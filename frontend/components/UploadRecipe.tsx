@@ -1,4 +1,3 @@
-import React, { useEffect } from 'react'
 import { Alert } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import * as ImageManipulator from 'expo-image-manipulator'
@@ -157,25 +156,3 @@ export const selectAndUploadImage = async (
   setUploadVisible(false)
 }
 
-type UploadFilesProps = {
-  setUploadVisible: (visible: boolean) => void
-}
-
-const UploadFiles: React.FC<UploadFilesProps> = ({
-  setUploadVisible,
-}) => {
-  useEffect(() => {
-    const initiateUpload = async () => {
-      try {
-        await selectAndUploadImage(setUploadVisible)
-      } catch {
-        // Error handled by Alert in selectAndUploadImage
-      }
-    }
-    initiateUpload()
-  }, [setUploadVisible])
-
-  return null
-}
-
-export default UploadFiles
