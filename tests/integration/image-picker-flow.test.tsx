@@ -271,10 +271,10 @@ describe('Integration: Image Picker Modal Flow', () => {
       });
 
       // Verify the confirmed recipe key was signaled for injection
-      const addKeyMock = (useRecipe as jest.Mock).mock.results.slice(-1)[0]?.value?.addPendingInjectionKey;
-      if (addKeyMock) {
-        expect(addKeyMock).toHaveBeenCalledWith('pending_recipe');
-      }
+      const lastMockResult = (useRecipe as jest.Mock).mock.results.slice(-1)[0];
+      expect(lastMockResult).toBeDefined();
+      const addKeyMock = lastMockResult.value.addPendingInjectionKey;
+      expect(addKeyMock).toHaveBeenCalledWith('pending_recipe');
       // Verify fetchBatch was called (queue initialization + any injection attempts)
       expect(ImageQueueService.fetchBatch).toHaveBeenCalled();
     });

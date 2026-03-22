@@ -317,8 +317,8 @@ describe('UploadRecipe', () => {
     )
   })
 
-  // Test 12: Modal closes immediately
-  it('test_closes_modal_immediately: should call setUploadVisible(false) immediately', async () => {
+  // Test 12: Upload queued after processing
+  it('test_queues_upload: should queue upload after processing files', async () => {
     ;(ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock).mockResolvedValue({
       status: 'granted',
     })
@@ -339,7 +339,7 @@ describe('UploadRecipe', () => {
 
     await selectAndUploadImage()
 
-
+    expect(UploadService.queueUpload).toHaveBeenCalledTimes(1)
   })
 
   // Test 13: Mixed files (images + PDF)

@@ -29,7 +29,7 @@ export function GlobalImagePicker() {
 
   return (
     <ImagePickerModal
-      isVisible={showImagePickerModal}
+      isVisible
       recipe={pendingRecipe}
       onConfirm={onConfirmImage}
       onDelete={onDeleteRecipe}
