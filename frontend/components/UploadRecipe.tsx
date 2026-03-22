@@ -1,4 +1,3 @@
-import React, { useEffect } from 'react'
 import { Alert } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import * as ImageManipulator from 'expo-image-manipulator'
@@ -46,29 +45,19 @@ export const pdfToBase64 = async (pdfUri: string): Promise<string> => {
 
 /**
  * Select and upload multiple files (images and PDFs)
- * Handles file validation, PDF chunking, and background upload
+ * Handles file validation, PDF chunking, and background upload.
+ * DocumentPicker is called first to preserve the browser's user gesture trust
+ * chain on web — awaiting permissions before the picker breaks the chain.
  */
-export const selectAndUploadImage = async (
-  setUploadVisible: (visible: boolean) => void
-): Promise<void> => {
+export const selectAndUploadImage = async (): Promise<void> => {
   // Constants
   const IMAGE_MAX_SIZE_MB = 10
   const IMAGE_MAX_SIZE_BYTES = IMAGE_MAX_SIZE_MB * 1024 * 1024
   const PDF_MAX_SIZE_MB = 50
   const PDF_MAX_SIZE_BYTES = PDF_MAX_SIZE_MB * 1024 * 1024
 
-  // Request permissions
-  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
-  if (status !== 'granted') {
-    Alert.alert(
-      'Permission Required',
-      'Sorry, we need media library permissions to select files.'
-    )
-    setUploadVisible(false)
-    return
-  }
-
-  // Launch document picker for multiple files
+  // Launch document picker FIRST to preserve browser gesture trust chain.
+  // On web, awaiting permissions before this call breaks the gesture context.
   const result = await DocumentPicker.getDocumentAsync({
     type: ['image/*', 'application/pdf'],
     multiple: true,
@@ -77,7 +66,16 @@ export const selectAndUploadImage = async (
 
   // Handle cancellation
   if (result.canceled || !result.assets || result.assets.length === 0) {
-    setUploadVisible(false)
+    return
+  }
+
+  // Request permissions after document selection (non-blocking on web)
+  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
+  if (status !== 'granted') {
+    Alert.alert(
+      'Permission Required',
+      'Sorry, we need media library permissions to process files.'
+    )
     return
   }
 
@@ -143,7 +141,6 @@ export const selectAndUploadImage = async (
   // Check if any files to upload
   if (files.length === 0) {
     Alert.alert('No Files', 'No valid files to upload.')
-    setUploadVisible(false)
     return
   }
 
@@ -152,30 +149,5 @@ export const selectAndUploadImage = async (
 
   // Show processing toast
   ToastQueue.show('Processing...')
-
-  // Close modal immediately
-  setUploadVisible(false)
 }
 
-type UploadFilesProps = {
-  setUploadVisible: (visible: boolean) => void
-}
-
-const UploadFiles: React.FC<UploadFilesProps> = ({
-  setUploadVisible,
-}) => {
-  useEffect(() => {
-    const initiateUpload = async () => {
-      try {
-        await selectAndUploadImage(setUploadVisible)
-      } catch {
-        // Error handled by Alert in selectAndUploadImage
-      }
-    }
-    initiateUpload()
-  }, [setUploadVisible])
-
-  return null
-}
-
-export default UploadFiles

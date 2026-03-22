@@ -90,7 +90,53 @@ describe('RecipeContext', () => {
     expect(result.current.mealTypeFilters).toEqual(newFilters);
   });
 
-  it('setPendingRecipeForPicker updates pending recipe state', () => {
+  it('enqueuePendingRecipe and dequeuePendingRecipe manage queue', () => {
+    const { result } = renderHook(() => useRecipe(), { wrapper });
+
+    const recipe1: Recipe = {
+      key: 'pending1',
+      Title: 'Pending Recipe 1',
+      image_search_results: ['https://example.com/img.jpg'],
+      image_url: null,
+    };
+
+    const recipe2: Recipe = {
+      key: 'pending2',
+      Title: 'Pending Recipe 2',
+      image_search_results: ['https://example.com/img2.jpg'],
+      image_url: null,
+    };
+
+    // Enqueue first recipe
+    act(() => {
+      result.current.enqueuePendingRecipe(recipe1);
+    });
+    expect(result.current.pendingRecipeForPicker).toEqual(recipe1);
+    expect(result.current.pendingRecipesForPicker).toHaveLength(1);
+
+    // Enqueue second recipe
+    act(() => {
+      result.current.enqueuePendingRecipe(recipe2);
+    });
+    expect(result.current.pendingRecipeForPicker).toEqual(recipe1);
+    expect(result.current.pendingRecipesForPicker).toHaveLength(2);
+
+    // Dequeue first - second becomes head
+    act(() => {
+      result.current.dequeuePendingRecipe();
+    });
+    expect(result.current.pendingRecipeForPicker).toEqual(recipe2);
+    expect(result.current.pendingRecipesForPicker).toHaveLength(1);
+
+    // Dequeue second - queue empty
+    act(() => {
+      result.current.dequeuePendingRecipe();
+    });
+    expect(result.current.pendingRecipeForPicker).toBeNull();
+    expect(result.current.pendingRecipesForPicker).toHaveLength(0);
+  });
+
+  it('enqueuePendingRecipe prevents duplicate keys', () => {
     const { result } = renderHook(() => useRecipe(), { wrapper });
 
     const recipe: Recipe = {
@@ -101,16 +147,11 @@ describe('RecipeContext', () => {
     };
 
     act(() => {
-      result.current.setPendingRecipeForPicker(recipe);
+      result.current.enqueuePendingRecipe(recipe);
+      result.current.enqueuePendingRecipe(recipe);
     });
 
-    expect(result.current.pendingRecipeForPicker).toEqual(recipe);
-
-    act(() => {
-      result.current.setPendingRecipeForPicker(null);
-    });
-
-    expect(result.current.pendingRecipeForPicker).toBeNull();
+    expect(result.current.pendingRecipesForPicker).toHaveLength(1);
   });
 
   it('stale-while-revalidate: loads local data first, then fresh data replaces it', async () => {

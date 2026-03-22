@@ -2,7 +2,6 @@
 export { MenuButton } from './MenuButton';
 export { MainMenuModal } from './MainMenuModal';
 export { InfoModal } from './InfoModal';
-export { UploadModal } from './UploadModal';
 export { FilterModal } from './FilterModal';
 export { MenuContainer } from './MenuContainer';
 

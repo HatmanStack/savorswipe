@@ -7,6 +7,7 @@ import { AppProvider } from '@/context';
 import Menu from '@/components/Menu';
 import { Toast } from '@/components/Toast';
 import { UploadListener } from '@/components/UploadListener';
+import { GlobalImagePicker } from '@/components/GlobalImagePicker';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -37,6 +38,7 @@ export default function RootLayout() {
           />
           <Stack.Screen name="+not-found" />
         </Stack>
+        <GlobalImagePicker />
         <Toast />
       </AppProvider>
     </ThemeProvider>

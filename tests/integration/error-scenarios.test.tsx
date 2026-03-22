@@ -1,5 +1,6 @@
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { useImageQueue } from '@/hooks/useImageQueue';
+import { useImagePicker } from '@/hooks/useImagePicker';
 import { RecipeService } from '@/services/RecipeService';
 import { ImageQueueService } from '@/services/ImageQueueService';
 import { useRecipe } from '@/context/RecipeContext';
@@ -11,6 +12,20 @@ jest.mock('@/services/RecipeService');
 jest.mock('@/services/ImageQueueService');
 jest.mock('@/context/RecipeContext');
 jest.mock('@/components/Toast');
+
+// Combined hook that merges useImageQueue (queue state) and useImagePicker (picker interactions)
+function useCombinedHook() {
+  const queue = useImageQueue();
+  const recipeCtx = useRecipe();
+  const picker = useImagePicker({
+    jsonData: recipeCtx.jsonData,
+    setJsonData: recipeCtx.setJsonData,
+    pendingRecipeForPicker: recipeCtx.pendingRecipeForPicker,
+    dequeuePendingRecipe: recipeCtx.dequeuePendingRecipe,
+    onRecipeConfirmed: recipeCtx.addPendingInjectionKey,
+  });
+  return { ...queue, ...picker };
+}
 
 describe('Integration: Error Scenario Testing', () => {
   const mockSetJsonData = jest.fn();
@@ -30,7 +45,11 @@ describe('Integration: Error Scenario Testing', () => {
       setCurrentRecipe: mockSetCurrentRecipe,
       mealTypeFilters: ['main dish', 'dessert'],
       pendingRecipeForPicker: null,
-      setPendingRecipeForPicker: jest.fn(),
+      pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
     });
 
     (ImageQueueService.createRecipeKeyPool as jest.Mock).mockReturnValue(['recipe1']);
@@ -53,7 +72,7 @@ describe('Integration: Error Scenario Testing', () => {
     it('should handle network timeout gracefully during image selection', async () => {
       const { mockData, setMockData } = setupTest();
 
-      const { result, rerender } = renderHook(() => useImageQueue());
+      const { result, rerender } = renderHook(() => useCombinedHook());
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -74,7 +93,11 @@ describe('Integration: Error Scenario Testing', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [pendingRecipe],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (RecipeService.selectRecipeImage as jest.Mock).mockRejectedValue(
@@ -105,7 +128,7 @@ describe('Integration: Error Scenario Testing', () => {
     it('should handle network timeout during recipe deletion', async () => {
       const { mockData, setMockData } = setupTest();
 
-      const { result, rerender } = renderHook(() => useImageQueue());
+      const { result, rerender } = renderHook(() => useCombinedHook());
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -125,7 +148,11 @@ describe('Integration: Error Scenario Testing', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [pendingRecipe],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (RecipeService.deleteRecipe as jest.Mock).mockRejectedValue(
@@ -157,7 +184,7 @@ describe('Integration: Error Scenario Testing', () => {
     it('should handle 404 Recipe not found during image selection', async () => {
       const { mockData, setMockData } = setupTest();
 
-      const { result, rerender } = renderHook(() => useImageQueue());
+      const { result, rerender } = renderHook(() => useCombinedHook());
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -177,7 +204,11 @@ describe('Integration: Error Scenario Testing', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [pendingRecipe],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (RecipeService.selectRecipeImage as jest.Mock).mockRejectedValue(
@@ -207,7 +238,7 @@ describe('Integration: Error Scenario Testing', () => {
     it('should handle 400 Invalid image URL error', async () => {
       const { mockData, setMockData } = setupTest();
 
-      const { result, rerender } = renderHook(() => useImageQueue());
+      const { result, rerender } = renderHook(() => useCombinedHook());
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -227,7 +258,11 @@ describe('Integration: Error Scenario Testing', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [pendingRecipe],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (RecipeService.selectRecipeImage as jest.Mock).mockRejectedValue(
@@ -257,7 +292,7 @@ describe('Integration: Error Scenario Testing', () => {
     it('should handle 500 Server error during image selection', async () => {
       const { mockData, setMockData } = setupTest();
 
-      const { result, rerender } = renderHook(() => useImageQueue());
+      const { result, rerender } = renderHook(() => useCombinedHook());
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -277,7 +312,11 @@ describe('Integration: Error Scenario Testing', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [pendingRecipe],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (RecipeService.selectRecipeImage as jest.Mock).mockRejectedValue(
@@ -307,7 +346,7 @@ describe('Integration: Error Scenario Testing', () => {
     it('should handle 404 Recipe not found during deletion', async () => {
       const { mockData, setMockData } = setupTest();
 
-      const { result, rerender } = renderHook(() => useImageQueue());
+      const { result, rerender } = renderHook(() => useCombinedHook());
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -327,7 +366,11 @@ describe('Integration: Error Scenario Testing', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [pendingRecipe],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (RecipeService.deleteRecipe as jest.Mock).mockRejectedValue(
@@ -359,7 +402,7 @@ describe('Integration: Error Scenario Testing', () => {
     it('should handle error responses from backend gracefully', async () => {
       const { mockData, setMockData } = setupTest();
 
-      const { result, rerender } = renderHook(() => useImageQueue());
+      const { result, rerender } = renderHook(() => useCombinedHook());
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -379,7 +422,11 @@ describe('Integration: Error Scenario Testing', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [pendingRecipe],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (RecipeService.selectRecipeImage as jest.Mock).mockRejectedValue(
@@ -407,7 +454,7 @@ describe('Integration: Error Scenario Testing', () => {
     it('should handle recipe already deleted scenario during selection', async () => {
       const { mockData, setMockData } = setupTest();
 
-      const { result, rerender } = renderHook(() => useImageQueue());
+      const { result, rerender } = renderHook(() => useCombinedHook());
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -427,7 +474,11 @@ describe('Integration: Error Scenario Testing', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [pendingRecipe],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (RecipeService.selectRecipeImage as jest.Mock).mockRejectedValue(
@@ -448,7 +499,11 @@ describe('Integration: Error Scenario Testing', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe, // Still in state but gone from jsonData
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       await act(async () => {
@@ -466,7 +521,7 @@ describe('Integration: Error Scenario Testing', () => {
     it('should handle offline network during image selection', async () => {
       const { mockData, setMockData } = setupTest();
 
-      const { result, rerender } = renderHook(() => useImageQueue());
+      const { result, rerender } = renderHook(() => useCombinedHook());
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -486,7 +541,11 @@ describe('Integration: Error Scenario Testing', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [pendingRecipe],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (RecipeService.selectRecipeImage as jest.Mock).mockRejectedValue(
@@ -517,7 +576,7 @@ describe('Integration: Error Scenario Testing', () => {
     it('should handle offline network during deletion', async () => {
       const { mockData, setMockData } = setupTest();
 
-      const { result, rerender } = renderHook(() => useImageQueue());
+      const { result, rerender } = renderHook(() => useCombinedHook());
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -537,7 +596,11 @@ describe('Integration: Error Scenario Testing', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [pendingRecipe],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (RecipeService.deleteRecipe as jest.Mock).mockRejectedValue(
@@ -569,7 +632,7 @@ describe('Integration: Error Scenario Testing', () => {
     it('should keep modal open after error occurs', async () => {
       const { mockData, setMockData } = setupTest();
 
-      const { result, rerender } = renderHook(() => useImageQueue());
+      const { result, rerender } = renderHook(() => useCombinedHook());
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -589,7 +652,11 @@ describe('Integration: Error Scenario Testing', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [pendingRecipe],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (RecipeService.selectRecipeImage as jest.Mock).mockRejectedValue(

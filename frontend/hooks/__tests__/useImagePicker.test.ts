@@ -22,15 +22,15 @@ describe('useImagePicker', () => {
   };
 
   const mockSetJsonData = jest.fn();
-  const mockSetPendingRecipeForPicker = jest.fn();
-  const mockInjectRecipes = jest.fn().mockResolvedValue(undefined);
+  const mockDequeuePendingRecipe = jest.fn();
+  const mockOnRecipeConfirmed = jest.fn();
 
   const createDefaultOptions = (overrides: Record<string, unknown> = {}) => ({
     jsonData: mockJsonData,
     setJsonData: mockSetJsonData,
     pendingRecipeForPicker: null as Recipe | null,
-    setPendingRecipeForPicker: mockSetPendingRecipeForPicker,
-    injectRecipes: mockInjectRecipes,
+    dequeuePendingRecipe: mockDequeuePendingRecipe,
+    onRecipeConfirmed: mockOnRecipeConfirmed,
     ...overrides,
   });
 
@@ -45,7 +45,7 @@ describe('useImagePicker', () => {
     (RecipeService.deleteRecipe as jest.Mock).mockResolvedValue(true);
   });
 
-  it('onConfirmImage calls RecipeService and updates jsonData', async () => {
+  it('onConfirmImage calls RecipeService, updates jsonData, and calls onRecipeConfirmed', async () => {
     const pendingData: S3JsonData = {
       ...mockJsonData,
       pending1: mockPendingRecipe,
@@ -79,13 +79,13 @@ describe('useImagePicker', () => {
     // Sibling recipes should be preserved
     expect(updatedData.recipe1).toEqual(mockJsonData.recipe1);
 
-    expect(mockInjectRecipes).toHaveBeenCalledWith(['pending1']);
-    // Modal should be cleared on success
-    expect(mockSetPendingRecipeForPicker).toHaveBeenCalledWith(null);
+    expect(mockOnRecipeConfirmed).toHaveBeenCalledWith('pending1');
+    // Modal should be cleared on success via dequeue
+    expect(mockDequeuePendingRecipe).toHaveBeenCalled();
     expect(ToastQueue.show).toHaveBeenCalledWith('Image saved');
   });
 
-  it('onDeleteRecipe calls RecipeService and removes from jsonData', async () => {
+  it('onDeleteRecipe calls RecipeService, removes from jsonData, and dequeues', async () => {
     const pendingData: S3JsonData = {
       ...mockJsonData,
       pending1: mockPendingRecipe,
@@ -112,12 +112,12 @@ describe('useImagePicker', () => {
     expect(updatedData.recipe1).toEqual(mockJsonData.recipe1);
     expect(updatedData.recipe2).toEqual(mockJsonData.recipe2);
 
-    // Modal should be cleared on success
-    expect(mockSetPendingRecipeForPicker).toHaveBeenCalledWith(null);
+    // Modal should be cleared on success via dequeue
+    expect(mockDequeuePendingRecipe).toHaveBeenCalled();
     expect(ToastQueue.show).toHaveBeenCalledWith('Recipe deleted');
   });
 
-  it('resetPendingRecipe clears modal state', () => {
+  it('resetPendingRecipe dequeues', () => {
     const { result } = renderHook(() =>
       useImagePicker(createDefaultOptions({
         pendingRecipeForPicker: mockPendingRecipe,
@@ -128,7 +128,7 @@ describe('useImagePicker', () => {
       result.current.resetPendingRecipe();
     });
 
-    expect(mockSetPendingRecipeForPicker).toHaveBeenCalledWith(null);
+    expect(mockDequeuePendingRecipe).toHaveBeenCalled();
   });
 
   it('showImagePickerModal derived state', () => {
@@ -171,7 +171,8 @@ describe('useImagePicker', () => {
     expect(ToastQueue.show).toHaveBeenCalledWith(
       expect.stringContaining('Failed to save image')
     );
-    // Modal should remain visible (pendingRecipe not cleared on error)
-    expect(mockSetPendingRecipeForPicker).not.toHaveBeenCalled();
+    // Modal should remain visible (dequeue not called on error)
+    expect(mockDequeuePendingRecipe).not.toHaveBeenCalled();
   });
+
 });

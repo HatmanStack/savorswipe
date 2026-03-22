@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useMemo, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useRef, useMemo, useEffect, useCallback, ReactNode } from 'react';
 import { Recipe, S3JsonData, MealType } from '@/types';
 import { RecipeService } from '@/services/RecipeService';
 
@@ -11,7 +11,12 @@ interface RecipeContextType {
   mealTypeFilters: MealType[];
   setMealTypeFilters: (filters: MealType[]) => void;
   pendingRecipeForPicker: Recipe | null;
-  setPendingRecipeForPicker: (recipe: Recipe | null) => void;
+  pendingRecipesForPicker: Recipe[];
+  enqueuePendingRecipe: (recipe: Recipe) => void;
+  dequeuePendingRecipe: () => void;
+  pendingInjectionKeys: string[];
+  addPendingInjectionKey: (key: string) => void;
+  consumePendingInjectionKeys: () => string[];
   refetchRecipes: () => Promise<void>;
 }
 
@@ -33,7 +38,36 @@ export const RecipeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     'side dish',
     'beverage'
   ]);
-  const [pendingRecipeForPicker, setPendingRecipeForPicker] = useState<Recipe | null>(null);
+  const [pendingRecipesForPicker, setPendingRecipesForPicker] = useState<Recipe[]>([]);
+  const pendingRecipeForPicker = pendingRecipesForPicker[0] ?? null;
+
+  const enqueuePendingRecipe = useCallback((recipe: Recipe) => {
+    setPendingRecipesForPicker(prev => {
+      if (prev.some(r => r.key === recipe.key)) return prev;
+      return [...prev, recipe];
+    });
+  }, []);
+
+  const dequeuePendingRecipe = useCallback(() => {
+    setPendingRecipesForPicker(prev => prev.slice(1));
+  }, []);
+
+  const [pendingInjectionKeys, setPendingInjectionKeys] = useState<string[]>([]);
+  const pendingInjectionKeysRef = useRef<string[]>([]);
+
+  const addPendingInjectionKey = useCallback((key: string) => {
+    if (!pendingInjectionKeysRef.current.includes(key)) {
+      pendingInjectionKeysRef.current = [...pendingInjectionKeysRef.current, key];
+      setPendingInjectionKeys(pendingInjectionKeysRef.current);
+    }
+  }, []);
+
+  const consumePendingInjectionKeys = useCallback((): string[] => {
+    const keys = pendingInjectionKeysRef.current;
+    pendingInjectionKeysRef.current = [];
+    setPendingInjectionKeys([]);
+    return keys;
+  }, []);
 
   // Fetch fresh data from Lambda (replaces local data entirely)
   const refetchRecipes = useCallback(async () => {
@@ -68,9 +102,14 @@ export const RecipeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     mealTypeFilters,
     setMealTypeFilters,
     pendingRecipeForPicker,
-    setPendingRecipeForPicker,
+    pendingRecipesForPicker,
+    enqueuePendingRecipe,
+    dequeuePendingRecipe,
+    pendingInjectionKeys,
+    addPendingInjectionKey,
+    consumePendingInjectionKeys,
     refetchRecipes
-  }), [currentRecipe, jsonData, mealTypeFilters, pendingRecipeForPicker, refetchRecipes]);
+  }), [currentRecipe, jsonData, mealTypeFilters, pendingRecipeForPicker, pendingRecipesForPicker, enqueuePendingRecipe, dequeuePendingRecipe, pendingInjectionKeys, addPendingInjectionKey, consumePendingInjectionKeys, refetchRecipes]);
 
   return (
     <RecipeContext.Provider value={value}>

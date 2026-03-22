@@ -46,8 +46,8 @@ export interface UseRecipeInjectionOptions {
   recipeKeyPoolRef: React.MutableRefObject<string[]>;
   lastInjectionTimeRef: React.MutableRefObject<number>;
   nextImageRef: React.MutableRefObject<ImageFile | null>;
-  pendingRecipe: Recipe | null;
-  setPendingRecipeForPicker: (recipe: Recipe | null) => void;
+  enqueuePendingRecipe: (recipe: Recipe) => void;
+  consumePendingInjectionKeys?: () => string[];
 }
 
 export interface RecipeInjectionReturn {
@@ -67,10 +67,11 @@ export function useRecipeInjection({
   recipeKeyPoolRef,
   lastInjectionTimeRef,
   nextImageRef,
-  pendingRecipe,
-  setPendingRecipeForPicker,
+  enqueuePendingRecipe,
+  consumePendingInjectionKeys,
 }: UseRecipeInjectionOptions): RecipeInjectionReturn {
   const prevJsonDataKeysRef = useRef<Set<string>>(new Set());
+  const unprocessedKeysRef = useRef<string[]>([]);
 
   // Inject new recipes into queue with retry logic
   const injectRecipes = useCallback(async (recipeKeys: string[]): Promise<void> => {
@@ -201,60 +202,85 @@ export function useRecipeInjection({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- all state reads use refs or functional updates
   }, []);
 
+  // Helper: consume confirmed injection keys and inject them into the queue
+  const consumeAndInjectConfirmedKeys = useCallback((data: S3JsonData) => {
+    if (!consumePendingInjectionKeys) return;
+    const confirmedKeys = consumePendingInjectionKeys();
+    if (confirmedKeys.length > 0) {
+      const injectableKeys = confirmedKeys.filter(key => {
+        const recipe = data[key];
+        return recipe && recipe.image_url;
+      });
+      if (injectableKeys.length > 0) {
+        injectRecipes(injectableKeys);
+      }
+    }
+  }, [consumePendingInjectionKeys, injectRecipes]);
+
   // Effect: Auto-detect new recipes in jsonData and inject them
   useEffect(() => {
     if (!jsonData) return;
 
-    // Get current keys
     const currentKeys = new Set(Object.keys(jsonData));
-
-    // Get previous keys
     const previousKeys = prevJsonDataKeysRef.current;
 
     // Skip injection on first mount (prevJsonDataKeysRef is empty Set)
     if (previousKeys.size === 0) {
-      // Just initialize the ref without injecting (queue already initialized)
       prevJsonDataKeysRef.current = currentKeys;
+      // Still consume confirmed keys on first mount (recipes confirmed before queue initialized)
+      consumeAndInjectConfirmedKeys(jsonData);
       return;
     }
 
     // Find new keys
     const newKeys = Array.from(currentKeys).filter(key => !previousKeys.has(key));
 
-    // Early exit if no new keys - prevents unnecessary work when effect runs
-    // due to pendingRecipe changes without actual jsonData changes
-    if (newKeys.length === 0) {
-      return;
-    }
+    // CRITICAL FIX: Always update prevJsonDataKeysRef to the full current key set
+    prevJsonDataKeysRef.current = currentKeys;
 
-    // If a pending recipe is already being resolved, defer processing new keys
-    // to avoid overwriting the active pendingRecipe with a different one
-    if (pendingRecipe) {
-      return;
-    }
-
-    // Check for pending recipes (recipes with image_search_results but no image_url)
-    // Prioritize pending recipes over injecting all new recipes
-    for (const key of newKeys) {
-      const recipe = jsonData[key];
-
-      if (isPendingImageSelection(recipe)) {
-        const recipeWithKey = { ...recipe, key };
-        setPendingRecipeForPicker(recipeWithKey);
-
-        // Mark only this specific pending key as processed so other new keys
-        // remain available for later injection
-        prevJsonDataKeysRef.current = new Set([...previousKeys, key]);
-        return;
+    // Add new keys to unprocessed set (deduplicate)
+    if (newKeys.length > 0) {
+      const existing = new Set(unprocessedKeysRef.current);
+      for (const key of newKeys) {
+        if (!existing.has(key)) {
+          unprocessedKeysRef.current.push(key);
+        }
       }
     }
 
-    // If new keys found and no pending recipes, inject them
-    injectRecipes(newKeys);
+    // Consume confirmed injection keys regardless of whether there are new keys
+    consumeAndInjectConfirmedKeys(jsonData);
 
-    // Update previous keys ref
-    prevJsonDataKeysRef.current = currentKeys;
-  }, [jsonData, injectRecipes, pendingRecipe, setPendingRecipeForPicker]);
+    // Nothing to process
+    if (unprocessedKeysRef.current.length === 0) return;
+
+    // Partition unprocessed keys into pending (need image selection) and ready (have images)
+    const pendingKeys: string[] = [];
+    const readyKeys: string[] = [];
+
+    for (const key of unprocessedKeysRef.current) {
+      const recipe = jsonData[key];
+      if (isPendingImageSelection(recipe)) {
+        pendingKeys.push(key);
+      } else {
+        readyKeys.push(key);
+      }
+    }
+
+    // Enqueue all pending recipes
+    for (const key of pendingKeys) {
+      const recipe = jsonData[key];
+      enqueuePendingRecipe({ ...recipe, key });
+    }
+
+    // Inject all ready recipes
+    if (readyKeys.length > 0) {
+      injectRecipes(readyKeys);
+    }
+
+    // Clear unprocessed keys (all have been dispatched)
+    unprocessedKeysRef.current = [];
+  }, [jsonData, injectRecipes, enqueuePendingRecipe, consumeAndInjectConfirmedKeys]);
 
   return { injectRecipes };
 }

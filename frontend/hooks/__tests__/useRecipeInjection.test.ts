@@ -19,7 +19,7 @@ describe('useRecipeInjection', () => {
   const mockSetCurrentImage = jest.fn() as unknown as React.Dispatch<React.SetStateAction<ImageFile | null>>;
   const mockSetNextImage = jest.fn() as unknown as React.Dispatch<React.SetStateAction<ImageFile | null>>;
   const mockSetIsLoading = jest.fn() as unknown as React.Dispatch<React.SetStateAction<boolean>>;
-  const mockSetPendingRecipeForPicker = jest.fn();
+  const mockEnqueuePendingRecipe = jest.fn();
 
   const createDefaultOptions = (overrides: Record<string, unknown> = {}) => ({
     jsonData: {
@@ -33,8 +33,7 @@ describe('useRecipeInjection', () => {
     recipeKeyPoolRef: { current: ['recipe3', 'recipe4'] },
     lastInjectionTimeRef: { current: 0 },
     nextImageRef: { current: null as ImageFile | null },
-    pendingRecipe: null as Recipe | null,
-    setPendingRecipeForPicker: mockSetPendingRecipeForPicker,
+    enqueuePendingRecipe: mockEnqueuePendingRecipe,
     ...overrides,
   });
 
@@ -125,7 +124,7 @@ describe('useRecipeInjection', () => {
     }, { timeout: 3000 });
   });
 
-  it('pending image selection pauses injection', () => {
+  it('pending image selection enqueues recipe', () => {
     const pendingData: S3JsonData = {
       recipe1: { key: 'recipe1', Title: 'Recipe 1' },
     };
@@ -151,8 +150,8 @@ describe('useRecipeInjection', () => {
       opts: createDefaultOptions({ jsonData: updatedData }),
     });
 
-    // Should set pending recipe instead of injecting
-    expect(mockSetPendingRecipeForPicker).toHaveBeenCalledWith(
+    // Should enqueue pending recipe instead of injecting
+    expect(mockEnqueuePendingRecipe).toHaveBeenCalledWith(
       expect.objectContaining({ key: 'pending1' })
     );
   });
@@ -165,5 +164,127 @@ describe('useRecipeInjection', () => {
     });
 
     expect(ImageQueueService.fetchBatch).not.toHaveBeenCalled();
+  });
+
+  it('sequential new recipes are all processed', async () => {
+    (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
+      images: [{ filename: 'images/new2.jpg', file: 'blob:new2' }],
+      failedKeys: [],
+    });
+
+    const initialData: S3JsonData = {
+      recipe1: { key: 'recipe1', Title: 'Recipe 1' },
+    };
+
+    const options = createDefaultOptions({ jsonData: initialData });
+    const { rerender } = renderHook(
+      ({ opts }: { opts: any }) => useRecipeInjection(opts),
+      { initialProps: { opts: options } }
+    );
+
+    // Add one pending + one ready recipe
+    const updatedData: S3JsonData = {
+      recipe1: { key: 'recipe1', Title: 'Recipe 1' },
+      new1: {
+        key: 'new1',
+        Title: 'Pending',
+        image_search_results: ['http://example.com/img.jpg'],
+        image_url: null,
+      },
+      new2: { key: 'new2', Title: 'Ready Recipe', image_url: 'http://example.com/img.jpg' },
+    };
+
+    rerender({
+      opts: createDefaultOptions({ jsonData: updatedData }),
+    });
+
+    // Pending recipe should be enqueued
+    expect(mockEnqueuePendingRecipe).toHaveBeenCalledWith(
+      expect.objectContaining({ key: 'new1' })
+    );
+
+    // Ready recipe should be injected
+    await waitFor(() => {
+      expect(ImageQueueService.fetchBatch).toHaveBeenCalled();
+    }, { timeout: 3000 });
+  });
+
+  it('second jsonData update does not re-process already-dispatched keys', async () => {
+    (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
+      images: [{ filename: 'images/new1.jpg', file: 'blob:new1' }],
+      failedKeys: [],
+    });
+
+    const initialData: S3JsonData = {
+      recipe1: { key: 'recipe1', Title: 'Recipe 1' },
+    };
+
+    const options = createDefaultOptions({ jsonData: initialData });
+    const { rerender } = renderHook(
+      ({ opts }: { opts: any }) => useRecipeInjection(opts),
+      { initialProps: { opts: options } }
+    );
+
+    const updatedData: S3JsonData = {
+      recipe1: { key: 'recipe1', Title: 'Recipe 1' },
+      new1: { key: 'new1', Title: 'New Recipe', image_url: 'http://example.com/img.jpg' },
+    };
+
+    // First update
+    rerender({ opts: createDefaultOptions({ jsonData: updatedData }) });
+
+    await waitFor(() => {
+      expect(ImageQueueService.fetchBatch).toHaveBeenCalledTimes(1);
+    }, { timeout: 3000 });
+
+    jest.clearAllMocks();
+
+    // Same data again (simulating a re-render)
+    rerender({ opts: createDefaultOptions({ jsonData: updatedData }) });
+
+    // Should not re-process
+    expect(ImageQueueService.fetchBatch).not.toHaveBeenCalled();
+  });
+
+  it('multiple pending recipes are all enqueued', () => {
+    const initialData: S3JsonData = {
+      recipe1: { key: 'recipe1', Title: 'Recipe 1' },
+    };
+
+    const options = createDefaultOptions({ jsonData: initialData });
+    const { rerender } = renderHook(
+      ({ opts }: { opts: any }) => useRecipeInjection(opts),
+      { initialProps: { opts: options } }
+    );
+
+    // Add two pending recipes at once
+    const updatedData: S3JsonData = {
+      recipe1: { key: 'recipe1', Title: 'Recipe 1' },
+      pending1: {
+        key: 'pending1',
+        Title: 'Pending 1',
+        image_search_results: ['http://example.com/img1.jpg'],
+        image_url: null,
+      },
+      pending2: {
+        key: 'pending2',
+        Title: 'Pending 2',
+        image_search_results: ['http://example.com/img2.jpg'],
+        image_url: null,
+      },
+    };
+
+    rerender({
+      opts: createDefaultOptions({ jsonData: updatedData }),
+    });
+
+    // Both pending recipes should be enqueued
+    expect(mockEnqueuePendingRecipe).toHaveBeenCalledTimes(2);
+    expect(mockEnqueuePendingRecipe).toHaveBeenCalledWith(
+      expect.objectContaining({ key: 'pending1' })
+    );
+    expect(mockEnqueuePendingRecipe).toHaveBeenCalledWith(
+      expect.objectContaining({ key: 'pending2' })
+    );
   });
 });

@@ -1,5 +1,6 @@
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { useImageQueue } from '@/hooks/useImageQueue';
+import { useImagePicker } from '@/hooks/useImagePicker';
 import { RecipeService } from '@/services/RecipeService';
 import { ImageQueueService } from '@/services/ImageQueueService';
 import { useRecipe } from '@/context/RecipeContext';
@@ -11,6 +12,20 @@ jest.mock('@/services/RecipeService');
 jest.mock('@/services/ImageQueueService');
 jest.mock('@/context/RecipeContext');
 jest.mock('@/components/Toast');
+
+// Combined hook that merges useImageQueue (queue state) and useImagePicker (picker interactions)
+function useCombinedHook() {
+  const queue = useImageQueue();
+  const recipeCtx = useRecipe();
+  const picker = useImagePicker({
+    jsonData: recipeCtx.jsonData,
+    setJsonData: recipeCtx.setJsonData,
+    pendingRecipeForPicker: recipeCtx.pendingRecipeForPicker,
+    dequeuePendingRecipe: recipeCtx.dequeuePendingRecipe,
+    onRecipeConfirmed: recipeCtx.addPendingInjectionKey,
+  });
+  return { ...queue, ...picker };
+}
 
 describe('Integration: Image Picker Modal Flow', () => {
   jest.setTimeout(30000); // Increase timeout for all tests in this file
@@ -28,7 +43,11 @@ describe('Integration: Image Picker Modal Flow', () => {
       setCurrentRecipe: mockSetCurrentRecipe,
       mealTypeFilters: ['main dish', 'dessert'],
       pendingRecipeForPicker: null,
-      setPendingRecipeForPicker: jest.fn(),
+      pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
     });
 
     // Setup ImageQueueService mocks
@@ -78,10 +97,14 @@ describe('Integration: Image Picker Modal Flow', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: null,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
-      const { result, rerender } = renderHook(() => useImageQueue());
+      const { result, rerender } = renderHook(() => useCombinedHook());
 
       // Wait for initial queue load
       await waitFor(() => {
@@ -109,7 +132,11 @@ describe('Integration: Image Picker Modal Flow', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [pendingRecipe],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       // Trigger re-render to detect new pending recipe
@@ -148,7 +175,11 @@ describe('Integration: Image Picker Modal Flow', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: null, // Recipe processed
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
       rerender({});
 
@@ -159,7 +190,7 @@ describe('Integration: Image Picker Modal Flow', () => {
       expect(result.current.pendingRecipe).toBeNull();
     });
 
-    it('should inject recipe at position 2 in queue', async () => {
+    it('should inject confirmed recipe into queue via fetchBatch', async () => {
       // Setup existing queue
       const existingQueue = [
         { filename: 'images/recipe1.jpg', file: 'blob:1' },
@@ -185,10 +216,14 @@ describe('Integration: Image Picker Modal Flow', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: null,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
-      const { result, rerender } = renderHook(() => useImageQueue());
+      const { result, rerender } = renderHook(() => useCombinedHook());
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -211,7 +246,11 @@ describe('Integration: Image Picker Modal Flow', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [pendingRecipe],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       rerender({});
@@ -231,7 +270,12 @@ describe('Integration: Image Picker Modal Flow', () => {
         await result.current.onConfirmImage('https://google.com/img1.jpg');
       });
 
-      // Verify injection was called
+      // Verify the confirmed recipe key was signaled for injection
+      const lastMockResult = (useRecipe as jest.Mock).mock.results.slice(-1)[0];
+      expect(lastMockResult).toBeDefined();
+      const addKeyMock = lastMockResult.value.addPendingInjectionKey;
+      expect(addKeyMock).toHaveBeenCalledWith('pending_recipe');
+      // Verify fetchBatch was called (queue initialization + any injection attempts)
       expect(ImageQueueService.fetchBatch).toHaveBeenCalled();
     });
   });
@@ -260,7 +304,11 @@ describe('Integration: Image Picker Modal Flow', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [pendingRecipe],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
@@ -271,7 +319,7 @@ describe('Integration: Image Picker Modal Flow', () => {
         failedKeys: [],
       });
 
-      const { result, rerender } = renderHook(() => useImageQueue());
+      const { result, rerender } = renderHook(() => useCombinedHook());
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -306,7 +354,11 @@ describe('Integration: Image Picker Modal Flow', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: null, // Recipe processed
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
       rerender({});
 
@@ -341,7 +393,11 @@ describe('Integration: Image Picker Modal Flow', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [pendingRecipe],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
@@ -353,7 +409,7 @@ describe('Integration: Image Picker Modal Flow', () => {
       const error = new Error('Failed to fetch image from Google');
       (RecipeService.selectRecipeImage as jest.Mock).mockRejectedValue(error);
 
-      const { result, rerender } = renderHook(() => useImageQueue());
+      const { result, rerender } = renderHook(() => useCombinedHook());
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -402,7 +458,11 @@ describe('Integration: Image Picker Modal Flow', () => {
         setCurrentRecipe: mockSetCurrentRecipe,
         mealTypeFilters: ['main dish', 'dessert'],
         pendingRecipeForPicker: pendingRecipe,
-        setPendingRecipeForPicker: jest.fn(),
+        pendingRecipesForPicker: [pendingRecipe],
+      enqueuePendingRecipe: jest.fn(),
+      dequeuePendingRecipe: jest.fn(),
+      addPendingInjectionKey: jest.fn(),
+      consumePendingInjectionKeys: jest.fn().mockReturnValue([]),
       });
 
       (ImageQueueService.fetchBatch as jest.Mock).mockResolvedValue({
@@ -414,7 +474,7 @@ describe('Integration: Image Picker Modal Flow', () => {
       const error = new Error('Recipe not found');
       (RecipeService.deleteRecipe as jest.Mock).mockRejectedValue(error);
 
-      const { result, rerender } = renderHook(() => useImageQueue());
+      const { result, rerender } = renderHook(() => useCombinedHook());
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);

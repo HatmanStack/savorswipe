@@ -2,12 +2,15 @@ import { useRecipe } from '@/context/RecipeContext';
 import { ImageQueueHook } from '@/types/queue';
 import { useQueueState } from './useQueueState';
 import { useRecipeInjection } from './useRecipeInjection';
-import { useImagePicker } from './useImagePicker';
 
 export function useImageQueue(): ImageQueueHook {
   const {
-    jsonData, setCurrentRecipe, setJsonData,
-    mealTypeFilters, pendingRecipeForPicker, setPendingRecipeForPicker
+    jsonData, setCurrentRecipe,
+    mealTypeFilters,
+    pendingRecipeForPicker,
+    enqueuePendingRecipe,
+    addPendingInjectionKey,
+    consumePendingInjectionKeys,
   } = useRecipe();
 
   const queueState = useQueueState({ jsonData, mealTypeFilters, setCurrentRecipe });
@@ -21,15 +24,12 @@ export function useImageQueue(): ImageQueueHook {
     recipeKeyPoolRef: queueState.recipeKeyPoolRef,
     lastInjectionTimeRef: queueState.lastInjectionTimeRef,
     nextImageRef: queueState.nextImageRef,
-    pendingRecipe: pendingRecipeForPicker,
-    setPendingRecipeForPicker,
+    enqueuePendingRecipe,
+    consumePendingInjectionKeys,
   });
 
-  const imagePicker = useImagePicker({
-    jsonData, setJsonData,
-    pendingRecipeForPicker, setPendingRecipeForPicker,
-    injectRecipes,
-  });
+  // Derive modal visibility from context (GlobalImagePicker handles all modal interactions)
+  const showImagePickerModal = pendingRecipeForPicker !== null;
 
   return {
     currentImage: queueState.currentImage,
@@ -39,10 +39,6 @@ export function useImageQueue(): ImageQueueHook {
     advanceQueue: queueState.advanceQueue,
     resetQueue: queueState.resetQueue,
     injectRecipes,
-    pendingRecipe: imagePicker.pendingRecipe,
-    showImagePickerModal: imagePicker.showImagePickerModal,
-    resetPendingRecipe: imagePicker.resetPendingRecipe,
-    onConfirmImage: imagePicker.onConfirmImage,
-    onDeleteRecipe: imagePicker.onDeleteRecipe,
+    showImagePickerModal,
   };
 }
