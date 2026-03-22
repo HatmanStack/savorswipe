@@ -43,25 +43,6 @@ export const MenuContainer: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  uploadMessage: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: '-50%' }, { translateY: '-50%' }],
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    padding: 20,
-    borderRadius: 10,
-    color: 'red',
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    zIndex: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-  },
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
