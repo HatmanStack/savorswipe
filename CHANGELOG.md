@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2026-03-21
+
+### Bug Fixes
+
+- **Sequential upload propagation** — Image picker modal now appears for every upload, not just the first. Fixed `prevJsonDataKeysRef` in `useRecipeInjection` to always update to the full key set, preventing new recipe keys from being silently dropped.
+- **Web document picker on /recipe route** — Moved `DocumentPicker.getDocumentAsync()` before `requestMediaLibraryPermissionsAsync()` in `selectAndUploadImage` to preserve the browser's user gesture trust chain.
+- **Concurrent upload hardening** — Replaced single `pendingRecipeForPicker` slot with a queue (`pendingRecipesForPicker[]`) so multiple uploads completing simultaneously each get their image picker modal.
+- **Confirmed recipe injection** — `consumePendingInjectionKeys` now uses a ref-backed queue for reliable synchronous consumption. Confirmed keys are consumed before early returns in the detection effect.
+- **Upload error display** — Restored `ErrorDetailModal` in `UploadListener` with error accumulation across jobs and clear-on-dismiss behavior.
+
+### Refactoring
+
+- **ImagePickerModal moved to layout** — New `GlobalImagePicker` component in `_layout.tsx` renders the modal from any route, replacing the home-screen-only rendering.
+- **Dead picker APIs removed from useImageQueue** — `useImagePicker` instantiation moved exclusively to `GlobalImagePicker`. `useImageQueue` derives `showImagePickerModal` from context directly.
+- **Dead code cleanup** — Removed old `Menu.tsx`, `UploadModal.tsx`, `UploadFiles` component, and vestigial `setUploadVisible` parameter from `selectAndUploadImage`.
+- **Consistent dequeue** — `onDeleteRecipe` calls `dequeuePendingRecipe()` directly, matching `onConfirmImage` behavior.
+
+### Testing
+
+- Added sequential and concurrent upload regression tests in `useRecipeInjection-sequential.test.ts`
+- Integration tests updated to use `useCombinedHook` pattern (useImageQueue + useImagePicker)
+- Fixed mock inconsistencies (`pendingRecipesForPicker` now consistent with `pendingRecipeForPicker`)
+
 ## [1.0.0] - 2026-02-05
 
 First tagged release. SavorSwipe is a recipe discovery app with swipe-based browsing,
