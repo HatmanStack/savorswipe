@@ -14,9 +14,14 @@ on:
       - '*.md'
       - '.claude/**'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   changes:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       frontend: ${{ steps.filter.outputs.frontend }}
       backend: ${{ steps.filter.outputs.backend }}
@@ -37,6 +42,7 @@ jobs:
   frontend:
     name: Frontend Lint & Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs: changes
     if: needs.changes.outputs.frontend == 'true'
     steps:
@@ -60,6 +66,7 @@ jobs:
   backend:
     name: Backend Lint & Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs: changes
     if: needs.changes.outputs.backend == 'true'
     env:
@@ -93,6 +100,7 @@ jobs:
   status-check:
     name: All Checks Passed
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: [frontend, backend]
     if: always()
     steps:
