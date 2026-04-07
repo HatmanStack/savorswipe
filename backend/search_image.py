@@ -5,6 +5,7 @@ from typing import Dict, List, Optional, Set
 
 import requests
 
+from http_client import SESSION
 from logger import StructuredLogger
 
 log = StructuredLogger("search")
@@ -83,7 +84,7 @@ def validate_image_urls(image_urls: List[str], timeout: int = 5) -> List[str]:
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
             }
-            response = requests.head(url, headers=headers, timeout=timeout, allow_redirects=True)
+            response = SESSION.head(url, headers=headers, timeout=timeout, allow_redirects=True)
             if response.status_code == 200:
                 content_type = response.headers.get('Content-Type', '')
                 if 'image' in content_type.lower():
@@ -197,7 +198,7 @@ def _search_google_images(query: str, count: int = 10) -> List[str]:
 
     try:
         log.info("Sending request to Google Custom Search API")
-        response = requests.get(url, params=params, timeout=10)  # 10 second timeout
+        response = SESSION.get(url, params=params, timeout=10)  # 10 second timeout
         log.info("Response received", status_code=response.status_code)
 
         if response.status_code == 200:

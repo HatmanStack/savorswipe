@@ -20,9 +20,21 @@ import requests
 from botocore.exceptions import ClientError
 from PIL import Image
 from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from urllib3.util.ssl_ import create_urllib3_context
 
 from logger import StructuredLogger
+
+# Retry policy shared with http_client.SESSION: backoff on transient 5xx.
+# We mount this on the per-request pinned adapter so outbound image fetches
+# also benefit from retry/backoff while preserving the DNS-rebinding defense.
+_IMAGE_FETCH_RETRY = Retry(
+    total=3,
+    backoff_factor=0.3,
+    status_forcelist=(500, 502, 503, 504),
+    allowed_methods=frozenset(["GET", "HEAD"]),
+    raise_on_status=False,
+)
 
 log = StructuredLogger("image_uploader")
 
@@ -158,9 +170,17 @@ def fetch_image_from_url(
         }
 
         # Use a session with a pinned hostname adapter so TLS SNI and certificate
-        # verification use the validated hostname, preventing DNS rebinding attacks
+        # verification use the validated hostname, preventing DNS rebinding attacks.
+        # The adapter carries a Retry policy so transient 5xx responses back off
+        # before giving up (shared policy with backend.http_client.SESSION).
         with requests.Session() as session:
-            session.mount('https://', _PinnedHostnameAdapter(server_hostname=hostname))
+            session.mount(
+                'https://',
+                _PinnedHostnameAdapter(
+                    server_hostname=hostname,
+                    max_retries=_IMAGE_FETCH_RETRY,
+                ),
+            )
 
             # Disable redirects to unvalidated hosts; use original URL (the adapter
             # handles hostname pinning at the TLS layer)

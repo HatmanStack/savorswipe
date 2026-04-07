@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 class TestValidateImageUrls:
     """Tests for validate_image_urls() function."""
 
-    @patch("search_image.requests.head")
+    @patch("search_image.SESSION.head")
     def test_validate_all_valid_urls(self, mock_head):
         """Test validation of all valid image URLs."""
         # Arrange
@@ -43,7 +43,7 @@ class TestValidateImageUrls:
         assert len(result) == 3
         assert result == urls
 
-    @patch("search_image.requests.head")
+    @patch("search_image.SESSION.head")
     def test_validate_mixed_valid_invalid(self, mock_head):
         """Test validation with mix of valid and invalid URLs."""
         # Arrange
@@ -72,7 +72,7 @@ class TestValidateImageUrls:
         assert "https://example.com/image1.jpg" in result
         assert "https://example.com/image2.jpg" in result
 
-    @patch("search_image.requests.head")
+    @patch("search_image.SESSION.head")
     def test_validate_url_returns_404(self, mock_head):
         """Test handling of URLs that return 404."""
         # Arrange
@@ -96,7 +96,7 @@ class TestValidateImageUrls:
         assert len(result) == 1
         assert result == ["https://example.com/image1.jpg"]
 
-    @patch("search_image.requests.head")
+    @patch("search_image.SESSION.head")
     def test_validate_url_timeout(self, mock_head):
         """Test handling of URL validation timeouts."""
         # Arrange
@@ -124,7 +124,7 @@ class TestValidateImageUrls:
         assert len(result) == 1
         assert result == ["https://example.com/image1.jpg"]
 
-    @patch("search_image.requests.head")
+    @patch("search_image.SESSION.head")
     def test_validate_url_connection_error(self, mock_head):
         """Test handling of connection errors during validation."""
         # Arrange
@@ -160,7 +160,7 @@ class TestValidateImageUrls:
         # Assert
         assert result == []
 
-    @patch("search_image.requests.head")
+    @patch("search_image.SESSION.head")
     def test_validate_with_empty_urls_in_list(self, mock_head):
         """Test validation skips empty strings in list."""
         # Arrange
@@ -176,7 +176,7 @@ class TestValidateImageUrls:
         # Assert
         assert len(result) == 2
 
-    @patch("search_image.requests.head")
+    @patch("search_image.SESSION.head")
     def test_validate_preserves_original_order(self, mock_head):
         """Test that validation returns URLs in original order even when later URLs validate faster."""
         import time
@@ -202,7 +202,7 @@ class TestValidateImageUrls:
 
         assert result == urls  # Order must be preserved
 
-    @patch("search_image.requests.head")
+    @patch("search_image.SESSION.head")
     def test_validate_filters_invalid_urls(self, mock_head):
         """Test that invalid URLs are filtered out while preserving order."""
         urls = [
@@ -229,7 +229,7 @@ class TestValidateImageUrls:
             "https://example.com/valid2.jpg",
         ]
 
-    @patch("search_image.requests.head")
+    @patch("search_image.SESSION.head")
     def test_validate_variable_content_types(self, mock_head):
         """Test validation accepts various image content types."""
         # Arrange
@@ -262,8 +262,8 @@ class TestValidateImageUrls:
 class TestGoogleSearchImage:
     """Tests for google_search_image() function."""
 
-    @patch("search_image.requests.head")
-    @patch("search_image.requests.get")
+    @patch("search_image.SESSION.head")
+    @patch("search_image.SESSION.get")
     def test_google_search_image_returns_correct_count(self, mock_get, mock_head):
         """Test that google_search_image returns requested number of URLs."""
         # Arrange
@@ -291,8 +291,8 @@ class TestGoogleSearchImage:
         assert all(isinstance(url, str) for url in results)
         assert all(url.startswith("https://") for url in results)
 
-    @patch("search_image.requests.head")
-    @patch("search_image.requests.get")
+    @patch("search_image.SESSION.head")
+    @patch("search_image.SESSION.get")
     def test_google_search_image_with_beverage_type(self, mock_get, mock_head):
         """Test google_search_image uses beverage-specific search terms."""
         # Arrange
@@ -320,8 +320,8 @@ class TestGoogleSearchImage:
         # Verify the function was called (implicitly tests search with beverage suffix)
         assert mock_get.called
 
-    @patch("search_image.requests.head")
-    @patch("search_image.requests.get")
+    @patch("search_image.SESSION.head")
+    @patch("search_image.SESSION.get")
     def test_google_search_image_empty_response(self, mock_get, mock_head):
         """Test handling of empty API response."""
         # Arrange
@@ -336,7 +336,7 @@ class TestGoogleSearchImage:
         # Assert
         assert results == []
 
-    @patch("search_image.requests.get")
+    @patch("search_image.SESSION.get")
     def test_google_search_image_api_error(self, mock_get):
         """Test handling of API error."""
         # Arrange
@@ -350,7 +350,7 @@ class TestGoogleSearchImage:
         # Assert
         assert results == []
 
-    @patch("search_image.requests.get")
+    @patch("search_image.SESSION.get")
     def test_google_search_image_timeout(self, mock_get):
         """Test handling of request timeout."""
         # Arrange
@@ -364,8 +364,8 @@ class TestGoogleSearchImage:
         # Assert
         assert results == []
 
-    @patch("search_image.requests.head")
-    @patch("search_image.requests.get")
+    @patch("search_image.SESSION.head")
+    @patch("search_image.SESSION.get")
     def test_google_search_image_filters_invalid_urls(self, mock_get, mock_head):
         """Test that google_search_image filters out invalid URLs."""
         # Arrange

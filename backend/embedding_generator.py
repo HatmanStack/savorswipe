@@ -9,6 +9,8 @@ from typing import Dict, List, Optional
 
 import requests
 
+from http_client import SESSION
+
 
 class EmbeddingGenerator:
     """Generates text embeddings using OpenAI API."""
@@ -58,8 +60,8 @@ class EmbeddingGenerator:
         }
 
         try:
-            # Make request with timeout
-            response = requests.post(
+            # Make request with timeout via shared retrying session
+            response = SESSION.post(
                 self.OPENAI_API_URL,
                 json=payload,
                 headers=headers,

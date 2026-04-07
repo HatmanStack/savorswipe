@@ -107,7 +107,7 @@ class TestEmbeddingGenerator(unittest.TestCase):
         self.assertIn('8 oz', text)
         self.assertIn('1 cup', text)
 
-    @patch('embedding_generator.requests.post')
+    @patch('embedding_generator.SESSION.post')
     def test_generate_embedding_success(self, mock_post):
         """Test successful embedding generation."""
         # Mock successful API response
@@ -127,7 +127,7 @@ class TestEmbeddingGenerator(unittest.TestCase):
         mock_post.assert_called_once()
         mock_response.raise_for_status.assert_called_once()
 
-    @patch('embedding_generator.requests.post')
+    @patch('embedding_generator.SESSION.post')
     def test_generate_embedding_timeout(self, mock_post):
         """Test embedding generation handles timeout."""
         # Mock timeout error
@@ -139,7 +139,7 @@ class TestEmbeddingGenerator(unittest.TestCase):
             generator.generate_embedding('test text')
         self.assertIn('timeout', str(context.exception).lower())
 
-    @patch('embedding_generator.requests.post')
+    @patch('embedding_generator.SESSION.post')
     def test_generate_embedding_includes_timeout(self, mock_post):
         """Test that requests.post is called with timeout parameter."""
         # Mock successful response
@@ -157,7 +157,7 @@ class TestEmbeddingGenerator(unittest.TestCase):
         call_kwargs = mock_post.call_args[1]
         self.assertEqual(call_kwargs['timeout'], EmbeddingGenerator.TIMEOUT)
 
-    @patch('embedding_generator.requests.post')
+    @patch('embedding_generator.SESSION.post')
     def test_generate_recipe_embedding(self, mock_post):
         """Test generating embedding for full recipe."""
         # Mock successful API response
@@ -185,7 +185,7 @@ class TestEmbeddingGenerator(unittest.TestCase):
         self.assertIn('Test Recipe', request_data['input'])
         self.assertIn('flour', request_data['input'])
 
-    @patch('embedding_generator.requests.post')
+    @patch('embedding_generator.SESSION.post')
     def test_recipe_to_text_missing_title(self, mock_post):
         """Test recipe_to_text handles missing title gracefully."""
         recipe = {
@@ -197,7 +197,7 @@ class TestEmbeddingGenerator(unittest.TestCase):
         self.assertIn('flour', text)
         self.assertIn('sugar', text)
 
-    @patch('embedding_generator.requests.post')
+    @patch('embedding_generator.SESSION.post')
     def test_recipe_to_text_missing_ingredients(self, mock_post):
         """Test recipe_to_text handles missing ingredients gracefully."""
         recipe = {
