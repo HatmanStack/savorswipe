@@ -47,10 +47,12 @@ docker build -f .devcontainer/Dockerfile .
 ## Quick Start
 
 ```bash
-npm install     # Install dependencies
-npm run deploy  # Deploy backend (required before first run)
-npm start       # Start Expo dev server
-npm run check   # Run all lint and tests
+npm install         # Install dependencies
+npm run deploy      # Deploy backend (required before first run)
+npm start           # Start Expo dev server
+npm run check       # Run all lint and tests
+npm run sitemap     # Generate static sitemap.xml from local recipe data
+npm run sitemap:api # Generate sitemap.xml from the live API
 ```
 
 ## Deployment

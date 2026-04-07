@@ -79,7 +79,26 @@ Example `.env` (auto-updated):
 ```bash
 EXPO_PUBLIC_CLOUDFRONT_BASE_URL=https://your-cloudfront-url.cloudfront.net
 EXPO_PUBLIC_API_GATEWAY_URL=https://your-api-url.execute-api.us-east-1.amazonaws.com
+EXPO_PUBLIC_UPLOAD_URL=https://your-upload-endpoint-url
 ```
+
+### Backend Lambda Environment Variables
+
+Set via SAM parameter overrides (`samconfig.toml` / `--parameter-overrides`):
+
+| Variable | Required | Default | Purpose |
+|---|---|---|---|
+| `API_KEY` | yes | — | OpenAI API key (OCR + embeddings) |
+| `SEARCH_ID` | yes | — | Google Custom Search engine id |
+| `SEARCH_KEY` | yes | — | Google Custom Search API key |
+| `S3_BUCKET` | yes | — | Recipe/image storage bucket |
+| `OPENAI_VISION_MODEL` | no | `gpt-5.2` | Vision model for OCR |
+| `SIMILARITY_THRESHOLD` | no | `0.85` | Cosine threshold for duplicate detection |
+| `PDF_MAX_PAGES` | no | `20` | Max PDF pages processed per upload |
+| `MAX_RETRIES` | no | `3` | ETag-locked write retry budget |
+| `FUNCTION_NAME` | no | derived | Self-invoke target for async background work |
+| `MAX_ASYNC_PAYLOAD_BYTES` | no | `262144` | Async invoke payload cap |
+| `RECIPE_BUDGET_SECONDS` | no | `540` | Per-recipe processing budget |
 
 ### Local Development CORS
 
@@ -280,10 +299,11 @@ The deployment creates:
 - **CloudFront Distribution**: CDN for serving images
 - **Lambda Function**: Python-based recipe processing (OCR, image search)
 - **API Gateway v2**: HTTP API with routes:
-  - `GET /recipes`
-  - `POST /recipe/upload`
-  - `DELETE /recipe/{recipe_key}`
-  - `POST /recipe/{recipe_key}/image`
+  - `GET /recipes` — fetch all recipe data
+  - `POST /recipe/upload` — upload images/PDFs for OCR processing
+  - `DELETE /recipe/{recipe_key}` — delete a recipe
+  - `POST /recipe/{recipe_key}/image` — select recipe image
+  - `GET /upload/status/{jobId}` — check background job status
 - **CloudWatch Logs**: Automatic logging for debugging
 
 The Lambda function has permissions to:
