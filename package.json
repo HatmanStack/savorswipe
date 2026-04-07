@@ -15,6 +15,8 @@
     "test:backend": "PYTHONPATH=backend pytest tests/backend -v --tb=short",
     "lint": "cd frontend && expo lint && npx tsc --noEmit",
     "lint:backend": "cd backend && uvx ruff check .",
+    "lock:backend": "cd backend && uv lock && uv export --frozen --no-hashes --no-dev --no-emit-project > requirements.txt",
+    "test:e2e": "playwright test",
     "check": "npm run lint && npm run lint:backend && jest --passWithNoTests --no-watch --ci --runInBand --forceExit && npm run test:backend",
     "deploy": "node ./frontend/scripts/deploy.js",
     "sitemap": "node ./frontend/scripts/generate-sitemap.js",
@@ -32,7 +34,10 @@
     ],
     "testPathIgnorePatterns": [
       "/node_modules/",
-      "/tests/backend/"
+      "/tests/backend/",
+      "/tests/e2e/",
+      "/__test_helpers__/",
+      "/dist/"
     ],
     "setupFiles": [
       "<rootDir>/jest.globals.js",
