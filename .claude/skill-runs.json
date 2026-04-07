@@ -8,5 +8,15 @@
     "skill": "brainstorm",
     "date": "2026-03-21",
     "plan": "2026-03-21-upload-propagation-bugs"
+  },
+  {
+    "skill": "audit",
+    "date": "2026-04-07",
+    "plan": "2026-04-07-audit-savorswipe",
+    "audits": [
+      "health",
+      "eval",
+      "docs"
+    ]
   }
 ]
