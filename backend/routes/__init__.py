@@ -1,13 +1,9 @@
 """
-Explicit route table for the recipe-processor Lambda.
+Per-endpoint Lambda route handlers and the explicit dispatch table.
 
-Replaces the substring-based dispatch in lambda_function.lambda_handler with
-regex-based path matching and parameter extraction. Each route is a tuple of
-``(method, compiled_pattern, handler_name)``. The handler name is resolved
-against the lambda_function module at dispatch time.
-
-Path parameters are captured via named groups (``(?P<recipe_key>[^/]+)``)
-and forwarded to the handler as kwargs.
+The dispatch table maps ``(method, path_pattern)`` to handler-name strings
+that are resolved against the ``lambda_function`` module at request time
+(so ``patch('lambda_function.handle_X')`` continues to work).
 """
 
 from __future__ import annotations
@@ -15,7 +11,6 @@ from __future__ import annotations
 import re
 from typing import Dict, List, Optional, Pattern, Tuple
 
-# (method, compiled regex, handler name)
 ROUTES: List[Tuple[str, Pattern[str], str]] = [
     ("GET", re.compile(r"^/recipes/?$"), "handle_get_request"),
     (
@@ -36,16 +31,11 @@ ROUTES: List[Tuple[str, Pattern[str], str]] = [
     ("POST", re.compile(r"^/recipe/upload/?$"), "handle_post_request"),
 ]
 
-# Methods that the API understands at all (used to distinguish 404 from 405).
 KNOWN_METHODS = {"GET", "POST", "DELETE"}
 
 
 def dispatch(method: str, path: str) -> Optional[Tuple[str, Dict[str, str]]]:
-    """
-    Resolve ``(method, path)`` to ``(handler_name, path_params)``.
-
-    Returns ``None`` on miss. Trailing slashes are tolerated.
-    """
+    """Resolve ``(method, path)`` to ``(handler_name, path_params)`` or ``None``."""
     if not path:
         return None
     for route_method, pattern, handler_name in ROUTES:
@@ -58,7 +48,7 @@ def dispatch(method: str, path: str) -> Optional[Tuple[str, Dict[str, str]]]:
 
 
 def method_allowed_for_path(path: str) -> bool:
-    """Return True if any route matches the given path under any method."""
+    """Return ``True`` if any route matches ``path`` under any HTTP method."""
     for _, pattern, _ in ROUTES:
         if pattern.match(path):
             return True
