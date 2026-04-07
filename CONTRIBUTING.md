@@ -4,17 +4,22 @@
 
 1. Clone the repository
 2. Install frontend dependencies:
+
    ```bash
    npm ci
    ```
+
 3. Install backend dependencies (uv only — never bare `pip`):
+
    ```bash
    cd backend && uv sync --frozen
    ```
+
    This project uses [uv](https://docs.astral.sh/uv/) for all Python package
    management. Never use bare `pip`; use `uv pip` or `uvx` instead.
 4. Copy `.env.example` to `.env` and fill in your values (see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md))
 5. Start the app:
+
    ```bash
    npm start
    ```
@@ -36,6 +41,7 @@ Format: `type(scope): description`
 **Valid types:** `feat`, `fix`, `refactor`, `test`, `chore`, `docs`, `perf`, `ci`, `style`, `build`, `revert`
 
 **Examples:**
+
 ```text
 feat(frontend): add recipe search filters
 fix(backend): handle missing S3 key in upload
@@ -55,16 +61,19 @@ docs: update deployment instructions
 ## Running Tests
 
 **Frontend:**
+
 ```bash
 npm test -- --ci --forceExit
 ```
 
 **Backend:**
+
 ```bash
 PYTHONPATH=backend pytest tests/backend -v --tb=short
 ```
 
 **All checks (lint + tests):**
+
 ```bash
 npm run check
 ```

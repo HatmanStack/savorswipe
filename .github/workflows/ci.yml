@@ -4,14 +4,10 @@ on:
   push:
     branches: [main]
     paths-ignore:
-      - 'docs/**'
-      - '*.md'
       - '.claude/**'
   pull_request:
     branches: [main]
     paths-ignore:
-      - 'docs/**'
-      - '*.md'
       - '.claude/**'
 
 concurrency:
@@ -126,11 +122,36 @@ jobs:
         env:
           CI: '1'
 
+  docs:
+    name: Docs Lint & Link Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Markdownlint
+        run: npm run docs:lint
+
+      - name: Link check (lychee)
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --config lychee.toml --no-progress '**/*.md'
+          fail: true
+
   status-check:
     name: All Checks Passed
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [frontend, backend, e2e]
+    needs: [frontend, backend, e2e, docs]
     if: always()
     steps:
       - name: Verify
@@ -138,6 +159,7 @@ jobs:
           results=(
             "${{ needs.frontend.result }}"
             "${{ needs.backend.result }}"
+            "${{ needs.docs.result }}"
           )
           for result in "${results[@]}"; do
             if [[ "$result" != "success" && "$result" != "skipped" ]]; then

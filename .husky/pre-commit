@@ -1,5 +1,12 @@
 #!/usr/bin/env sh
 set -e
+
+# Lint staged markdown files only (fast path; full repo runs in CI).
+staged_md=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.md$' || true)
+if [ -n "$staged_md" ]; then
+  echo "$staged_md" | xargs npx --no-install markdownlint-cli --ignore-path .markdownlintignore
+fi
+
 cd frontend && npx expo lint
 if command -v uvx >/dev/null 2>&1; then
   cd ../backend && uvx ruff check .

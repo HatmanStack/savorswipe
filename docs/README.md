@@ -46,18 +46,21 @@ After uploading, a modal appears with 9 Google image search results:
 ## Architecture
 
 **Frontend**: Expo/React Native with file-based routing (Expo Router)
+
 - Context-based state management (`RecipeContext`)
 - Image prefetch queue (10-15 images, batch fetching)
 - Background upload processing with job queue and AsyncStorage persistence
 - Discriminated union type system with branded types
 
 **Backend**: AWS Lambda (Python 3.13) with API Gateway v2
+
 - OpenAI Vision API for OCR
 - Google Custom Search for recipe images
 - Semantic duplicate detection using embeddings (cosine similarity, 0.85 threshold)
 - Atomic S3 writes with ETag-based optimistic locking
 
 **Storage**: S3 with CloudFront CDN
+
 - `/images/*.jpg` - Recipe photos
 - `/jsondata/combined_data.json` - Recipe metadata
 - `/jsondata/recipe_embeddings.json` - Similarity vectors
