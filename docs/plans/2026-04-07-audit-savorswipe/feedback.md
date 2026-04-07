@@ -41,3 +41,16 @@ Confirmed green:
 Resolution: Added `frontend/knip.json` declaring the real Expo Router entries (`app/**/*.{ts,tsx,js,jsx}`, config files, scripts, and Jest test/helper globs), changed `frontend/package.json` `main` from the bare `expo-router/entry` specifier to a local `index.js` shim that does `import 'expo-router/entry';`, and ignored `expo-router` in `ignoreDependencies` (since it's pulled in transitively via the shim, not a direct import). `npx knip` from `frontend/` now reports zero configuration hints, zero unused files, and zero unused exports — the 94-file false-positive cascade is gone. Remaining `Unlisted dependencies (129)` are the expected workspace-hoisted peers (`react`, `react-native`, etc.) and out of scope for Task 1.3. Lint (`npm run lint`) and frontend tests (`npm test -- --ci --forceExit`: 29 suites, 279 passed, 9 skipped) re-verified green. Committed as a follow-up `chore(frontend):` (no amend).
 
 ---
+
+### CODE_REVIEW Phase 5 — CI Node version pinned to v24, contradicting Phase 0 convention
+
+- Status: RESOLVED
+- Reviewer: health-reviewer
+- Scope: Task 5.1 / Task 5.3 — `.github/workflows/ci.yml`
+
+Original report: Phase 0 explicitly states "Node: Active LTS is v22 (NOT v24). CI pins explicit versions." The new `e2e` job and the existing `frontend` job both pinned `node-version: '24'` while the devcontainer Dockerfile correctly pins `NODE_VERSION=22`, so CI and the devcontainer disagreed about the supported runtime — exactly the reproducibility gap Phase 5 was supposed to close.
+
+Resolution: Flipped both the `frontend` and new `e2e` jobs in `.github/workflows/ci.yml` from `node-version: '24'` to `'22'`, matching Phase 0 convention and the devcontainer Dockerfile (`NODE_VERSION=22`). The three sources of truth (Phase 0, devcontainer, CI) now agree on Node 22 LTS. Re-ran `npm run check` post-flip — green (29 jest suites, 279 passed, 9 skipped; lint clean). Committed as a follow-up `ci:` (no amend).
+
+---
+
