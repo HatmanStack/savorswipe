@@ -7,7 +7,7 @@ const CLOUDFRONT_BASE_URL = process.env.EXPO_PUBLIC_CLOUDFRONT_BASE_URL;
  * Extracts ingredients as a flat string array for JSON-LD.
  * Handles both raw and normalized ingredient formats.
  */
-export function getIngredientsList(ingredients: RecipeIngredients | RawIngredients | undefined): string[] {
+function getIngredientsList(ingredients: RecipeIngredients | RawIngredients | undefined): string[] {
   if (!ingredients) return [];
   if (typeof ingredients === 'string') return [ingredients];
   if (Array.isArray(ingredients)) return ingredients;
@@ -31,7 +31,7 @@ export function getIngredientsList(ingredients: RecipeIngredients | RawIngredien
  * Extracts directions as a flat string array for JSON-LD.
  * Handles both raw and normalized direction formats.
  */
-export function getInstructionsList(directions: RecipeDirections | RawDirections | undefined): string[] {
+function getInstructionsList(directions: RecipeDirections | RawDirections | undefined): string[] {
   if (!directions) return [];
   if (typeof directions === 'string') return [directions];
   if (Array.isArray(directions)) return directions;

@@ -9,7 +9,7 @@ import { ToastQueue } from '@/components/Toast'
 /**
  * Resize image to max dimensions and return base64
  */
-export const resizeImage = async (uri: string, maxSize: number): Promise<string | undefined> => {
+const resizeImage = async (uri: string, maxSize: number): Promise<string | undefined> => {
   const manipulatorResult = await ImageManipulator.manipulateAsync(
     uri,
     [{ resize: { width: maxSize } }],  // Preserve aspect ratio

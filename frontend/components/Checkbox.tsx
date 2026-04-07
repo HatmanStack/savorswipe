@@ -15,7 +15,7 @@ interface CheckboxProps {
   disabled?: boolean;
 }
 
-export const createCheckbox = (defaultOptions?: Partial<CheckboxProps>) => {
+const createCheckbox = (defaultOptions?: Partial<CheckboxProps>) => {
   return function CustomCheckbox(props: CheckboxProps) {
     const options = { ...defaultOptions, ...props };
     const {
@@ -72,25 +72,6 @@ export const createCheckbox = (defaultOptions?: Partial<CheckboxProps>) => {
 
 // Create some preset checkbox styles
 export const StandardCheckbox = createCheckbox();
-
-export const RoundCheckbox = createCheckbox({
-  size: 24,
-  borderColor: '#2196F3',
-  fillColor: '#2196F3',
-  style: { borderRadius: 12 }, // Make it fully round
-});
-
-export const LargeCheckbox = createCheckbox({
-  size: 28,
-  borderColor: '#4CAF50',
-  fillColor: '#4CAF50',
-});
-
-export const SmallCheckbox = createCheckbox({
-  size: 16,
-  borderColor: '#FF9800',
-  fillColor: '#FF9800',
-});
 
 const styles = StyleSheet.create({
   row: {

@@ -21,7 +21,7 @@ import {
   Modal,
 } from 'react-native'
 
-export interface ImageGridProps {
+interface ImageGridProps {
   /** Recipe title to display at top */
   recipeTitle: string;
   /** Array of 9 Google image URLs */

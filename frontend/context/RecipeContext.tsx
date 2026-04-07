@@ -23,9 +23,6 @@ interface RecipeContextType {
 // Create the context
 const RecipeContext = createContext<RecipeContextType | undefined>(undefined);
 
-// Export MealType for backwards compatibility
-export type { MealType };
-
 // Create the provider component
 export const RecipeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [currentRecipe, setCurrentRecipe] = useState<Recipe | null>(null);

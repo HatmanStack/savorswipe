@@ -11,7 +11,7 @@ import { Recipe, S3JsonData } from '@/types';
  * Declarative error pattern mapping.
  * Order matters: more specific patterns must come before generic ones.
  */
-export const ERROR_PATTERNS: ReadonlyArray<{ pattern: RegExp; message: string }> = [
+const ERROR_PATTERNS: ReadonlyArray<{ pattern: RegExp; message: string }> = [
   { pattern: /timeout|request timeout/i, message: 'Taking longer than expected. Please check your internet and try again.' },
   { pattern: /recipe not found|404/i, message: 'Recipe not found. It may have been deleted.' },
   { pattern: /invalid image url|invalid url|400/i, message: "Image couldn't be loaded. Please select another image." },
@@ -27,7 +27,7 @@ export const ERROR_PATTERNS: ReadonlyArray<{ pattern: RegExp; message: string }>
  * @param rawError - Raw error message from backend or network
  * @returns User-friendly error message
  */
-export function transformErrorMessage(rawError: string): string {
+function transformErrorMessage(rawError: string): string {
   const match = ERROR_PATTERNS.find(({ pattern }) => pattern.test(rawError));
   return match?.message ?? 'An error occurred. Please try again.';
 }
@@ -36,7 +36,7 @@ export function transformErrorMessage(rawError: string): string {
 // Types
 // ============================================================================
 
-export interface UseImagePickerOptions {
+interface UseImagePickerOptions {
   jsonData: S3JsonData | null;
   setJsonData: React.Dispatch<React.SetStateAction<S3JsonData | null>>;
   pendingRecipeForPicker: Recipe | null;
@@ -44,7 +44,7 @@ export interface UseImagePickerOptions {
   onRecipeConfirmed: (recipeKey: string) => void;
 }
 
-export interface ImagePickerReturn {
+interface ImagePickerReturn {
   pendingRecipe: Recipe | null;
   showImagePickerModal: boolean;
   isSubmitting: boolean;

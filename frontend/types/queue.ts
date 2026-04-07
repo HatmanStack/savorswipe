@@ -18,23 +18,6 @@ export interface QueueConfig {
   ANIMATION_DURATION: number;
 }
 
-// ============================================================================
-// Generic Queue Types
-// ============================================================================
-
-/**
- * Generic state for a prefetch queue.
- * @template T - Type of items in the queue (default: ImageFile)
- */
-export interface QueueState<T = ImageFile> {
-  /** Prefetched items ready for display */
-  queue: T[];
-  /** Remaining unfetched item keys */
-  itemKeyPool: string[];
-  /** Is a batch fetch in progress? */
-  isRefilling: boolean;
-}
-
 /**
  * Generic result of a batch fetch operation.
  * @template T - Type of fetched items (default: ImageFile)
@@ -44,16 +27,6 @@ export interface BatchFetchResult<T = ImageFile> {
   images: T[];
   /** Keys that failed to fetch */
   failedKeys: string[];
-}
-
-// ============================================================================
-// Image Queue Specific Types
-// ============================================================================
-
-/** State maintained by ImageQueueService */
-export interface ImageQueueState extends QueueState<ImageFile> {
-  /** Alias for itemKeyPool for backwards compatibility */
-  recipeKeyPool: string[];
 }
 
 /**
@@ -84,16 +57,3 @@ export interface ImageQueueHook {
   showImagePickerModal: boolean;
 }
 
-// ============================================================================
-// Type Guards
-// ============================================================================
-
-/** Check if a batch fetch result has any successful fetches */
-export function hasFetchedImages<T>(result: BatchFetchResult<T>): boolean {
-  return result.images.length > 0;
-}
-
-/** Check if all requested items failed to fetch */
-export function allFetchesFailed<T>(result: BatchFetchResult<T>, requestedCount: number): boolean {
-  return result.failedKeys.length === requestedCount && result.images.length === 0;
-}

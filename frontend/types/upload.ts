@@ -10,7 +10,7 @@
 
 import { Recipe } from './index'
 
-export type UploadState = 'pending' | 'processing' | 'completed' | 'error'
+type UploadState = 'pending' | 'processing' | 'completed' | 'error'
 export type JobStatus = 'pending' | 'processing' | 'completed' | 'error'
 
 /**
@@ -90,4 +90,4 @@ export type JobStatusCallback = (job: UploadJob) => void
  * Callback for upload status changes
  * Updated signature for job-based system
  */
-export type UploadStatusCallback = (job: UploadJob) => void
+type UploadStatusCallback = (job: UploadJob) => void
