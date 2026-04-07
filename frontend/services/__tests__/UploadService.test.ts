@@ -7,6 +7,11 @@
 global.fetch = jest.fn()
 
 import { UploadService } from '../UploadService'
+import {
+  setTestApiUrl,
+  setProcessingForTests,
+  resetUploadServiceForTests,
+} from '../__test_helpers__/UploadServiceTestHooks'
 import { UploadFile, UploadJob, UploadResult } from '@/types/upload'
 
 describe('UploadService', () => {
@@ -23,8 +28,8 @@ describe('UploadService', () => {
   beforeEach(async () => {
     jest.clearAllMocks()
     // Reset service state between tests (async to clear persistence)
-    await UploadService._resetForTests()
-    UploadService._setTestApiUrl('https://mock-api-url.com')
+    await resetUploadServiceForTests()
+    setTestApiUrl('https://mock-api-url.com')
 
     // Default fetch mock to prevent unhandled rejections
     ;(global.fetch as jest.Mock).mockResolvedValue({
@@ -35,13 +40,13 @@ describe('UploadService', () => {
 
   afterEach(() => {
     // Clean up test URL
-    UploadService._setTestApiUrl(null)
+    setTestApiUrl(null)
   })
 
   describe('queueUpload', () => {
     it('test_queue_upload_creates_job: should create job with UUID and pending status', async () => {
       // Prevent automatic processing for this test
-      UploadService._setProcessingForTests(true)
+      setProcessingForTests(true)
 
       const files: UploadFile[] = [
         { data: 'base64data1', type: 'image', uri: 'file://img1.jpg' },
@@ -62,7 +67,7 @@ describe('UploadService', () => {
       expect(job?.timestamp).toBeLessThanOrEqual(Date.now())
 
       // Reset for other tests
-      UploadService._setProcessingForTests(false)
+      setProcessingForTests(false)
     })
 
     it('test_queue_upload_returns_immediately: should return job ID without waiting', async () => {
@@ -86,7 +91,7 @@ describe('UploadService', () => {
 
     it('test_queue_multiple_uploads: should add all to queue with pending status', async () => {
       // Prevent automatic processing for this test
-      UploadService._setProcessingForTests(true)
+      setProcessingForTests(true)
 
       const files1: UploadFile[] = [
         { data: 'data1', type: 'image', uri: 'file://img1.jpg' },
@@ -110,7 +115,7 @@ describe('UploadService', () => {
       )
 
       // Reset for other tests
-      UploadService._setProcessingForTests(false)
+      setProcessingForTests(false)
     })
   })
 
@@ -278,7 +283,7 @@ describe('UploadService', () => {
   describe('job cancellation', () => {
     it('test_cancel_pending_job: should set status to error', async () => {
       // Prevent processing from starting
-      UploadService._setProcessingForTests(true)
+      setProcessingForTests(true)
 
       const files: UploadFile[] = [
         { data: 'data1', type: 'image', uri: 'file://img1.jpg' },
@@ -295,7 +300,7 @@ describe('UploadService', () => {
       expect(job?.errors.length).toBeGreaterThan(0)
 
       // Reset for other tests
-      UploadService._setProcessingForTests(false)
+      setProcessingForTests(false)
     })
 
     it('test_cannot_cancel_processing_job: should return false', async () => {

@@ -26,44 +26,6 @@ export class UploadService {
   private static isProcessing: boolean = false
 
   /**
-   * Test-only method to set API URL
-   * @internal
-   */
-  static _setTestApiUrl(url: string | null): void {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('_setTestApiUrl is only available in test/development environments')
-    }
-    this._testApiUrl = url
-  }
-
-  /**
-   * Test-only method to reset all internal state
-   * @internal
-   */
-  static async _resetForTests(): Promise<void> {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('_resetForTests is only available in test/development environments')
-    }
-    this.jobQueue = []
-    this.currentJobId = null
-    this.isProcessing = false
-    this.subscribers = new Set()
-    this._testApiUrl = null
-    await UploadPersistence.clear()
-  }
-
-  /**
-   * Test-only method to control processing lock
-   * @internal
-   */
-  static _setProcessingForTests(value: boolean): void {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('_setProcessingForTests is only available in test/development environments')
-    }
-    this.isProcessing = value
-  }
-
-  /**
    * Queue a new upload job
    * Returns job ID immediately (non-blocking)
    *
@@ -422,5 +384,41 @@ export class UploadService {
    */
   private static generateJobId(): string {
     return Crypto.randomUUID()
+  }
+}
+
+// ============================================================================
+// Test-only internal accessor
+// ----------------------------------------------------------------------------
+// Exported only when running under React Native's __DEV__ flag (Jest sets this
+// to true via jest-expo). Production bundles tree-shake the entire branch
+// because the assignment is dead code, leaving no test back doors in the ship.
+// ============================================================================
+type UploadServiceInternals = {
+  setTestApiUrl(url: string | null): void
+  setProcessing(value: boolean): void
+  reset(): Promise<void>
+}
+
+export let __UPLOAD_SERVICE_INTERNALS__: UploadServiceInternals | undefined
+
+if (typeof __DEV__ !== 'undefined' && __DEV__) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const Internal = UploadService as any
+  __UPLOAD_SERVICE_INTERNALS__ = {
+    setTestApiUrl(url: string | null) {
+      Internal._testApiUrl = url
+    },
+    setProcessing(value: boolean) {
+      Internal.isProcessing = value
+    },
+    async reset() {
+      Internal.jobQueue = []
+      Internal.currentJobId = null
+      Internal.isProcessing = false
+      Internal.subscribers = new Set()
+      Internal._testApiUrl = null
+      await UploadPersistence.clear()
+    },
   }
 }
