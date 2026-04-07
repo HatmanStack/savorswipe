@@ -67,52 +67,6 @@ def is_problematic_url(url: str) -> bool:
         return False
 
 
-def to_s3(recipe, search_results, jsonData=None):
-    combined_data_key = 'jsondata/combined_data.json'
-    s3_client = _get_s3_client()
-    etag = None
-    try:
-        if not jsonData:
-            existing_data = s3_client.get_object(Bucket=bucket_name, Key=combined_data_key)
-            existing_data_body = existing_data['Body'].read()
-            etag = existing_data['ETag'].strip('"')
-        else:
-            existing_data_body = jsonData
-        existing_data_json = json.loads(existing_data_body)
-        for existing_recipe in existing_data_json.values():
-            if existing_recipe.get('Title') == recipe.get('Title'):
-                return False, existing_data_json
-        numeric_keys = [int(k) for k in existing_data_json.keys() if k.isdigit()]
-        highest_key = max(numeric_keys, default=0) + 1
-    except ClientError as e:
-        if e.response['Error']['Code'] == 'NoSuchKey':
-            existing_data_json = {}
-            highest_key = 1
-        else:
-            raise
-
-    image_url = upload_image(search_results, bucket_name, highest_key)
-    if image_url:
-        recipe['key'] = highest_key
-        recipe['image_url'] = image_url  # Save the source image URL
-        # NEW_RECIPE_FEATURE: Add uploadedAt timestamp for frontend "new" indicator
-        recipe['uploadedAt'] = datetime.now(timezone.utc).isoformat()
-        existing_data_json[str(highest_key)] = recipe
-        updated_data_json = json.dumps(existing_data_json)
-        params = {
-            'Bucket': bucket_name,
-            'Key': combined_data_key,
-            'Body': updated_data_json,
-            'ContentType': 'application/json'
-        }
-        if etag is not None:
-            params['IfMatch'] = etag
-        s3_client.put_object(**params)
-        return True, existing_data_json
-    else:
-        return False, existing_data_json
-
-
 def upload_image(search_results, bucket_name, highest_key):
     log.info("Starting image upload", recipe_key=highest_key, search_results_type=str(type(search_results)))
 

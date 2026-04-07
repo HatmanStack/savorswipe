@@ -352,36 +352,5 @@ class TestUploadModule(unittest.TestCase):
         self.assertEqual(len(success_keys), 1)
         self.assertEqual(success_keys[0], '6')  # max(1,3,5) + 1 = 6, not len(3) + 1 = 4
 
-    @patch('upload.upload_image')
-    def test_to_s3_key_generation_after_deletion(self, mock_upload_image):
-        """Test that to_s3 uses max(keys)+1 after deletions."""
-        from upload import to_s3
-
-        existing_with_gaps = {
-            '1': {'Title': 'Recipe One'},
-            '3': {'Title': 'Recipe Three'},
-            '5': {'Title': 'Recipe Five'},
-        }
-        mock_upload_image.return_value = 'https://example.com/image.jpg'
-
-        new_recipe = {'Title': 'New Recipe', 'Ingredients': ['flour']}
-
-        success, result_data = to_s3(
-            new_recipe, ['url1', 'url2'],
-            jsonData=json.dumps(existing_with_gaps)
-        )
-
-        self.assertTrue(success)
-        # Key should be "6" (max(1,3,5) + 1), not "4" (len(3) + 1)
-        self.assertIn('6', result_data)
-        self.assertNotIn('4', result_data)
-
-        # Verify the recipe object stored at key '6' has expected fields
-        stored_recipe = result_data['6']
-        self.assertEqual(stored_recipe['Title'], 'New Recipe')
-        self.assertIn('flour', stored_recipe['Ingredients'])
-        self.assertEqual(stored_recipe['key'], 6)
-
-
 if __name__ == '__main__':
     unittest.main()

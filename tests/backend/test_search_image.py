@@ -6,7 +6,6 @@ Tests image search, selection, and title simplification logic.
 
 from search_image import (
     google_search_image,
-    select_unique_image_url,
     simplify_recipe_title,
     extract_used_image_urls,
     validate_image_urls,
@@ -400,86 +399,6 @@ class TestGoogleSearchImage:
         assert len(results) == 2
         assert "https://example.com/image1.jpg" in results
         assert "https://example.com/image2.jpg" in results
-
-
-class TestSelectUniqueImageUrl:
-    """Tests for select_unique_image_url() function."""
-
-    def test_select_first_unused_url(self):
-        """Test selecting first unused URL when some are used."""
-        # Arrange
-        search_results = [
-            "https://example.com/image3.jpg",
-            "https://example.com/image4.jpg",
-            "https://example.com/image5.jpg",
-        ]
-        used_urls = {"https://example.com/image1.jpg", "https://example.com/image3.jpg"}
-
-        # Act
-        result = select_unique_image_url(search_results, used_urls)
-
-        # Assert
-        assert result == "https://example.com/image4.jpg"
-
-    def test_select_all_urls_used_fallback(self):
-        """Test fallback when all search results already used."""
-        # Arrange
-        search_results = [
-            "https://example.com/image1.jpg",
-            "https://example.com/image2.jpg",
-            "https://example.com/image3.jpg",
-        ]
-        used_urls = {
-            "https://example.com/image1.jpg",
-            "https://example.com/image2.jpg",
-            "https://example.com/image3.jpg",
-        }
-
-        # Act
-        result = select_unique_image_url(search_results, used_urls)
-
-        # Assert
-        assert result == "https://example.com/image1.jpg"
-
-    def test_select_empty_search_results(self):
-        """Test handling of empty search results."""
-        # Arrange
-        search_results = []
-        used_urls = {"https://example.com/image1.jpg"}
-
-        # Act
-        result = select_unique_image_url(search_results, used_urls)
-
-        # Assert
-        assert result == ""
-
-    def test_select_no_used_urls(self):
-        """Test selecting when no URLs are used yet."""
-        # Arrange
-        search_results = [
-            "https://example.com/image1.jpg",
-            "https://example.com/image2.jpg",
-            "https://example.com/image3.jpg",
-        ]
-        used_urls = set()
-
-        # Act
-        result = select_unique_image_url(search_results, used_urls)
-
-        # Assert
-        assert result == "https://example.com/image1.jpg"
-
-    def test_select_single_url_unused(self):
-        """Test with single unused URL."""
-        # Arrange
-        search_results = ["https://example.com/image1.jpg"]
-        used_urls = set()
-
-        # Act
-        result = select_unique_image_url(search_results, used_urls)
-
-        # Assert
-        assert result == "https://example.com/image1.jpg"
 
 
 class TestSimplifyRecipeTitle:

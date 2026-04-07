@@ -69,15 +69,6 @@ from upload import batch_to_s3_atomic
 # Structured logger for this module
 log = get_logger('lambda')
 
-# Debug mode - set DEBUG_MODE=true in Lambda environment to enable verbose logging
-DEBUG_MODE = os.getenv('DEBUG_MODE', 'false').lower() == 'true'
-
-
-def debug_log(message: str) -> None:
-    """Print debug message only if DEBUG_MODE is enabled."""
-    log.debug(message)
-
-
 def is_recipe_incomplete(recipe: Dict) -> bool:
     """Check if a recipe is missing ingredients or directions."""
     ingredients = recipe.get('Ingredients', {})
@@ -324,7 +315,7 @@ def lambda_handler(event, context):
     request_path = event.get('requestContext', {}).get('http', {}).get('path', '')
     path_params = event.get('pathParameters', {})
 
-    debug_log(f"[DEBUG] lambda_handler: Detected HTTP method: {http_method}, path: {request_path}")
+    log.debug("lambda_handler dispatch", method=http_method, path=request_path)
 
     # Check for async processing invocation (not from API Gateway)
     if event.get('async_processing'):
@@ -1230,15 +1221,15 @@ def process_upload_files(body, job_id, bucket_name):
     all_recipes = []
     file_errors = []
 
-    debug_log(f"[DEBUG] Starting file processing for {len(files)} files...")
+    log.debug("Starting file processing", file_count=len(files))
 
     for file_idx, file_data in enumerate(files):
         try:
-            debug_log(f"[DEBUG] Processing file {file_idx + 1}/{len(files)}...")
+            log.debug("Processing file", index=file_idx + 1, total=len(files))
             # Get file data and type from frontend payload
             file_content = file_data.get('data', '')
             file_type = file_data.get('type', '').lower()
-            debug_log(f"[DEBUG] File {file_idx}: type={file_type}, data_length={len(file_content)}")
+            log.debug("File metadata", index=file_idx, type=file_type, data_length=len(file_content))
 
             # Strip data URI prefix if present (e.g., "data:image/jpeg;base64,...")
             if file_content.startswith('data:'):
@@ -1277,12 +1268,15 @@ def process_upload_files(body, job_id, bucket_name):
                 base64_images = [file_content]
 
             # Extract recipes from images
-            debug_log(f"[DEBUG] Extracting recipes from {len(base64_images)} image(s)...")
+            log.debug("Extracting recipes from images", image_count=len(base64_images))
             for img_idx, base64_image in enumerate(base64_images):
-                debug_log(f"[DEBUG] Calling OCR for image {img_idx + 1}/{len(base64_images)}...")
+                log.debug("Calling OCR", index=img_idx + 1, total=len(base64_images))
                 recipe_json = ocr.extract_recipe_data(base64_image)
-                debug_log(
-                    f"[DEBUG] OCR completed for image {img_idx + 1}, result: {len(str(recipe_json)) if recipe_json else 0} chars")
+                log.debug(
+                    "OCR completed",
+                    index=img_idx + 1,
+                    result_chars=len(str(recipe_json)) if recipe_json else 0,
+                )
                 upload.upload_user_data('user_images_json', 'application/json',
                                         'json', recipe_json, app_time)
 
