@@ -35,11 +35,11 @@ Carves the 1,580-line `backend/lambda_function.py` into a thin dispatcher plus f
 
 **Verification Checklist:**
 
-- [ ] `wc -l backend/lambda_function.py` reports <200 lines
-- [ ] No handler logic remains in `lambda_function.py`
-- [ ] `merge_incomplete_recipes` is pure (returns a new list, asserted by test)
-- [ ] All backend tests green
-- [ ] `uvx ruff check backend` clean
+- [x]`wc -l backend/lambda_function.py` reports <200 lines
+- [x]No handler logic remains in `lambda_function.py`
+- [x]`merge_incomplete_recipes` is pure (returns a new list, asserted by test)
+- [x]All backend tests green
+- [x]`uvx ruff check backend` clean
 
 **Testing Instructions:**
 
@@ -96,11 +96,11 @@ Refs: health-audit.md findings 2 (CRITICAL), 17
 
 **Verification Checklist:**
 
-- [ ] Loop is single-level try/except
-- [ ] No closure capture of `s3_path`
-- [ ] Unreachable return removed
-- [ ] New tests cover success, conflict-retry, exhaustion, cleanup
-- [ ] Backend tests green
+- [x]Loop is single-level try/except
+- [x]No closure capture of `s3_path`
+- [x]Unreachable return removed
+- [x]New tests cover success, conflict-retry, exhaustion, cleanup
+- [x]Backend tests green
 
 **Testing Instructions:**
 
@@ -144,10 +144,10 @@ Refs: health-audit.md finding 5
 
 **Verification Checklist:**
 
-- [ ] Zero `except: pass` swallowing in upload pipeline
-- [ ] `file_errors` includes ParseJSON, mapping-miss, and timeout entries when applicable
-- [ ] Tests cover each new error path
-- [ ] Backend tests green
+- [x]Zero `except: pass` swallowing in upload pipeline
+- [x]`file_errors` includes ParseJSON, mapping-miss, and timeout entries when applicable
+- [x]Tests cover each new error path
+- [x]Backend tests green
 
 **Testing Instructions:**
 
