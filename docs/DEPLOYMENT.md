@@ -5,7 +5,7 @@ This guide explains how to deploy the SavorSwipe backend Lambda function and API
 ## Prerequisites
 
 1. **AWS CLI** installed and configured with appropriate credentials
-2. **AWS SAM CLI** installed (`pip install aws-sam-cli`)
+2. **AWS SAM CLI** installed (`uvx --from aws-sam-cli sam --version` or `uv pip install aws-sam-cli`)
 3. **Docker** installed and running (required for SAM build with containers)
 4. **Node.js** installed (for running the deployment script)
 
@@ -78,7 +78,7 @@ GOOGLE_SEARCH_KEY=...
 Example `.env` (auto-updated):
 ```bash
 EXPO_PUBLIC_CLOUDFRONT_BASE_URL=https://your-cloudfront-url.cloudfront.net
-EXPO_PUBLIC_API_GATEWAY_URL=https://your-api-url.execute-api.us-west-2.amazonaws.com
+EXPO_PUBLIC_API_GATEWAY_URL=https://your-api-url.execute-api.us-east-1.amazonaws.com
 ```
 
 ### Local Development CORS
@@ -130,8 +130,8 @@ You can manually retrieve outputs with:
 
 ```bash
 aws cloudformation describe-stacks \
-  --stack-name savorswipe-lambda \
-  --region us-west-2 \
+  --stack-name savorswipe \
+  --region us-east-1 \
   --query 'Stacks[0].Outputs'
 ```
 
@@ -147,9 +147,11 @@ aws cloudformation describe-stacks \
 
 **Error**: `sam: command not found`
 
-**Solution**: Install AWS SAM CLI:
+**Solution**: Install AWS SAM CLI via uv (never bare `pip`):
 ```bash
-pip install aws-sam-cli
+uvx --from aws-sam-cli sam --version
+# or
+uv pip install aws-sam-cli
 ```
 
 ### AWS Credentials Not Configured
@@ -176,17 +178,17 @@ If deployment fails, you can:
 
 1. Check CloudFormation stack status:
    ```bash
-   aws cloudformation describe-stacks --stack-name savorswipe-lambda
+   aws cloudformation describe-stacks --stack-name savorswipe
    ```
 
 2. View stack events:
    ```bash
-   aws cloudformation describe-stack-events --stack-name savorswipe-lambda
+   aws cloudformation describe-stack-events --stack-name savorswipe
    ```
 
 3. Delete the stack and retry:
    ```bash
-   aws cloudformation delete-stack --stack-name savorswipe-lambda
+   aws cloudformation delete-stack --stack-name savorswipe
    npm run deploy
    ```
 

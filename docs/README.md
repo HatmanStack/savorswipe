@@ -12,7 +12,7 @@
 
 ## Technologies
 
-- **Expo** 54 / React Native / React 19
+- **Expo** 55 / React Native / React 19
 - **AWS**: Lambda (Python 3.13), S3, API Gateway v2, CloudFront
 - **Google Custom Search JSON API**: Recipe image discovery
 - **OpenAI Vision API**: OCR for recipe extraction from images and PDFs
@@ -67,7 +67,7 @@ After uploading, a modal appears with 9 Google image search results:
 
 ```bash
 npm run check        # Run all lint and tests
-npm test             # Frontend tests (watch mode)
+npm test             # Frontend tests (one-shot, --forceExit)
 npm run test:backend # Backend tests only
 npm run lint         # Frontend ESLint + TypeScript
 npm run lint:backend # Backend ruff

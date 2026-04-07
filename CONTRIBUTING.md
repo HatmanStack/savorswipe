@@ -7,10 +7,12 @@
    ```bash
    npm ci
    ```
-3. Install backend dependencies:
+3. Install backend dependencies (uv only — never bare `pip`):
    ```bash
-   cd backend && pip install -r requirements.txt && pip install -e ".[dev]"
+   cd backend && uv sync --frozen
    ```
+   This project uses [uv](https://docs.astral.sh/uv/) for all Python package
+   management. Never use bare `pip`; use `uv pip` or `uvx` instead.
 4. Copy `.env.example` to `.env` and fill in your values (see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md))
 5. Start the app:
    ```bash
