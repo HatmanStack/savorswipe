@@ -211,7 +211,31 @@ If deployment fails, you can:
    npm run deploy
    ```
 
-## Manual Deployment (Bash Script)
+## Local Lambda Testing with `sam local invoke`
+
+You can exercise a single Lambda route locally without deploying. From
+`backend/`:
+
+```bash
+# Build once
+sam build --use-container
+
+# Invoke with a synthetic API Gateway v2 event
+sam local invoke RecipeFunction \
+  --event events/get-recipes.json \
+  --env-vars env.json
+```
+
+`events/get-recipes.json` is a standard API Gateway v2 HTTP event
+(`sam local generate-event apigateway http-api-proxy` will scaffold one).
+`env.json` supplies the Lambda environment variables documented in
+[Backend Lambda Environment Variables](#backend-lambda-environment-variables).
+
+## Manual Deployment (Bash Script — deprecated)
+
+> The `backend/deploy.sh` script is preserved for emergency fallback only.
+> Prefer `npm run deploy`, which auto-updates `.env` and integrates with
+> the rest of the npm workflow.
 
 If you prefer the original bash script, you can still use:
 

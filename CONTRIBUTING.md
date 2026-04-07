@@ -69,6 +69,21 @@ PYTHONPATH=backend pytest tests/backend -v --tb=short
 npm run check
 ```
 
+## Good First Issues
+
+Issues labeled `good first issue` are scoped for newcomers. To qualify, an
+issue should:
+
+- Touch a single module or doc, with no cross-cutting refactor required.
+- Have a clear acceptance criterion (failing test, doc diff, or visible bug).
+- Be solvable without deploying AWS infrastructure.
+- Reference the relevant file paths so a contributor can start reading
+  immediately.
+
+Maintainers tag issues with this label after writing the acceptance
+criterion in the issue body. If you find an unlabeled issue that fits, ask
+in the comments and we will add the label.
+
 ## Code Style
 
 - **Frontend:** ESLint + TypeScript strict mode, enforced by Expo lint
