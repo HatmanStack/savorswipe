@@ -50,13 +50,13 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, List, Optional, Tuple
 
-import boto3
 from botocore.exceptions import ClientError
 
 import handlepdf
 import ocr
 import search_image as si
 import upload
+from aws_clients import CLOUDWATCH, LAMBDA, S3
 from config import PDF_MAX_PAGES
 from duplicate_detector import DuplicateDetector
 from embedding_generator import EmbeddingGenerator
@@ -375,7 +375,7 @@ def handle_get_request(event, context):
             'body': json.dumps({'error': 'S3_BUCKET environment variable not set'})
         }
 
-    s3_client = boto3.client('s3')
+    s3_client = S3
     json_key = 'jsondata/combined_data.json'
 
     try:
@@ -441,7 +441,7 @@ def handle_async_processing(event, context):
 
     try:
         # Read pending request data from S3
-        s3_client = boto3.client('s3')
+        s3_client = S3
         response = s3_client.get_object(Bucket=bucket_name, Key=pending_key)
         body = json.loads(response['Body'].read().decode('utf-8'))
 
@@ -461,7 +461,7 @@ def handle_async_processing(event, context):
 
         # Write error status
         try:
-            s3_client = boto3.client('s3')
+            s3_client = S3
             error_status = {
                 'jobId': job_id,
                 'status': 'error',
@@ -508,7 +508,7 @@ def handle_status_request(event, context, job_id):
     status_key = f'upload-status/{job_id}.json'
 
     try:
-        s3_client = boto3.client('s3')
+        s3_client = S3
         response = s3_client.get_object(Bucket=bucket_name, Key=status_key)
         status_data = json.loads(response['Body'].read().decode('utf-8'))
 
@@ -601,7 +601,7 @@ def handle_delete_request(event, context, recipe_key=None):
         }
 
     try:
-        s3_client = boto3.client('s3')
+        s3_client = S3
 
         # Perform atomic deletion
         success, error_message = delete_recipe_atomic(
@@ -819,7 +819,7 @@ def handle_post_image_request(event, context, recipe_key=None):
     # Validate that imageUrl is one of the recipe's search results
     # Load recipe to verify the imageUrl was from our search results (not injected)
     try:
-        s3_client = boto3.client('s3')
+        s3_client = S3
         response = s3_client.get_object(Bucket=bucket_name, Key='jsondata/combined_data.json')
         json_data = json.loads(response['Body'].read())
 
@@ -868,8 +868,6 @@ def handle_post_image_request(event, context, recipe_key=None):
 
     s3_path = None
     try:
-        s3_client = boto3.client('s3')
-
         # Step 1: Fetch image from Google URL
         image_bytes, content_type = fetch_image_from_url(image_url)
 
@@ -1071,7 +1069,7 @@ def handle_post_image_request(event, context, recipe_key=None):
         if s3_path:
             try:
                 log.warning("Cleaning up orphaned image after unexpected error", image_key=s3_path)
-                boto3.client('s3').delete_object(Bucket=bucket_name, Key=s3_path)
+                S3.delete_object(Bucket=bucket_name, Key=s3_path)
             except Exception as cleanup_err:
                 log.error("Failed to clean up orphaned image", image_key=s3_path, error=str(cleanup_err))
         return {
@@ -1129,8 +1127,8 @@ def handle_post_request(event, context):
         }
 
     try:
-        s3_client = boto3.client('s3')
-        lambda_client = boto3.client('lambda')
+        s3_client = S3
+        lambda_client = LAMBDA
 
         # Save request body to S3 for async processing
         pending_key = f'upload-pending/{job_id}.json'
@@ -1412,7 +1410,7 @@ def process_upload_files(body, job_id, bucket_name):
         if unique_recipes:
             # Get existing recipe data for URL deduplication
             log.info("Loading existing recipe data from S3")
-            s3_client = boto3.client('s3')
+            s3_client = S3
             try:
                 response = s3_client.get_object(
                     Bucket=bucket_name, Key='jsondata/combined_data.json')
@@ -1499,7 +1497,7 @@ def process_upload_files(body, job_id, bucket_name):
 
     # Send CloudWatch metrics
     try:
-        cloudwatch = boto3.client('cloudwatch')
+        cloudwatch = CLOUDWATCH
         execution_time = time.time() - start_time
         duplicate_count = sum(1 for err in file_errors if 'Duplicate' in err.get('reason', ''))
 
@@ -1533,7 +1531,7 @@ def process_upload_files(body, job_id, bucket_name):
 
     # Write S3 completion flag
     try:
-        s3_client = boto3.client('s3')
+        s3_client = S3
         completion_data = {
             'jobId': job_id,
             'status': 'completed',

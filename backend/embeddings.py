@@ -10,8 +10,9 @@ import random
 import time
 from typing import Dict, List, Optional, Tuple
 
-import boto3
 from botocore.exceptions import ClientError
+
+from aws_clients import S3
 
 
 class EmbeddingStore:
@@ -28,7 +29,7 @@ class EmbeddingStore:
             bucket_name: Name of the S3 bucket
         """
         self.bucket_name = bucket_name
-        self.s3_client = boto3.client('s3')
+        self.s3_client = S3
 
     def load_embeddings(self) -> Tuple[Dict[str, List[float]], Optional[str]]:
         """

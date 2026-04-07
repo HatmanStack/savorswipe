@@ -33,11 +33,29 @@ def aws_credentials():
 
 
 @pytest.fixture
-def s3_bucket(aws_credentials):
-    """Create a mock S3 bucket for testing."""
+def s3_bucket(aws_credentials, monkeypatch):
+    """Create a mock S3 bucket for testing.
+
+    Also rebinds the module-scope S3 singletons (lambda_function.S3,
+    embeddings.S3, upload.S3) to a moto-backed client so backend code that
+    uses the singletons hits the mock instead of the pre-mock real client
+    constructed at import time.
+    """
     with mock_aws():
         conn = boto3.resource("s3", region_name="us-east-1")
         conn.create_bucket(Bucket="test-bucket")
+
+        # Rebind singletons to moto-backed client
+        moto_s3 = boto3.client("s3", region_name="us-east-1")
+        import aws_clients
+        import lambda_function
+        import embeddings as embeddings_mod
+        import upload as upload_mod
+        monkeypatch.setattr(aws_clients, "S3", moto_s3)
+        monkeypatch.setattr(lambda_function, "S3", moto_s3)
+        monkeypatch.setattr(embeddings_mod, "S3", moto_s3)
+        monkeypatch.setattr(upload_mod, "S3", moto_s3)
+
         yield conn
 
 

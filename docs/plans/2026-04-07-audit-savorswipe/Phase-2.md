@@ -81,10 +81,10 @@ Refs: health-audit.md finding 1 (CRITICAL)
 
 **Verification Checklist:**
 
-- [ ] `Grep "boto3.client" backend/` returns only `backend/aws_clients.py`
-- [ ] `handle_post_image_request` constructs zero clients
-- [ ] Moto-backed tests still pass
-- [ ] Backend tests green
+- [x] `Grep "boto3.client" backend/` returns only `backend/aws_clients.py`
+- [x] `handle_post_image_request` constructs zero clients
+- [x] Moto-backed tests still pass
+- [x] Backend tests green
 
 **Testing Instructions:**
 

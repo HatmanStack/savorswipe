@@ -21,12 +21,11 @@ class TestEmbeddingStore(unittest.TestCase):
             'recipe_2': [0.4, 0.5, 0.6]
         }
 
-    @patch('embeddings.boto3.client')
+    @patch('embeddings.S3', new_callable=MagicMock)
     def test_load_embeddings_success(self, mock_boto_client):
         """Test loading embeddings successfully from S3."""
         # Mock S3 response
-        mock_s3 = MagicMock()
-        mock_boto_client.return_value = mock_s3
+        mock_s3 = mock_boto_client
 
         mock_response = {
             'Body': MagicMock(read=lambda: json.dumps(self.test_embeddings).encode()),
@@ -46,12 +45,11 @@ class TestEmbeddingStore(unittest.TestCase):
             Key=EmbeddingStore.EMBEDDINGS_KEY
         )
 
-    @patch('embeddings.boto3.client')
+    @patch('embeddings.S3', new_callable=MagicMock)
     def test_load_embeddings_not_exists(self, mock_boto_client):
         """Test loading embeddings when file doesn't exist."""
         # Mock S3 NoSuchKey error
-        mock_s3 = MagicMock()
-        mock_boto_client.return_value = mock_s3
+        mock_s3 = mock_boto_client
 
         error_response = {'Error': {'Code': 'NoSuchKey'}}
         mock_s3.get_object.side_effect = ClientError(error_response, 'GetObject')
@@ -64,12 +62,11 @@ class TestEmbeddingStore(unittest.TestCase):
         self.assertEqual(embeddings, {})
         self.assertIsNone(etag)
 
-    @patch('embeddings.boto3.client')
+    @patch('embeddings.S3', new_callable=MagicMock)
     def test_load_embeddings_strips_etag_quotes(self, mock_boto_client):
         """Test that ETag quotes are stripped correctly."""
         # Mock S3 response with quoted ETag
-        mock_s3 = MagicMock()
-        mock_boto_client.return_value = mock_s3
+        mock_s3 = mock_boto_client
 
         mock_response = {
             'Body': MagicMock(read=lambda: json.dumps({}).encode()),
@@ -84,12 +81,11 @@ class TestEmbeddingStore(unittest.TestCase):
         # Verify quotes stripped
         self.assertEqual(etag, 'abc123')
 
-    @patch('embeddings.boto3.client')
+    @patch('embeddings.S3', new_callable=MagicMock)
     def test_save_embeddings_without_etag(self, mock_boto_client):
         """Test saving embeddings without ETag (no conditional write)."""
         # Mock S3
-        mock_s3 = MagicMock()
-        mock_boto_client.return_value = mock_s3
+        mock_s3 = mock_boto_client
 
         # Test
         store = EmbeddingStore(self.bucket_name)
@@ -108,12 +104,11 @@ class TestEmbeddingStore(unittest.TestCase):
         body_data = json.loads(call_kwargs['Body'])
         self.assertEqual(body_data, self.test_embeddings)
 
-    @patch('embeddings.boto3.client')
+    @patch('embeddings.S3', new_callable=MagicMock)
     def test_save_embeddings_with_etag(self, mock_boto_client):
         """Test saving embeddings with ETag (conditional write)."""
         # Mock S3
-        mock_s3 = MagicMock()
-        mock_boto_client.return_value = mock_s3
+        mock_s3 = mock_boto_client
 
         # Test
         store = EmbeddingStore(self.bucket_name)
@@ -126,12 +121,11 @@ class TestEmbeddingStore(unittest.TestCase):
         call_kwargs = mock_s3.put_object.call_args[1]
         self.assertEqual(call_kwargs['IfMatch'], 'abc123')
 
-    @patch('embeddings.boto3.client')
+    @patch('embeddings.S3', new_callable=MagicMock)
     def test_save_embeddings_precondition_failed(self, mock_boto_client):
         """Test save fails when ETag doesn't match (conflict)."""
         # Mock S3 PreconditionFailed error
-        mock_s3 = MagicMock()
-        mock_boto_client.return_value = mock_s3
+        mock_s3 = mock_boto_client
 
         error_response = {'Error': {'Code': 'PreconditionFailed'}}
         mock_s3.put_object.side_effect = ClientError(error_response, 'PutObject')
@@ -143,12 +137,11 @@ class TestEmbeddingStore(unittest.TestCase):
         # Verify returns False on conflict
         self.assertFalse(result)
 
-    @patch('embeddings.boto3.client')
+    @patch('embeddings.S3', new_callable=MagicMock)
     def test_save_embeddings_other_error(self, mock_boto_client):
         """Test save raises exception for non-conflict errors."""
         # Mock S3 other error
-        mock_s3 = MagicMock()
-        mock_boto_client.return_value = mock_s3
+        mock_s3 = mock_boto_client
 
         error_response = {'Error': {'Code': 'AccessDenied'}}
         mock_s3.put_object.side_effect = ClientError(error_response, 'PutObject')
@@ -158,13 +151,12 @@ class TestEmbeddingStore(unittest.TestCase):
         with self.assertRaises(ClientError):
             store.save_embeddings(self.test_embeddings)
 
-    @patch('embeddings.boto3.client')
+    @patch('embeddings.S3', new_callable=MagicMock)
     @patch('embeddings.time.sleep')  # Mock sleep to speed up tests
     def test_add_embeddings_success_first_try(self, mock_sleep, mock_boto_client):
         """Test adding embeddings succeeds on first attempt."""
         # Mock S3
-        mock_s3 = MagicMock()
-        mock_boto_client.return_value = mock_s3
+        mock_s3 = mock_boto_client
 
         # Mock load_embeddings
         existing = {'recipe_1': [0.1, 0.2, 0.3]}
@@ -184,13 +176,12 @@ class TestEmbeddingStore(unittest.TestCase):
         self.assertEqual(mock_s3.put_object.call_count, 1)
         mock_sleep.assert_not_called()  # No retries needed
 
-    @patch('embeddings.boto3.client')
+    @patch('embeddings.S3', new_callable=MagicMock)
     @patch('embeddings.time.sleep')
     def test_add_embeddings_retries_on_conflict(self, mock_sleep, mock_boto_client):
         """Test retry logic when first save fails with conflict."""
         # Mock S3
-        mock_s3 = MagicMock()
-        mock_boto_client.return_value = mock_s3
+        mock_s3 = mock_boto_client
 
         # Mock load_embeddings (called twice due to retry)
         existing = {'recipe_1': [0.1, 0.2, 0.3]}
@@ -218,13 +209,12 @@ class TestEmbeddingStore(unittest.TestCase):
         self.assertEqual(mock_s3.get_object.call_count, 2)
         mock_sleep.assert_called_once()  # Backoff after first failure
 
-    @patch('embeddings.boto3.client')
+    @patch('embeddings.S3', new_callable=MagicMock)
     @patch('embeddings.time.sleep')
     def test_add_embeddings_max_retries_exceeded(self, mock_sleep, mock_boto_client):
         """Test failure after max retries exhausted."""
         # Mock S3
-        mock_s3 = MagicMock()
-        mock_boto_client.return_value = mock_s3
+        mock_s3 = mock_boto_client
 
         # Mock load_embeddings
         existing = {'recipe_1': [0.1, 0.2, 0.3]}

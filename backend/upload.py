@@ -8,10 +8,10 @@ from datetime import datetime, timezone
 from typing import Dict, List, Tuple
 from urllib.parse import urlparse
 
-import boto3
 from botocore.exceptions import ClientError
 from PIL import Image
 
+from aws_clients import S3
 from config import MAX_RETRIES, PROBLEMATIC_DOMAINS
 from image_uploader import fetch_image_from_url, upload_image_to_s3
 from logger import StructuredLogger
@@ -23,12 +23,12 @@ bucket_name = os.getenv('S3_BUCKET')
 
 def _get_s3_client():
     """
-    Get fresh S3 client.
+    Return the module-scope S3 client singleton.
 
-    Do not cache at module level to avoid stale credentials in Lambda.
-    Lambda containers can live for hours, and IAM credentials rotate.
+    Kept as a function for backward compatibility with existing call sites
+    and to provide a single patch point for tests.
     """
-    return boto3.client('s3')
+    return S3
 
 
 def is_problematic_url(url: str) -> bool:
