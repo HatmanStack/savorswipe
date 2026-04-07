@@ -426,10 +426,36 @@ async function deploy() {
   console.log('Building Lambda function...\n');
   execCommand('sam build');
 
-  // Deploy to AWS (pass secrets and stack name via CLI)
+  // Deploy guard: refuse to deploy IsDevMode=true to a stack matching /prod/i.
+  // Dev-mode CORS allows wildcard origins, which is unsafe for production.
+  const isDevMode = String(config.INCLUDE_DEV_ORIGINS).toLowerCase() === 'true';
+  const looksLikeProd = /prod/i.test(config.STACK_NAME);
+  if (isDevMode && looksLikeProd) {
+    console.error(`\n✗ Refusing to deploy IsDevMode=true to stack "${config.STACK_NAME}" (matches /prod/i).`);
+    console.error('  Dev-mode CORS allows wildcard origins; set INCLUDE_DEV_ORIGINS=false for production stacks.');
+    process.exit(1);
+  }
+  if (isDevMode) {
+    console.warn(`\n⚠ INCLUDE_DEV_ORIGINS=true: API will accept wildcard CORS origins. Use only for local development.\n`);
+  }
+
+  // Deploy to AWS (pass secrets and stack name via CLI).
+  // Shell-quote each parameter value so semicolons, spaces, $, and backticks
+  // in keys cannot break out of the argument boundary.
   console.log('\nDeploying to AWS...\n');
   const productionOrigins = config.PRODUCTION_ORIGINS || '';
-  const paramOverrides = `StackName="${config.STACK_NAME}" OpenAIApiKey="${config.OPENAI_KEY}" GoogleSearchId="${config.GOOGLE_SEARCH_ID}" GoogleSearchKey="${config.GOOGLE_SEARCH_KEY}" IncludeDevOrigins="${config.INCLUDE_DEV_ORIGINS}" ProductionOrigins="${productionOrigins}"`;
+  const shellQuote = (val) => `'${String(val).replace(/'/g, `'\\''`)}'`;
+  const overridesPairs = [
+    ['StackName', config.STACK_NAME],
+    ['OpenAIApiKey', config.OPENAI_KEY],
+    ['GoogleSearchId', config.GOOGLE_SEARCH_ID],
+    ['GoogleSearchKey', config.GOOGLE_SEARCH_KEY],
+    ['IncludeDevOrigins', config.INCLUDE_DEV_ORIGINS],
+    ['ProductionOrigins', productionOrigins],
+  ];
+  const paramOverrides = overridesPairs
+    .map(([key, value]) => `${key}=${shellQuote(value)}`)
+    .join(' ');
   execCommand(`sam deploy --parameter-overrides ${paramOverrides}`);
 
   // Get stack outputs
