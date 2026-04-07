@@ -88,6 +88,10 @@ Resources:
             Status: Enabled
             Prefix: upload-status/
             ExpirationInDays: 7
+          - Id: DeleteOldUploadPending
+            Status: Enabled
+            Prefix: upload-pending/
+            ExpirationInDays: 1
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -98,6 +102,37 @@ Resources:
           Value: SavorSwipe
         - Key: StackName
           Value: !Ref StackName
+
+  # SQS Dead-Letter Queue for async Lambda invocations
+  UploadDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub '${StackName}-upload-dlq'
+      MessageRetentionPeriod: 1209600  # 14 days
+      Tags:
+        - Key: Application
+          Value: SavorSwipe
+        - Key: StackName
+          Value: !Ref StackName
+
+  # CloudWatch alarm: any message in the DLQ is an escaped failure.
+  UploadDLQNotEmptyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${StackName}-upload-dlq-not-empty'
+      AlarmDescription: Upload async-invoke DLQ has unprocessed messages
+      Namespace: AWS/SQS
+      MetricName: ApproximateNumberOfMessagesVisible
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt UploadDLQ.QueueName
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
 
   # Lambda Function
   RecipeProcessorFunction:
@@ -110,6 +145,15 @@ Resources:
       Description: Multi-file recipe processing with OCR, duplicate detection, and image search
       MemorySize: 1024
       Timeout: 600
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt UploadDLQ.Arn
+      EventInvokeConfig:
+        MaximumRetryAttempts: 2
+        DestinationConfig:
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt UploadDLQ.Arn
       Environment:
         Variables:
           API_KEY: !Ref OpenAIApiKey
@@ -133,6 +177,14 @@ Resources:
               Action:
                 - lambda:InvokeFunction
               Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${StackName}-recipe-processor'
+            - Effect: Allow
+              Action:
+                - sqs:SendMessage
+              Resource: !GetAtt UploadDLQ.Arn
+            - Effect: Allow
+              Action:
+                - cloudwatch:PutMetricData
+              Resource: '*'
       Tags:
         Application: SavorSwipe
         StackName: !Ref StackName

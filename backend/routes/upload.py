@@ -38,6 +38,10 @@ lf = _LFProxy()
 # Per-recipe wall-clock budget for the parallel-processing stage.
 RECIPE_BUDGET_SECONDS = float(os.getenv("RECIPE_BUDGET_SECONDS", "90"))
 
+# Maximum payload bytes allowed for the self-invoke async Event payload.
+# Lambda's hard async limit is 256 KB; we stay well under with headroom.
+MAX_ASYNC_PAYLOAD_BYTES = int(os.getenv("MAX_ASYNC_PAYLOAD_BYTES", "200000"))
+
 
 def process_single_recipe(
     recipe_data: Dict,
@@ -106,6 +110,45 @@ def handle_post_request(event, context):
             "body": json.dumps({"returnMessage": "S3_BUCKET environment variable not set"}),
         }
 
+    # Validate FUNCTION_NAME and payload size BEFORE any S3 write so failures
+    # cannot leak upload-pending blobs that lifecycle will still bill for.
+    function_name = os.getenv("FUNCTION_NAME")
+    if not function_name:
+        log.error("FUNCTION_NAME env var missing; refusing to queue async invoke")
+        return {
+            "statusCode": 500,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps(
+                {
+                    "success": False,
+                    "error": "FUNCTION_NAME environment variable not set",
+                }
+            ),
+        }
+
+    serialized_body = json.dumps(body)
+    payload_bytes = len(serialized_body.encode("utf-8"))
+    if payload_bytes > MAX_ASYNC_PAYLOAD_BYTES:
+        log.error(
+            "Upload payload too large for async invoke",
+            job_id=job_id,
+            payload_bytes=payload_bytes,
+            limit=MAX_ASYNC_PAYLOAD_BYTES,
+        )
+        return {
+            "statusCode": 413,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps(
+                {
+                    "success": False,
+                    "error": (
+                        f"Upload payload {payload_bytes} bytes exceeds async limit "
+                        f"{MAX_ASYNC_PAYLOAD_BYTES}"
+                    ),
+                }
+            ),
+        }
+
     try:
         s3_client = lf.S3
         lambda_client = lf.LAMBDA
@@ -114,7 +157,7 @@ def handle_post_request(event, context):
         s3_client.put_object(
             Bucket=bucket_name,
             Key=pending_key,
-            Body=json.dumps(body),
+            Body=serialized_body,
             ContentType="application/json",
         )
 
@@ -133,7 +176,6 @@ def handle_post_request(event, context):
             ContentType="application/json",
         )
 
-        function_name = os.getenv("FUNCTION_NAME")
         lambda_client.invoke(
             FunctionName=function_name,
             InvocationType="Event",
