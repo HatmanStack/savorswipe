@@ -64,6 +64,7 @@ from embeddings import EmbeddingStore
 from image_uploader import fetch_image_from_url, upload_image_to_s3
 from logger import get_logger
 from recipe_deletion import delete_recipe_atomic
+from routes import dispatch, method_allowed_for_path
 from upload import batch_to_s3_atomic
 
 # Structured logger for this module
@@ -310,35 +311,63 @@ def lambda_handler(event, context):
         POST /image: Success/error response with updated recipe
     """
 
-    # Detect HTTP method from requestContext
-    http_method = event.get('requestContext', {}).get('http', {}).get('method', 'POST')
-    request_path = event.get('requestContext', {}).get('http', {}).get('path', '')
-    path_params = event.get('pathParameters', {})
-
-    log.debug("lambda_handler dispatch", method=http_method, path=request_path)
-
-    # Check for async processing invocation (not from API Gateway)
+    # Async-invoke branch (not from API Gateway). Handled before route dispatch.
     if event.get('async_processing'):
         return handle_async_processing(event, context)
 
-    if http_method == 'GET':
-        # Check if this is a status check request
-        if '/upload/status/' in request_path:
-            job_id = path_params.get('jobId')
-            return handle_status_request(event, context, job_id)
-        return handle_get_request(event, context)
-    elif http_method == 'DELETE':
-        recipe_key = path_params.get('recipe_key')
-        return handle_delete_request(event, context, recipe_key)
-    elif http_method == 'POST':
-        # Check if this is an image update request or a file upload
-        if '/image' in request_path and path_params.get('recipe_key'):
-             recipe_key = path_params.get('recipe_key')
-             return handle_post_image_request(event, context, recipe_key)
-        else:
-            return handle_post_request(event, context)
-    else:
+    http_method = event.get('requestContext', {}).get('http', {}).get('method', 'POST')
+    request_path = event.get('requestContext', {}).get('http', {}).get('path', '')
+    api_path_params = event.get('pathParameters') or {}
+
+    log.debug("lambda_handler dispatch", method=http_method, path=request_path)
+
+    # Direct invocation fallback: no requestContext path means treat as POST upload
+    # (preserves existing test invocation pattern where event is the body itself).
+    if not request_path:
         return handle_post_request(event, context)
+
+    resolved = dispatch(http_method, request_path)
+    if resolved is None:
+        # Distinguish 405 (path exists, method does not) from 404
+        if method_allowed_for_path(request_path):
+            return {
+                'statusCode': 405,
+                'headers': {'Content-Type': 'application/json'},
+                'body': json.dumps({
+                    'success': False,
+                    'error': f'Method {http_method} not allowed for {request_path}'
+                })
+            }
+        return {
+            'statusCode': 404,
+            'headers': {'Content-Type': 'application/json'},
+            'body': json.dumps({
+                'success': False,
+                'error': f'No route for {http_method} {request_path}'
+            })
+        }
+
+    handler_name, path_params = resolved
+    # Merge API Gateway path params (they win on conflict for backward compat)
+    path_params = {**path_params, **api_path_params}
+
+    handler = globals().get(handler_name)
+    if handler is None:
+        log.error("Handler not found", handler=handler_name)
+        return {
+            'statusCode': 500,
+            'headers': {'Content-Type': 'application/json'},
+            'body': json.dumps({'success': False, 'error': f'Handler {handler_name} not found'})
+        }
+
+    # Each handler accepts (event, context) plus optional path params as kwargs.
+    if handler_name == 'handle_status_request':
+        return handler(event, context, path_params.get('jobId'))
+    if handler_name == 'handle_delete_request':
+        return handler(event, context, path_params.get('recipe_key'))
+    if handler_name == 'handle_post_image_request':
+        return handler(event, context, path_params.get('recipe_key'))
+    return handler(event, context)
 
 
 def handle_get_request(event, context):

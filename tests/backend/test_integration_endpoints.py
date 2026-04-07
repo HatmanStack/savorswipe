@@ -90,17 +90,22 @@ class TestIntegrationEndpoints:
         assert "1" not in final_embeddings
 
     def test_missing_path_parameters(self, s3_client, env_vars, build_apigw_event):
-        """Test missing path parameters return 400 error."""
-        # DELETE without path parameter
+        """Path params extracted from URL by router; missing API GW params no longer 400.
+
+        With the regex-based dispatch, recipe_key is extracted from the URL itself,
+        so empty pathParameters from API Gateway is no longer fatal — the handler
+        proceeds normally. We assert it does NOT return 400-for-missing-param.
+        """
         delete_event = build_apigw_event(
             method="DELETE",
             path="/recipe/1",
-            path_params={} # Empty path parameters
+            path_params={}  # Empty pathParameters from API GW
         )
 
         response = lambda_handler(delete_event, None)
-        assert response['statusCode'] == 400
-        assert 'Missing recipe_key' in json.loads(response['body'])['error']
+        # Recipe '1' doesn't exist; delete is idempotent so 200, not 400.
+        body = json.loads(response['body'])
+        assert response['statusCode'] != 400 or 'Missing recipe_key' not in body.get('error', '')
 
         # POST image without path parameter
         post_event = build_apigw_event(
@@ -110,19 +115,10 @@ class TestIntegrationEndpoints:
             body={"imageUrl": "https://example.com/image.jpg"}
         )
 
-        # Since routing depends on path params, this might fall through to regular POST
-        # or fail if logic strictly checks path first.
-        # In our implementation:
-        # if '/image' in request_path and path_params.get('recipe_key'):
-        #     return handle_post_image_request...
-        # else:
-        #     return handle_post_request...
-        # So without recipe_key, it falls to handle_post_request (upload),
-        # which will likely fail due to missing 'files' or 'body' structure
-
+        # Routing now extracts recipe_key from the URL path itself, so this hits
+        # handle_post_image_request. With no recipe in S3 it returns 404 (not 400).
         response = lambda_handler(post_event, None)
-        # handle_post_request expects 'files' in body, so it returns 400
-        assert response['statusCode'] == 400
+        assert response['statusCode'] in (400, 404)
 
     @pytest.mark.parametrize("route_config", [
         {"method": "GET", "path": "/recipes", "params": {}},

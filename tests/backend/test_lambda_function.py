@@ -406,14 +406,15 @@ class TestLambdaRouting(unittest.TestCase):
 
     @patch('lambda_function.handle_get_request')
     def test_routes_get_request(self, mock_get_handler):
-        """Test lambda_handler routes GET to handle_get_request."""
+        """Test lambda_handler routes GET /recipes to handle_get_request."""
         # Arrange
         mock_get_handler.return_value = {'statusCode': 200}
 
         event = {
             'requestContext': {
                 'http': {
-                    'method': 'GET'
+                    'method': 'GET',
+                    'path': '/recipes'
                 }
             }
         }

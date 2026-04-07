@@ -129,10 +129,10 @@ Refs: health-audit.md finding 3 (CRITICAL)
 
 **Verification Checklist:**
 
-- [ ] Zero `'/image' in request_path`-style substring checks remain in `lambda_function.py`
-- [ ] All 5 documented routes covered by `ROUTES`
-- [ ] New routing tests pass
-- [ ] Backend tests green
+- [x] Zero `'/image' in request_path`-style substring checks remain in `lambda_function.py`
+- [x] All 5 documented routes covered by `ROUTES`
+- [x] New routing tests pass
+- [x] Backend tests green
 
 **Testing Instructions:**
 
