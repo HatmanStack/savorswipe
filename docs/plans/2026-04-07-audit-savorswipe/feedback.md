@@ -32,6 +32,21 @@ Confirmed green:
 
 <!-- Generators move items here with Status: RESOLVED + resolution note -->
 
+### CODE_REVIEW Phase 6 — OPENAI_VISION_MODEL default still says gpt-5.2 in committed docs
+
+- Status: RESOLVED
+- Phase: 6
+- Files: docs/DEPLOYMENT.md:99, .env.example:22
+
+Resolution: Updated both committed docs to document `gpt-4o` as the
+`OPENAI_VISION_MODEL` default, matching `backend/config.py:21`
+(`os.environ.get('OPENAI_VISION_MODEL', 'gpt-4o')`). The env-var table
+in `docs/DEPLOYMENT.md` and the commented example in `.env.example` now
+agree with the runtime default. `npm run docs:lint` re-verified clean.
+Committed as a follow-up `docs:` (no amend).
+
+---
+
 ### CODE_REVIEW Phase 1 — Stale `expo-router/entry` knip hint not fixed
 
 - Status: RESOLVED
