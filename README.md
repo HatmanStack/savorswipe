@@ -32,6 +32,18 @@ Upload a picture of your own directions, ingredients or recipe to join it to the
 - **AWS SAM CLI** for serverless deployment
 - **Python 3.13+** for backend Lambda functions
 
+## Devcontainer
+
+A `.devcontainer/` configuration is provided for one-command onboarding in
+VS Code or any devcontainer-compatible IDE. It pins Node 22 LTS and Python
+3.13 (via `uv`), installs ripgrep/jq/git, and runs
+`npm install && cd backend && uv sync --frozen --extra dev` on first create.
+Smoke-build locally with:
+
+```bash
+docker build -f .devcontainer/Dockerfile .
+```
+
 ## Quick Start
 
 ```bash
