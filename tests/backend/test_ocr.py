@@ -49,4 +49,4 @@ def test_complete_recipe_with_gpt_uses_configured_model(mock_openai_client):
 
 
 def test_default_model_is_gpt_4o():
-    assert config.OPENAI_VISION_MODEL == "gpt-4o" or config.OPENAI_VISION_MODEL != "gpt-5.2"
+    assert config.OPENAI_VISION_MODEL == "gpt-4o"
