@@ -66,8 +66,10 @@ def write_with_etag(
     """
     last_error: Optional[str] = None
     total_sleep = 0.0
+    attempts_made = 0
 
     for attempt in range(max_retries):
+        attempts_made = attempt + 1
         try:
             response = s3_client.get_object(Bucket=bucket, Key=key)
             current = json.loads(response["Body"].read())
@@ -75,7 +77,7 @@ def write_with_etag(
         except ClientError as e:
             code = e.response.get("Error", {}).get("Code", "")
             if code == "NoSuchKey":
-                return WriteResult(success=False, not_found=True, error="NoSuchKey", attempts=attempt + 1)
+                return WriteResult(success=False, not_found=True, error="NoSuchKey", attempts=attempts_made)
             last_error = f"GET failed: {e}"
             log.error("ETag writer GET failed", key=key, error=str(e))
             break
@@ -129,4 +131,4 @@ def write_with_etag(
         except Exception as cleanup_err:  # pragma: no cover - defensive
             log.error("ETag writer cleanup_fn raised", error=str(cleanup_err))
 
-    return WriteResult(success=False, error=last_error or "unknown", attempts=max_retries)
+    return WriteResult(success=False, error=last_error or "unknown", attempts=attempts_made)
