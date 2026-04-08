@@ -82,7 +82,7 @@ async function installStubs(page: Page) {
   });
 }
 
-test('swipe + upload happy path', async ({ page }) => {
+test('app boot happy path', async ({ page }) => {
   await installStubs(page);
 
   const consoleErrors: string[] = [];
