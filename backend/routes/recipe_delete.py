@@ -68,19 +68,6 @@ def handle_delete_request(event, context, recipe_key=None):
                 ),
             }
 
-        if error_message and "not found" in error_message.lower():
-            log.info("Recipe not found (idempotent delete)", recipe_key=recipe_key)
-            return {
-                "statusCode": 200,
-                "headers": {"Content-Type": "application/json"},
-                "body": json.dumps(
-                    {
-                        "success": True,
-                        "message": f"Recipe {recipe_key} was already deleted or not found",
-                    }
-                ),
-            }
-
         log.error("Failed to delete recipe", recipe_key=recipe_key, error=error_message)
         return {
             "statusCode": 500,
