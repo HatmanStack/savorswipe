@@ -484,11 +484,10 @@ def process_upload_files(body, job_id, bucket_name):
         )
     except Exception as e:
         log.error("Parallel processing failed", error=str(e), traceback=traceback.format_exc())
-        return {
-            "statusCode": 500,
-            "headers": {"Content-Type": "application/json"},
-            "body": json.dumps({"returnMessage": f"Parallel processing failed: {str(e)}"}),
-        }
+        # Re-raise so handle_async_processing can write status=error to S3.
+        # Returning a 500 dict here would be swallowed by the async invoke path
+        # and leave the job stuck in "processing" forever.
+        raise
 
     success_keys: List[str] = []
     json_data: Dict = {}
@@ -523,19 +522,11 @@ def process_upload_files(body, job_id, bucket_name):
                         attempt=attempt + 1,
                     )
                     if attempt + 1 == load_attempts:
-                        return {
-                            "statusCode": 500,
-                            "headers": {"Content-Type": "application/json"},
-                            "body": json.dumps(
-                                {
-                                    "success": False,
-                                    "error": (
-                                        "Failed to load existing recipe data from S3 "
-                                        f"after {load_attempts} attempts: {str(e)}"
-                                    ),
-                                }
-                            ),
-                        }
+                        # Raise so handle_async_processing writes status=error to S3.
+                        raise RuntimeError(
+                            "Failed to load existing recipe data from S3 "
+                            f"after {load_attempts} attempts: {str(e)}"
+                        ) from e
                     time.sleep(0.3 * (2**attempt))
 
             used_urls = si.extract_used_image_urls(json_data)
