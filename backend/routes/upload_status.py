@@ -31,6 +31,12 @@ def handle_status_request(event, context, job_id):
         }
 
     bucket_name = os.getenv("S3_BUCKET")
+    if not bucket_name:
+        return {
+            "statusCode": 500,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps({"error": "S3_BUCKET environment variable not set"}),
+        }
     status_key = f"upload-status/{job_id}.json"
 
     try:
