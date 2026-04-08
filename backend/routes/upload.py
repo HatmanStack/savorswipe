@@ -498,18 +498,45 @@ def process_upload_files(body, job_id, bucket_name):
     try:
         if unique_recipes:
             s3_client = lf.S3
-            try:
-                response = s3_client.get_object(
-                    Bucket=bucket_name, Key="jsondata/combined_data.json"
-                )
-                json_data = json.loads(response["Body"].read())
-                log.info("Loaded existing recipes from S3", count=len(json_data))
-            except s3_client.exceptions.NoSuchKey:
-                log.info("No existing recipe data found (first upload)")
-                json_data = {}
-            except Exception as e:
-                log.error("Error loading existing data", error=str(e))
-                json_data = {}
+            # Only treat NoSuchKey as "empty bucket"; for any other error
+            # retry with exponential backoff and fail loud if retries are
+            # exhausted. Silently falling back to an empty dict would let
+            # a transient S3 read failure overwrite existing recipes.
+            json_data = None
+            load_attempts = 3
+            for attempt in range(load_attempts):
+                try:
+                    response = s3_client.get_object(
+                        Bucket=bucket_name, Key="jsondata/combined_data.json"
+                    )
+                    json_data = json.loads(response["Body"].read())
+                    log.info("Loaded existing recipes from S3", count=len(json_data))
+                    break
+                except s3_client.exceptions.NoSuchKey:
+                    log.info("No existing recipe data found (first upload)")
+                    json_data = {}
+                    break
+                except Exception as e:
+                    log.error(
+                        "Error loading existing data",
+                        error=str(e),
+                        attempt=attempt + 1,
+                    )
+                    if attempt + 1 == load_attempts:
+                        return {
+                            "statusCode": 500,
+                            "headers": {"Content-Type": "application/json"},
+                            "body": json.dumps(
+                                {
+                                    "success": False,
+                                    "error": (
+                                        "Failed to load existing recipe data from S3 "
+                                        f"after {load_attempts} attempts: {str(e)}"
+                                    ),
+                                }
+                            ),
+                        }
+                    time.sleep(0.3 * (2**attempt))
 
             used_urls = si.extract_used_image_urls(json_data)
             log.info("Found used image URLs", count=len(used_urls))
