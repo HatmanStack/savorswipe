@@ -1,33 +1,4 @@
 // ============================================================================
-// Branded Types for Type-Safe IDs
-// ============================================================================
-
-declare const __brand: unique symbol;
-type Brand<B> = { [__brand]: B };
-
-/**
- * Branded type utility - creates a nominal type from a structural type.
- * Prevents mixing up different string IDs (e.g., RecipeKey vs JobId).
- */
-export type Branded<T, B> = T & Brand<B>;
-
-/** Type-safe recipe key (prevents mixing with other string IDs) */
-export type RecipeKey = Branded<string, 'RecipeKey'>;
-
-/** Type-safe job ID (prevents mixing with recipe keys) */
-export type JobId = Branded<string, 'JobId'>;
-
-/** Helper to create a RecipeKey from a string */
-export function asRecipeKey(key: string): RecipeKey {
-  return key as RecipeKey;
-}
-
-/** Helper to create a JobId from a string */
-export function asJobId(id: string): JobId {
-  return id as JobId;
-}
-
-// ============================================================================
 // Discriminated Union Types for Ingredients
 // ============================================================================
 
@@ -205,15 +176,6 @@ export interface Recipe {
   image_search_results?: string[];
 }
 
-/**
- * Normalized recipe with guaranteed discriminated union types.
- * Use this when you need type-safe pattern matching.
- */
-export interface NormalizedRecipe extends Omit<Recipe, 'Ingredients' | 'Directions'> {
-  Ingredients?: RecipeIngredients;
-  Directions?: RecipeDirections;
-}
-
 /** Normalized recipe data collection */
 export interface S3JsonData {
   [key: string]: Recipe;
@@ -241,14 +203,6 @@ export interface UploadResponse {
   statusCode: number;
   body: string;
   headers?: Record<string, string>;
-}
-
-// ============================================================================
-// Component Props Types
-// ============================================================================
-
-export interface RecipeDetailsProps {
-  currentRecipe: Recipe;
 }
 
 // ============================================================================
@@ -297,30 +251,6 @@ export function isRawArrayIngredients(
   return Array.isArray(ing);
 }
 
-// ============================================================================
-// Type Guards for Directions
-// ============================================================================
-
-/** Check if directions are in normalized format (has 'kind' field) */
-export function isNormalizedDirections(
-  dir: RecipeDirections | RawDirections | undefined
-): dir is RecipeDirections {
-  return dir !== undefined && typeof dir === 'object' && !Array.isArray(dir) && 'kind' in dir;
-}
-
-/** Check if directions are in raw string format */
-export function isRawStringDirections(
-  dir: RecipeDirections | RawDirections | undefined
-): dir is string {
-  return typeof dir === 'string';
-}
-
-/** Check if directions are in raw array format */
-export function isRawArrayDirections(
-  dir: RecipeDirections | RawDirections | undefined
-): dir is string[] {
-  return Array.isArray(dir);
-}
 
 // Search types
 export * from './search';

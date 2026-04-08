@@ -7,13 +7,13 @@ import { ImageFile, Recipe, S3JsonData, MealType } from '@/types';
 // Types
 // ============================================================================
 
-export interface UseQueueStateOptions {
+interface UseQueueStateOptions {
   jsonData: S3JsonData | null;
   mealTypeFilters: MealType[];
   setCurrentRecipe: (recipe: Recipe | null) => void;
 }
 
-export interface QueueStateReturn {
+interface QueueStateReturn {
   queue: ImageFile[];
   currentImage: ImageFile | null;
   nextImage: ImageFile | null;

@@ -8,6 +8,3 @@ interface AppProviderProps {
 export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   return <RecipeProvider>{children}</RecipeProvider>;
 };
-
-// Re-export context hook for convenience
-export { useRecipe } from './RecipeContext';

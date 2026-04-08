@@ -1,0 +1,23 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "app/**/*.{ts,tsx,js,jsx}",
+    "app.config.js",
+    "babel.config.js",
+    "metro.config.js",
+    "jest.setup.js",
+    "jest.mocks.js",
+    "scripts/**/*.{js,ts}",
+    "**/__tests__/**/*.{ts,tsx,js,jsx}",
+    "**/*.test.{ts,tsx,js,jsx}",
+    "services/__test_helpers__/**/*.{ts,tsx}"
+  ],
+  "project": [
+    "**/*.{ts,tsx,js,jsx}",
+    "!dist/**",
+    "!public/**",
+    "!node_modules/**"
+  ],
+  "ignoreBinaries": ["expo"],
+  "ignoreDependencies": ["expo-router"]
+}

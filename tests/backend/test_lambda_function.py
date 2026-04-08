@@ -109,22 +109,16 @@ class TestLambdaFunction(unittest.TestCase):
         self.assertIsNotNone(error)
         self.assertIn('Processing failed', error)
 
-    @patch('lambda_function.boto3.client')
-    def test_lambda_handler_multi_file_format(self, mock_boto):
+    @patch('lambda_function.S3', new_callable=MagicMock)
+    @patch('lambda_function.LAMBDA', new_callable=MagicMock)
+    def test_lambda_handler_multi_file_format(self, mock_lambda_param, mock_s3_param):
         """Test Lambda handler returns 202 and invokes async processing."""
         # Mock environment
         with patch.dict('os.environ', {'S3_BUCKET': 'test-bucket', 'FUNCTION_NAME': 'test-function'}):
             # Mock S3 and Lambda clients
-            mock_s3_client = MagicMock()
-            mock_lambda_client = MagicMock()
+            mock_s3_client = mock_s3_param
 
-            def get_boto_client(service_name, **kwargs):
-                if service_name == 's3':
-                    return mock_s3_client
-                elif service_name == 'lambda':
-                    return mock_lambda_client
-                return MagicMock()
-            mock_boto.side_effect = get_boto_client
+            mock_lambda_client = mock_lambda_param
 
             # Test event with jobId
             event = {
@@ -149,10 +143,11 @@ class TestLambdaFunction(unittest.TestCase):
             invoke_call = mock_lambda_client.invoke.call_args
             self.assertEqual(invoke_call.kwargs['InvocationType'], 'Event')
 
-    @patch('lambda_function.boto3.client')
+    @patch('lambda_function.S3', new_callable=MagicMock)
     @patch('lambda_function.EmbeddingStore')
     @patch('lambda_function.EmbeddingGenerator')
-    def test_lambda_handler_no_files(self, mock_gen_class, mock_store_class, mock_boto):
+    @patch('lambda_function.LAMBDA', new_callable=MagicMock)
+    def test_lambda_handler_no_files(self, mock_gen_class, mock_store_class, mock_lambda_param, mock_s3_param):
         """Test Lambda handler with no files returns 400 error."""
         with patch.dict('os.environ', {'S3_BUCKET': 'test-bucket'}):
             # Test empty event
@@ -166,21 +161,15 @@ class TestLambdaFunction(unittest.TestCase):
             body = json.loads(response['body'])
             self.assertIn('No files', body['returnMessage'])
 
-    @patch('lambda_function.boto3.client')
-    def test_lambda_handler_parallel_processing(self, mock_boto):
+    @patch('lambda_function.S3', new_callable=MagicMock)
+    @patch('lambda_function.LAMBDA', new_callable=MagicMock)
+    def test_lambda_handler_parallel_processing(self, mock_lambda_param, mock_s3_param):
         """Test that handle_post_request invokes async processing (parallel handled in process_upload_files)."""
         # Note: Parallel processing now happens in process_upload_files, not handle_post_request
         with patch.dict('os.environ', {'S3_BUCKET': 'test-bucket', 'FUNCTION_NAME': 'test-function'}):
-            mock_s3_client = MagicMock()
-            mock_lambda_client = MagicMock()
+            mock_s3_client = mock_s3_param
 
-            def get_boto_client(service_name, **kwargs):
-                if service_name == 's3':
-                    return mock_s3_client
-                elif service_name == 'lambda':
-                    return mock_lambda_client
-                return MagicMock()
-            mock_boto.side_effect = get_boto_client
+            mock_lambda_client = mock_lambda_param
 
             event = {
                 'files': [
@@ -195,20 +184,14 @@ class TestLambdaFunction(unittest.TestCase):
             self.assertEqual(response['statusCode'], 202)
             mock_lambda_client.invoke.assert_called_once()
 
-    @patch('lambda_function.boto3.client')
-    def test_lambda_handler_success_response(self, mock_boto):
+    @patch('lambda_function.S3', new_callable=MagicMock)
+    @patch('lambda_function.LAMBDA', new_callable=MagicMock)
+    def test_lambda_handler_success_response(self, mock_lambda_param, mock_s3_param):
         """Test Lambda handler returns correct async response format."""
         with patch.dict('os.environ', {'S3_BUCKET': 'test-bucket', 'FUNCTION_NAME': 'test-function'}):
-            mock_s3_client = MagicMock()
-            mock_lambda_client = MagicMock()
+            mock_s3_client = mock_s3_param
 
-            def get_boto_client(service_name, **kwargs):
-                if service_name == 's3':
-                    return mock_s3_client
-                elif service_name == 'lambda':
-                    return mock_lambda_client
-                return MagicMock()
-            mock_boto.side_effect = get_boto_client
+            mock_lambda_client = mock_lambda_param
 
             event = {
                 'files': [{'data': 'base64data', 'type': 'image'}],
@@ -227,21 +210,15 @@ class TestLambdaFunction(unittest.TestCase):
             self.assertEqual(body['jobId'], 'test-job-456')
             self.assertEqual(body['status'], 'processing')
 
-    @patch('lambda_function.boto3.client')
-    def test_lambda_handler_embedding_storage(self, mock_boto):
+    @patch('lambda_function.S3', new_callable=MagicMock)
+    @patch('lambda_function.LAMBDA', new_callable=MagicMock)
+    def test_lambda_handler_embedding_storage(self, mock_lambda_param, mock_s3_param):
         """Test that initial status is written to S3 (embeddings stored by process_upload_files)."""
         # Note: Embeddings are now stored by process_upload_files, not handle_post_request
         with patch.dict('os.environ', {'S3_BUCKET': 'test-bucket', 'FUNCTION_NAME': 'test-function'}):
-            mock_s3_client = MagicMock()
-            mock_lambda_client = MagicMock()
+            mock_s3_client = mock_s3_param
 
-            def get_boto_client(service_name, **kwargs):
-                if service_name == 's3':
-                    return mock_s3_client
-                elif service_name == 'lambda':
-                    return mock_lambda_client
-                return MagicMock()
-            mock_boto.side_effect = get_boto_client
+            mock_lambda_client = mock_lambda_param
 
             event = {
                 'files': [{'data': 'base64data', 'type': 'image'}],
@@ -255,20 +232,14 @@ class TestLambdaFunction(unittest.TestCase):
             status_calls = [c for c in put_calls if 'upload-status/' in str(c)]
             self.assertGreater(len(status_calls), 0)
 
-    @patch('lambda_function.boto3.client')
-    def test_lambda_handler_completion_flag(self, mock_boto):
+    @patch('lambda_function.S3', new_callable=MagicMock)
+    @patch('lambda_function.LAMBDA', new_callable=MagicMock)
+    def test_lambda_handler_completion_flag(self, mock_lambda_param, mock_s3_param):
         """Test that processing status is written to S3."""
         with patch.dict('os.environ', {'S3_BUCKET': 'test-bucket', 'FUNCTION_NAME': 'test-function'}):
-            mock_s3 = MagicMock()
-            mock_lambda = MagicMock()
+            mock_s3 = mock_s3_param
 
-            def get_client(service_name, **kwargs):
-                if service_name == 's3':
-                    return mock_s3
-                elif service_name == 'lambda':
-                    return mock_lambda
-                return MagicMock()
-            mock_boto.side_effect = get_client
+            mock_lambda = mock_lambda_param
 
             event = {
                 'files': [{'data': 'base64data', 'type': 'image'}],
@@ -282,30 +253,16 @@ class TestLambdaFunction(unittest.TestCase):
                          if 'upload-status/' in str(call)]
             self.assertGreater(len(put_calls), 0)
 
-    @patch('lambda_function.boto3.client')
-    def test_lambda_handler_completion_flag_error(self, mock_boto):
+    @patch('lambda_function.S3', new_callable=MagicMock)
+    @patch('lambda_function.LAMBDA', new_callable=MagicMock)
+    def test_lambda_handler_completion_flag_error(self, mock_lambda_param, mock_s3_param):
         """Test that Lambda doesn't fail if status write fails."""
         with patch.dict('os.environ', {'S3_BUCKET': 'test-bucket', 'FUNCTION_NAME': 'test-function'}):
-            mock_s3 = MagicMock()
-            mock_lambda = MagicMock()
+            mock_s3 = mock_s3_param
+            mock_lambda = mock_lambda_param
 
-            # Make first S3 put fail but let Lambda invoke succeed
-            put_call_count = [0]
-            def selective_error(*args, **kwargs):
-                put_call_count[0] += 1
-                if put_call_count[0] == 1:  # First call (pending file)
-                    raise Exception('S3 Error')
-                return MagicMock()
-
-            mock_s3.put_object.side_effect = selective_error
-
-            def get_client(service_name, **kwargs):
-                if service_name == 's3':
-                    return mock_s3
-                elif service_name == 'lambda':
-                    return mock_lambda
-                return MagicMock()
-            mock_boto.side_effect = get_client
+            # First S3 put fails (pending file write)
+            mock_s3.put_object.side_effect = Exception('S3 Error')
 
             event = {
                 'files': [{'data': 'base64data', 'type': 'image'}],
@@ -321,12 +278,11 @@ class TestLambdaFunction(unittest.TestCase):
 class TestLambdaGetRequest(unittest.TestCase):
     """Test cases for GET request handling."""
 
-    @patch('lambda_function.boto3.client')
+    @patch('lambda_function.S3', new_callable=MagicMock)
     def test_get_request_success(self, mock_boto_client):
         """Test successful GET request returns JSON with cache headers."""
         # Arrange
-        mock_s3 = Mock()
-        mock_boto_client.return_value = mock_s3
+        mock_s3 = mock_boto_client
 
         mock_body = Mock()
         mock_body.read.return_value = b'{"recipe-1": {"Title": "Test Recipe"}}'
@@ -365,12 +321,11 @@ class TestLambdaGetRequest(unittest.TestCase):
                 Key='jsondata/combined_data.json'
             )
 
-    @patch('lambda_function.boto3.client')
+    @patch('lambda_function.S3', new_callable=MagicMock)
     def test_get_request_file_not_found(self, mock_boto_client):
         """Test GET request returns 404 when JSON file missing."""
         # Arrange
-        mock_s3 = Mock()
-        mock_boto_client.return_value = mock_s3
+        mock_s3 = mock_boto_client
 
         from botocore.exceptions import ClientError
         error_response = {'Error': {'Code': 'NoSuchKey'}}
@@ -397,12 +352,11 @@ class TestLambdaGetRequest(unittest.TestCase):
             self.assertIn('error', body)
             self.assertIn('not found', body['error'].lower())
 
-    @patch('lambda_function.boto3.client')
+    @patch('lambda_function.S3', new_callable=MagicMock)
     def test_get_request_s3_error(self, mock_boto_client):
         """Test GET request returns 500 on S3 error."""
         # Arrange
-        mock_s3 = Mock()
-        mock_boto_client.return_value = mock_s3
+        mock_s3 = mock_boto_client
         mock_s3.get_object.side_effect = Exception('S3 connection failed')
 
         with patch.dict('os.environ', {'S3_BUCKET': 'test-bucket'}):
@@ -452,14 +406,15 @@ class TestLambdaRouting(unittest.TestCase):
 
     @patch('lambda_function.handle_get_request')
     def test_routes_get_request(self, mock_get_handler):
-        """Test lambda_handler routes GET to handle_get_request."""
+        """Test lambda_handler routes GET /recipes to handle_get_request."""
         # Arrange
         mock_get_handler.return_value = {'statusCode': 200}
 
         event = {
             'requestContext': {
                 'http': {
-                    'method': 'GET'
+                    'method': 'GET',
+                    'path': '/recipes'
                 }
             }
         }

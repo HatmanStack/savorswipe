@@ -54,7 +54,7 @@ function isSectionedObject(obj: Record<string, unknown>): boolean {
  * - Record<string, string> -> FlatIngredients
  * - Record<string, Record<string, string>> -> SectionedIngredients
  */
-export function normalizeIngredients(raw: RawIngredients | undefined): RecipeIngredients | undefined {
+function normalizeIngredients(raw: RawIngredients | undefined): RecipeIngredients | undefined {
   if (raw === undefined || raw === null) {
     return undefined;
   }
@@ -108,7 +108,7 @@ export function normalizeIngredients(raw: RawIngredients | undefined): RecipeIng
  * - Record<string, string> -> FlatDirections
  * - Record<string, Record<string, string>> -> SectionedDirections
  */
-export function normalizeDirections(raw: RawDirections | undefined): RecipeDirections | undefined {
+function normalizeDirections(raw: RawDirections | undefined): RecipeDirections | undefined {
   if (raw === undefined || raw === null) {
     return undefined;
   }
@@ -159,7 +159,7 @@ export function normalizeDirections(raw: RawDirections | undefined): RecipeDirec
  * @param key - Recipe key (from object key in S3JsonData)
  * @returns Normalized Recipe with discriminated union types
  */
-export function normalizeRecipe(raw: RawRecipe, key: string): Recipe {
+function normalizeRecipe(raw: RawRecipe, key: string): Recipe {
   return {
     ...raw,
     key,

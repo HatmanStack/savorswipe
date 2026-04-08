@@ -41,7 +41,7 @@ import { Recipe } from '@/types/index'
 import { ImageGrid } from './ImageGrid'
 import { ImagePreview } from './ImagePreview'
 
-export interface ImagePickerModalProps {
+interface ImagePickerModalProps {
   /** Recipe being displayed for image selection */
   recipe: Recipe | null;
   /** Whether modal is visible */

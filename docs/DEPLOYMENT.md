@@ -5,7 +5,7 @@ This guide explains how to deploy the SavorSwipe backend Lambda function and API
 ## Prerequisites
 
 1. **AWS CLI** installed and configured with appropriate credentials
-2. **AWS SAM CLI** installed (`pip install aws-sam-cli`)
+2. **AWS SAM CLI** installed (`uvx --from aws-sam-cli sam --version` or `uv pip install aws-sam-cli`)
 3. **Docker** installed and running (required for SAM build with containers)
 4. **Node.js** installed (for running the deployment script)
 
@@ -18,6 +18,7 @@ npm run deploy
 ```
 
 The script will:
+
 1. Prompt for stack name, AWS region, environment, and API keys
 2. Save your configuration to `.env.deploy` for future deployments
 3. Generate `backend/samconfig.toml` with deployment parameters
@@ -47,6 +48,7 @@ These values are saved to `.env.deploy` for subsequent deployments.
 After the first deployment, the script will load your saved configuration and show current values in brackets. Press Enter to accept defaults or type a new value.
 
 You can:
+
 - Edit `.env.deploy` to update your configuration
 - Delete `.env.deploy` to start fresh
 
@@ -65,6 +67,7 @@ The project uses two environment files:
    - **Not committed to Git** (in `.gitignore`)
 
 Example `.env.deploy`:
+
 ```bash
 STACK_NAME=savorswipe
 AWS_REGION=us-east-1
@@ -76,10 +79,30 @@ GOOGLE_SEARCH_KEY=...
 ```
 
 Example `.env` (auto-updated):
+
 ```bash
 EXPO_PUBLIC_CLOUDFRONT_BASE_URL=https://your-cloudfront-url.cloudfront.net
-EXPO_PUBLIC_API_GATEWAY_URL=https://your-api-url.execute-api.us-west-2.amazonaws.com
+EXPO_PUBLIC_API_GATEWAY_URL=https://your-api-url.execute-api.us-east-1.amazonaws.com
+EXPO_PUBLIC_UPLOAD_URL=https://your-upload-endpoint-url
 ```
+
+### Backend Lambda Environment Variables
+
+Set via SAM parameter overrides (`samconfig.toml` / `--parameter-overrides`):
+
+| Variable | Required | Default | Purpose |
+|---|---|---|---|
+| `API_KEY` | yes | — | OpenAI API key (OCR + embeddings) |
+| `SEARCH_ID` | yes | — | Google Custom Search engine id |
+| `SEARCH_KEY` | yes | — | Google Custom Search API key |
+| `S3_BUCKET` | yes | — | Recipe/image storage bucket |
+| `OPENAI_VISION_MODEL` | no | `gpt-4o` | Vision model for OCR |
+| `SIMILARITY_THRESHOLD` | no | `0.85` | Cosine threshold for duplicate detection |
+| `PDF_MAX_PAGES` | no | `20` | Max PDF pages processed per upload |
+| `MAX_RETRIES` | no | `3` | ETag-locked write retry budget |
+| `FUNCTION_NAME` | no | derived | Self-invoke target for async background work |
+| `MAX_ASYNC_PAYLOAD_BYTES` | no | `262144` | Async invoke payload cap |
+| `RECIPE_BUDGET_SECONDS` | no | `540` | Per-recipe processing budget |
 
 ### Local Development CORS
 
@@ -99,6 +122,7 @@ The deployment script uses `samconfig.toml` to persist deployment configuration.
 ### GitHub Actions (CI Only)
 
 The `.github/workflows` configuration runs:
+
 - ✅ Frontend linting and type-check (`npm run lint`)
 - ✅ Frontend tests (`npm test`)
 - ✅ Backend linting (`ruff check`)
@@ -114,6 +138,7 @@ npm run deploy
 ```
 
 This ensures:
+
 - Control over when deployments happen
 - No accidental deployments from CI
 - Proper credential management
@@ -130,8 +155,8 @@ You can manually retrieve outputs with:
 
 ```bash
 aws cloudformation describe-stacks \
-  --stack-name savorswipe-lambda \
-  --region us-west-2 \
+  --stack-name savorswipe \
+  --region us-east-1 \
   --query 'Stacks[0].Outputs'
 ```
 
@@ -147,9 +172,12 @@ aws cloudformation describe-stacks \
 
 **Error**: `sam: command not found`
 
-**Solution**: Install AWS SAM CLI:
+**Solution**: Install AWS SAM CLI via uv (never bare `pip`):
+
 ```bash
-pip install aws-sam-cli
+uvx --from aws-sam-cli sam --version
+# or
+uv pip install aws-sam-cli
 ```
 
 ### AWS Credentials Not Configured
@@ -157,6 +185,7 @@ pip install aws-sam-cli
 **Error**: `Unable to locate credentials`
 
 **Solution**: Configure AWS CLI:
+
 ```bash
 aws configure
 ```
@@ -167,6 +196,7 @@ The deployment script automatically creates an S3 bucket for SAM artifacts:
 `sam-deploy-savorswipe-<region>`
 
 If this bucket already exists in a different account, you may need to:
+
 1. Choose a different region
 2. Modify the bucket name in `frontend/scripts/deploy.js`
 
@@ -175,22 +205,49 @@ If this bucket already exists in a different account, you may need to:
 If deployment fails, you can:
 
 1. Check CloudFormation stack status:
+
    ```bash
-   aws cloudformation describe-stacks --stack-name savorswipe-lambda
+   aws cloudformation describe-stacks --stack-name savorswipe
    ```
 
 2. View stack events:
+
    ```bash
-   aws cloudformation describe-stack-events --stack-name savorswipe-lambda
+   aws cloudformation describe-stack-events --stack-name savorswipe
    ```
 
 3. Delete the stack and retry:
+
    ```bash
-   aws cloudformation delete-stack --stack-name savorswipe-lambda
+   aws cloudformation delete-stack --stack-name savorswipe
    npm run deploy
    ```
 
-## Manual Deployment (Bash Script)
+## Local Lambda Testing with `sam local invoke`
+
+You can exercise a single Lambda route locally without deploying. From
+`backend/`:
+
+```bash
+# Build once
+sam build --use-container
+
+# Invoke with a synthetic API Gateway v2 event
+sam local invoke RecipeFunction \
+  --event events/get-recipes.json \
+  --env-vars env.json
+```
+
+`events/get-recipes.json` is a standard API Gateway v2 HTTP event
+(`sam local generate-event apigateway http-api-proxy` will scaffold one).
+`env.json` supplies the Lambda environment variables documented in
+[Backend Lambda Environment Variables](#backend-lambda-environment-variables).
+
+## Manual Deployment (Bash Script — deprecated)
+
+> The `backend/deploy.sh` script is preserved for emergency fallback only.
+> Prefer `npm run deploy`, which auto-updates `.env` and integrates with
+> the rest of the npm workflow.
 
 If you prefer the original bash script, you can still use:
 
@@ -200,6 +257,7 @@ cd backend
 ```
 
 This script:
+
 - Loads from `.env.deploy`
 - Prompts for missing values
 - Runs `sam build` and `sam deploy`
@@ -212,16 +270,19 @@ This script:
 To deploy the frontend as a web app:
 
 1. **Copy environment variables**: The `.env` file must be in `frontend/` for the build:
+
    ```bash
    cp .env frontend/.env
    ```
 
 2. **Build the web export** (must run from `frontend/` directory):
+
    ```bash
    cd frontend && npx expo export --platform web
    ```
 
    If you get env variable errors, clear the cache first:
+
    ```bash
    cd frontend && rm -rf .expo dist node_modules/.cache && npx expo export --platform web
    ```
@@ -231,6 +292,7 @@ To deploy the frontend as a web app:
 4. **Deploy with AWS Amplify**: Create an Amplify app with the S3 bucket as source
 
 5. **Update CORS**: Redeploy the backend with the Amplify CloudFront URL as a production origin:
+
    ```bash
    npm run deploy
    # When prompted for Production Origins, enter your Amplify URL
@@ -250,6 +312,7 @@ After successful backend deployment:
 Starter data uses keys 10000+ to avoid conflicts with user data. New uploads use `len(recipes) + 1` for key generation, so you can migrate data from an old deployment:
 
 1. **Export from old stack**:
+
    ```bash
    aws s3 cp s3://old-bucket/jsondata/combined_data.json ./old_data.json
    aws s3 cp s3://old-bucket/jsondata/recipe_embeddings.json ./old_embeddings.json
@@ -259,6 +322,7 @@ Starter data uses keys 10000+ to avoid conflicts with user data. New uploads use
 2. **Merge with new stack**: Append your old recipes to the new `combined_data.json` and `recipe_embeddings.json`. Your old keys (1-N) won't conflict with starter keys (10000+).
 
 3. **Upload to new stack**:
+
    ```bash
    aws s3 cp ./merged_data.json s3://new-bucket/jsondata/combined_data.json
    aws s3 cp ./merged_embeddings.json s3://new-bucket/jsondata/recipe_embeddings.json
@@ -278,13 +342,15 @@ The deployment creates:
 - **CloudFront Distribution**: CDN for serving images
 - **Lambda Function**: Python-based recipe processing (OCR, image search)
 - **API Gateway v2**: HTTP API with routes:
-  - `GET /recipes`
-  - `POST /recipe/upload`
-  - `DELETE /recipe/{recipe_key}`
-  - `POST /recipe/{recipe_key}/image`
+  - `GET /recipes` — fetch all recipe data
+  - `POST /recipe/upload` — upload images/PDFs for OCR processing
+  - `DELETE /recipe/{recipe_key}` — delete a recipe
+  - `POST /recipe/{recipe_key}/image` — select recipe image
+  - `GET /upload/status/{jobId}` — check background job status
 - **CloudWatch Logs**: Automatic logging for debugging
 
 The Lambda function has permissions to:
+
 - Read/write to S3 bucket
 - Call OpenAI API
 - Call Google Custom Search API
@@ -310,6 +376,7 @@ known scaling limits:
 ### Migration Path (if needed)
 
 If you need to scale beyond a personal collection:
+
 1. **DynamoDB:** Replace S3 JSON with DynamoDB table. Each recipe becomes a row.
    Enables per-item reads/writes and pagination.
 2. **Aurora Serverless:** For relational queries, full-text search, and joins.

@@ -14,6 +14,10 @@ global.fetch = jest.fn()
 
 import { waitFor } from '@testing-library/react-native'
 import { UploadService } from '@/services/UploadService'
+import {
+  setTestApiUrl,
+  resetUploadServiceForTests,
+} from '@/services/__test_helpers__/UploadServiceTestHooks'
 import { ImageQueueService } from '@/services/ImageQueueService'
 import { ImageService } from '@/services/ImageService'
 import { useRecipe } from '@/context/RecipeContext'
@@ -39,8 +43,8 @@ describe('Upload Flow Integration', () => {
     jest.clearAllMocks()
 
     // Reset UploadService state (async to clear persistence)
-    await UploadService._resetForTests()
-    UploadService._setTestApiUrl('https://mock-api-url.com')
+    await resetUploadServiceForTests()
+    setTestApiUrl('https://mock-api-url.com')
 
     // Mock useRecipe hook
     ;(useRecipe as jest.Mock).mockReturnValue({
@@ -87,7 +91,7 @@ describe('Upload Flow Integration', () => {
   })
 
   afterEach(() => {
-    UploadService._setTestApiUrl(null)
+    setTestApiUrl(null)
   })
 
   describe('test_complete_upload_flow_single_file', () => {

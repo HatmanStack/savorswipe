@@ -20,7 +20,7 @@ import {
   Text,
 } from 'react-native'
 
-export interface ImagePreviewProps {
+interface ImagePreviewProps {
   /** Google image URL to display */
   imageUrl: string;
   /** Called when user confirms selection */

@@ -5,6 +5,7 @@ import traceback
 
 from openai import OpenAI
 
+from config import OPENAI_VISION_MODEL
 from fix_ingredients import normalize_recipe
 from logger import StructuredLogger
 
@@ -107,7 +108,7 @@ Here is the partial extraction we have so far:
     partial_str = json.dumps(partial_data, indent=2)
 
     response = get_client().chat.completions.create(
-        model="gpt-5.2",
+        model=OPENAI_VISION_MODEL,
         response_format={"type": "json_object"},
         messages=[
             {
@@ -125,7 +126,7 @@ Here is the partial extraction we have so far:
         ],
         temperature=0.1,  # Slightly higher to allow for completion creativity while staying accurate
         max_completion_tokens=4096,
-        timeout=120.0,
+        timeout=60.0,
     )
 
     completed_json = response.choices[0].message.content
@@ -338,7 +339,7 @@ Example 3 - Multiple partial recipes (e.g., index page with snippets):
     system_prompt = system_prompt + safety_note
 
     response = get_client().chat.completions.create(
-        model="gpt-5.2",
+        model=OPENAI_VISION_MODEL,
         response_format={"type": "json_object"},
         messages=[
             {
@@ -356,6 +357,7 @@ Example 3 - Multiple partial recipes (e.g., index page with snippets):
         ],
         temperature=0.0,
         max_completion_tokens=4096,  # Ensure enough tokens for complete recipe extraction
+        timeout=60.0,
     )
 
     # Handle content filter by retrying (max 2 attempts)
@@ -514,7 +516,7 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
     try:
         log.info("Calling OpenAI API")
         response = get_client().chat.completions.create(
-            model="gpt-5.2",
+            model=OPENAI_VISION_MODEL,
             response_format={"type": "json_object"},
 
             messages=[
@@ -529,7 +531,10 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
             ],
             temperature=0.0,
             max_completion_tokens=16384,
-            timeout=120.0  # 2 minute timeout for multi-recipe processing
+            # 120s: parseJSON can receive all recipes from a multi-page PDF
+            # in a single call. At 16384 completion tokens and ~100-150 tok/s
+            # gpt-4o non-streaming throughput, a full response can take 110-160s.
+            timeout=120.0
         )
         log.info("OpenAI API call completed")
     except Exception as e:

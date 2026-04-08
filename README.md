@@ -4,7 +4,7 @@
 </h1>
 
 <h4 align="center">
-<a href="https://www.apache.org/licenses/LICENSE-2.0.html"><img src="https://img.shields.io/badge/license-Apache2.0-blue" alt="savorswipe is under the Apache 2.0 license" /></a><a href="https://expo.dev"><img src="https://img.shields.io/badge/Expo-54+-orange" alt="Expo Version" /></a><a href="https://programmablesearchengine.google.com/about/"><img src="https://img.shields.io/badge/Google%20Custom%20Search-violet" alt="Google Custom Search" /></a><a href="https://platform.openai.com/docs/guides/vision"><img src="https://img.shields.io/badge/OpenAI-Vision-yellow" alt="OpenAI OCR" /></a><a href="https://docs.aws.amazon.com/lambda/"><img src="https://img.shields.io/badge/AWS-Lambda-green" alt="AWS Lambda Documentation" /></a>
+<a href="https://www.apache.org/licenses/LICENSE-2.0.html"><img src="https://img.shields.io/badge/license-Apache2.0-blue" alt="savorswipe is under the Apache 2.0 license" /></a><a href="https://expo.dev"><img src="https://img.shields.io/badge/Expo-55+-orange" alt="Expo Version" /></a><a href="https://programmablesearchengine.google.com/about/"><img src="https://img.shields.io/badge/Google%20Custom%20Search-violet" alt="Google Custom Search" /></a><a href="https://platform.openai.com/docs/guides/vision"><img src="https://img.shields.io/badge/OpenAI-Vision-yellow" alt="OpenAI OCR" /></a><a href="https://docs.aws.amazon.com/lambda/"><img src="https://img.shields.io/badge/AWS-Lambda-green" alt="AWS Lambda Documentation" /></a>
 </h4>
 <p align="center">
   <p align="center"><b>From Cravings to Cooking - Swipe, Discover, Repeat!<br> <a href="https://savorswipe.hatstack.fun"> SavorSwipe » </a> </b> </p>
@@ -27,18 +27,32 @@ Upload a picture of your own directions, ingredients or recipe to join it to the
 
 ## Prerequisites
 
-- **Node.js** v18+ (v24 LTS recommended)
+- **Node.js** v18+ (v22 LTS recommended — current Active LTS)
 - **AWS CLI** configured with credentials (`aws configure`)
 - **AWS SAM CLI** for serverless deployment
 - **Python 3.13+** for backend Lambda functions
 
+## Devcontainer
+
+A `.devcontainer/` configuration is provided for one-command onboarding in
+VS Code or any devcontainer-compatible IDE. It pins Node 22 LTS and Python
+3.13 (via `uv`), installs ripgrep/jq/git, and runs
+`npm install && cd backend && uv sync --frozen --extra dev` on first create.
+Smoke-build locally with:
+
+```bash
+docker build -f .devcontainer/Dockerfile .
+```
+
 ## Quick Start
 
 ```bash
-npm install     # Install dependencies
-npm run deploy  # Deploy backend (required before first run)
-npm start       # Start Expo dev server
-npm run check   # Run all lint and tests
+npm install         # Install dependencies
+npm run deploy      # Deploy backend (required before first run)
+npm start           # Start Expo dev server
+npm run check       # Run all lint and tests
+npm run sitemap     # Generate static sitemap.xml from local recipe data
+npm run sitemap:api # Generate sitemap.xml from the live API
 ```
 
 ## Deployment

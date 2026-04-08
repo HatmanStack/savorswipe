@@ -5,6 +5,7 @@ from typing import Dict, List, Optional, Set
 
 import requests
 
+from http_client import SESSION
 from logger import StructuredLogger
 
 log = StructuredLogger("search")
@@ -83,7 +84,7 @@ def validate_image_urls(image_urls: List[str], timeout: int = 5) -> List[str]:
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
             }
-            response = requests.head(url, headers=headers, timeout=timeout, allow_redirects=True)
+            response = SESSION.head(url, headers=headers, timeout=timeout, allow_redirects=True)
             if response.status_code == 200:
                 content_type = response.headers.get('Content-Type', '')
                 if 'image' in content_type.lower():
@@ -197,7 +198,7 @@ def _search_google_images(query: str, count: int = 10) -> List[str]:
 
     try:
         log.info("Sending request to Google Custom Search API")
-        response = requests.get(url, params=params, timeout=10)  # 10 second timeout
+        response = SESSION.get(url, params=params, timeout=10)  # 10 second timeout
         log.info("Response received", status_code=response.status_code)
 
         if response.status_code == 200:
@@ -254,44 +255,3 @@ def extract_used_image_urls(json_data: Dict) -> Set[str]:
     return used_urls
 
 
-def select_unique_image_url(search_results: List[str], used_urls: Set[str]) -> str:
-    """
-    Select the first unused image URL from search results.
-
-    This function implements image URL deduplication to ensure that
-    different recipes don't use the same image. It's used during both
-    initial upload (legacy auto-selection) and new image picker workflow
-    (user selection from grid).
-
-    Args:
-        search_results: List of image URLs from Google search (typically 9 from picker)
-        used_urls: Set of image URLs already in use by existing recipes
-
-    Returns:
-        First unused URL from search results, first URL as fallback if all are used,
-        or empty string if no search results provided
-
-    Examples:
-        >>> urls = ["url1", "url2", "url3"]
-        >>> used = {"url1"}
-        >>> select_unique_image_url(urls, used)
-        'url2'  # First unused
-        >>> select_unique_image_url(urls, {"url1", "url2", "url3"})
-        'url1'  # All used, fallback to first
-        >>> select_unique_image_url([], set())
-        ''  # Empty results
-    """
-    log.info("Selecting unique URL", results=len(search_results), used=len(used_urls))
-    if not search_results:
-        log.info("No search results provided")
-        return ''
-
-    # Find first unused URL
-    for idx, url in enumerate(search_results):
-        if url not in used_urls:
-            log.info("Selected unused URL", position=idx)
-            return url
-
-    # All URLs are used - return first as fallback
-    log.warning("All URLs already used, using first as fallback")
-    return search_results[0]

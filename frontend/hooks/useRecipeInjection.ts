@@ -24,7 +24,7 @@ const INJECT_RETRY_DELAY = 1000;
  * Check if a recipe is pending image selection.
  * A recipe is pending if it has image_search_results but no image_url set.
  */
-export function isPendingImageSelection(recipe: Recipe | undefined): boolean {
+function isPendingImageSelection(recipe: Recipe | undefined): boolean {
   if (!recipe) return false;
   return (
     Array.isArray(recipe.image_search_results) &&
@@ -37,7 +37,7 @@ export function isPendingImageSelection(recipe: Recipe | undefined): boolean {
 // Types
 // ============================================================================
 
-export interface UseRecipeInjectionOptions {
+interface UseRecipeInjectionOptions {
   jsonData: S3JsonData | null;
   setQueue: React.Dispatch<React.SetStateAction<ImageFile[]>>;
   setCurrentImage: React.Dispatch<React.SetStateAction<ImageFile | null>>;
@@ -50,7 +50,7 @@ export interface UseRecipeInjectionOptions {
   consumePendingInjectionKeys?: () => string[];
 }
 
-export interface RecipeInjectionReturn {
+interface RecipeInjectionReturn {
   injectRecipes: (recipeKeys: string[]) => Promise<void>;
 }
 
