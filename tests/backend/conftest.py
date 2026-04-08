@@ -45,14 +45,22 @@ def s3_bucket(aws_credentials, monkeypatch):
         conn = boto3.resource("s3", region_name="us-east-1")
         conn.create_bucket(Bucket="test-bucket")
 
-        # Rebind singletons to moto-backed client
+        # Rebind singletons to moto-backed clients so backend code that
+        # uses the module-scope singletons hits the mocks instead of the
+        # pre-mock real clients constructed at import time.
         moto_s3 = boto3.client("s3", region_name="us-east-1")
+        moto_lambda = boto3.client("lambda", region_name="us-east-1")
+        moto_cloudwatch = boto3.client("cloudwatch", region_name="us-east-1")
         import aws_clients
         import lambda_function
         import embeddings as embeddings_mod
         import upload as upload_mod
         monkeypatch.setattr(aws_clients, "S3", moto_s3)
+        monkeypatch.setattr(aws_clients, "LAMBDA", moto_lambda)
+        monkeypatch.setattr(aws_clients, "CLOUDWATCH", moto_cloudwatch)
         monkeypatch.setattr(lambda_function, "S3", moto_s3)
+        monkeypatch.setattr(lambda_function, "LAMBDA", moto_lambda)
+        monkeypatch.setattr(lambda_function, "CLOUDWATCH", moto_cloudwatch)
         monkeypatch.setattr(embeddings_mod, "S3", moto_s3)
         monkeypatch.setattr(upload_mod, "S3", moto_s3)
 
