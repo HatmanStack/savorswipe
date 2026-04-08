@@ -36,10 +36,14 @@ def aws_credentials():
 def s3_bucket(aws_credentials, monkeypatch):
     """Create a mock S3 bucket for testing.
 
-    Also rebinds the module-scope S3 singletons (lambda_function.S3,
-    embeddings.S3, upload.S3) to a moto-backed client so backend code that
-    uses the singletons hits the mock instead of the pre-mock real client
-    constructed at import time.
+    Also rebinds the module-scope AWS client singletons to moto-backed
+    clients so backend code that uses the singletons hits the mocks
+    instead of the pre-mock real clients constructed at import time:
+
+    - S3: ``aws_clients.S3``, ``lambda_function.S3``, ``embeddings.S3``,
+      ``upload.S3``
+    - Lambda: ``aws_clients.LAMBDA``, ``lambda_function.LAMBDA``
+    - CloudWatch: ``aws_clients.CLOUDWATCH``, ``lambda_function.CLOUDWATCH``
     """
     with mock_aws():
         conn = boto3.resource("s3", region_name="us-east-1")
