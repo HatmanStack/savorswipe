@@ -531,7 +531,10 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
             ],
             temperature=0.0,
             max_completion_tokens=16384,
-            timeout=60.0
+            # 120s: parseJSON can receive all recipes from a multi-page PDF
+            # in a single call. At 16384 completion tokens and ~100-150 tok/s
+            # gpt-4o non-streaming throughput, a full response can take 110-160s.
+            timeout=120.0
         )
         log.info("OpenAI API call completed")
     except Exception as e:
