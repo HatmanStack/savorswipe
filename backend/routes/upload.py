@@ -581,11 +581,9 @@ def process_upload_files(body, job_id, bucket_name):
             log.info("No unique recipes to upload")
     except Exception as e:
         log.error("Batch upload failed", error=str(e), traceback=traceback.format_exc())
-        return {
-            "statusCode": 500,
-            "headers": {"Content-Type": "application/json"},
-            "body": json.dumps({"returnMessage": f"Batch upload failed: {str(e)}"}),
-        }
+        # Raise so handle_async_processing writes status=error to S3.
+        # Returning a 500 dict would leave the job stuck in "processing".
+        raise
 
     success_count = len(success_keys)
     fail_count = len(file_errors)
