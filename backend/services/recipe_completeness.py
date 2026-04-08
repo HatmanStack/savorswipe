@@ -39,8 +39,12 @@ def merge_recipes(incomplete: Dict, complete: Dict) -> Dict:
     """
     merged = dict(complete)
 
-    if len(incomplete.get("Title", "")) < len(complete.get("Title", "")):
-        merged["Title"] = incomplete.get("Title", complete.get("Title"))
+    incomplete_title = incomplete.get("Title", "") or ""
+    complete_title = complete.get("Title", "") or ""
+    # Only adopt the shorter title if it is actually a real title.
+    # Otherwise an empty incomplete title would clobber a valid complete one.
+    if incomplete_title.strip() and len(incomplete_title) < len(complete_title):
+        merged["Title"] = incomplete_title
 
     incomplete_desc = incomplete.get("Description", "")
     complete_desc = complete.get("Description", "")
