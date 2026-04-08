@@ -24,7 +24,11 @@ _RETRY = Retry(
     total=3,
     backoff_factor=0.3,
     status_forcelist=(500, 502, 503, 504),
-    allowed_methods=frozenset(["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"]),
+    # Only retry idempotent methods. POST/PUT/DELETE must not auto-retry:
+    # embedding_generator.py uses SESSION.post for paid OpenAI calls, and
+    # a transient 5xx retry would double-bill. Callers that need write
+    # retries should build their own policy.
+    allowed_methods=frozenset(["GET", "HEAD", "OPTIONS"]),
     raise_on_status=False,
 )
 
