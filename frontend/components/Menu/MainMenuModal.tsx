@@ -9,6 +9,7 @@ interface MainMenuModalProps {
   onClose: () => void;
   onInfoPress: () => void;
   onUploadPress: () => void;
+  onSearchPress: () => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   styles: Record<string, any>;
 }
@@ -18,6 +19,7 @@ export const MainMenuModal: React.FC<MainMenuModalProps> = ({
   onClose,
   onInfoPress,
   onUploadPress,
+  onSearchPress,
   styles,
 }) => {
   return (
@@ -33,6 +35,10 @@ export const MainMenuModal: React.FC<MainMenuModalProps> = ({
             <ThemedText>About App</ThemedText>
           </Pressable>
           
+          <Pressable style={styles.menuItem} onPress={onSearchPress}>
+            <ThemedText>Search Recipes</ThemedText>
+          </Pressable>
+
           <Pressable style={styles.menuItem} onPress={onUploadPress}>
             <ThemedText>Upload Recipe</ThemedText>
           </Pressable>

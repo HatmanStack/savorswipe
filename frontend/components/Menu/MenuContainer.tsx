@@ -1,17 +1,24 @@
 import React, { useState } from 'react';
 import { StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
 import { MenuButton } from './MenuButton';
 import { MainMenuModal } from './MainMenuModal';
 import { InfoModal } from './InfoModal';
 import { selectAndUploadImage } from '@/components/UploadRecipe';
 
 export const MenuContainer: React.FC = () => {
+  const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
   const [infoVisible, setInfoVisible] = useState(false);
 
   const handleInfoPress = () => {
     setMenuVisible(false);
     setInfoVisible(true);
+  };
+
+  const handleSearchPress = () => {
+    setMenuVisible(false);
+    router.push('/search');
   };
 
   const handleUploadPress = () => {
@@ -30,6 +37,7 @@ export const MenuContainer: React.FC = () => {
         onClose={() => setMenuVisible(false)}
         onInfoPress={handleInfoPress}
         onUploadPress={handleUploadPress}
+        onSearchPress={handleSearchPress}
         styles={styles}
       />
 
