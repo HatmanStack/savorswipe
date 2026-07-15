@@ -8,7 +8,7 @@ anyio==4.14.2
     #   openai
 boto3==1.43.42
     # via savorswipe-backend
-botocore==1.43.38
+botocore==1.43.48
     # via
     #   boto3
     #   s3transfer
