@@ -2,6 +2,34 @@
 /* eslint-disable no-undef */
 import '@testing-library/jest-native/extend-expect';
 
+// Expo 57 installs its winter globals (fetch, URL, streams, ...) as lazy
+// getters that `import` their implementation on first read. Jest fires an
+// unread getter from outside the test scope, which throws "You are trying to
+// `import` a file outside of the scope of the test code". Reading each one
+// here, while the module registry is still alive, turns the getter into a
+// plain value before anything else can touch it.
+for (const name of [
+  'fetch', 'Headers', 'Request', 'Response', 'FormData', 'URL',
+  'URLSearchParams', 'TextEncoder', 'TextDecoder', 'AbortController',
+  'AbortSignal', 'Blob', 'File', 'ReadableStream', 'WritableStream',
+  'TransformStream', 'EventSource', 'WebSocket', 'structuredClone',
+  '__ExpoImportMetaRegistry',
+]) {
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, name);
+  if (!descriptor || !descriptor.get) continue;
+  try {
+    const value = globalThis[name];
+    Object.defineProperty(globalThis, name, {
+      value,
+      configurable: true,
+      writable: true,
+      enumerable: descriptor.enumerable,
+    });
+  } catch {
+    // A global this environment does not provide; nothing to freeze.
+  }
+}
+
 // Set environment variables for tests - MUST be before any module imports in tests
 process.env.EXPO_PUBLIC_API_GATEWAY_URL = 'https://placeholder-api-gateway-url.execute-api.us-east-1.amazonaws.com';
 process.env.EXPO_PUBLIC_CLOUDFRONT_BASE_URL = 'https://test-cloudfront.cloudfront.net';
