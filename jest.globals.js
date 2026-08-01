@@ -14,10 +14,17 @@ Object.defineProperty(globalThis, '__ExpoImportMetaRegistry', {
   enumerable: false,
 });
 
-// Jest 30 VM sandbox may not expose structuredClone
-if (typeof globalThis.structuredClone === 'undefined') {
-  globalThis.structuredClone = (val) => JSON.parse(JSON.stringify(val));
-}
+// Jest 30 VM sandbox may not expose structuredClone. Pinned like the registry
+// above so expo's winter runtime leaves the working implementation in place.
+Object.defineProperty(globalThis, 'structuredClone', {
+  value:
+    typeof globalThis.structuredClone === 'function'
+      ? globalThis.structuredClone
+      : (val) => JSON.parse(JSON.stringify(val)),
+  configurable: false,
+  writable: true,
+  enumerable: false,
+});
 
 // Prevent react-native requestAnimationFrame from crashing after jest teardown
 // RN 0.84 uses jest.now() in requestAnimationFrame which throws after teardown
