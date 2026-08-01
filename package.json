@@ -42,6 +42,7 @@
       "/dist/"
     ],
     "setupFiles": [
+      "react-native-gesture-handler/jestSetup",
       "<rootDir>/jest.globals.js",
       "<rootDir>/frontend/jest.mocks.js"
     ],

@@ -13,6 +13,7 @@ for (const name of [
   'URLSearchParams', 'TextEncoder', 'TextDecoder', 'AbortController',
   'AbortSignal', 'Blob', 'File', 'ReadableStream', 'WritableStream',
   'TransformStream', 'EventSource', 'WebSocket', 'structuredClone',
+  '__ExpoImportMetaRegistry',
 ]) {
   const descriptor = Object.getOwnPropertyDescriptor(globalThis, name);
   if (!descriptor || !descriptor.get) continue;
