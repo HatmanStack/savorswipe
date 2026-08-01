@@ -56,16 +56,11 @@ export default {
         }
       ]
     },
-    plugins: [
-      [
-        'expo-splash-screen',
-        {
-          image: './assets/images/adaptive-icon.png', // Path to your splash screen image
-          resizeMode: 'contain', // How the splash image should be resized
-          backgroundColor: '#ffffff', // Background color of the splash screen
-        },
-      ],
-    ],
+    splash: {
+      image: './assets/images/adaptive-icon.png', // Path to your splash screen image
+      resizeMode: 'contain', // How the splash image should be resized
+      backgroundColor: '#ffffff', // Background color of the splash screen
+    },
     updates: {
       fallbackToCacheTimeout: 0, // How long to wait for updates
     },
