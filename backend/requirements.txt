@@ -6,7 +6,7 @@ anyio==4.14.2
     # via
     #   httpx
     #   openai
-boto3==1.43.42
+boto3==1.43.62
     # via savorswipe-backend
 botocore==1.43.48
     # via
