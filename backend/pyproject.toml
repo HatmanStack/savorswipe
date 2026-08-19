@@ -7,7 +7,7 @@ dependencies = [
     "pymupdf==1.28.2",
     "boto3>=1.43.62",
     "requests>=2.34.2",
-    "Pillow>=10.4.0",
+    "Pillow>=12.3.0",
 ]
 
 [tool.setuptools]
