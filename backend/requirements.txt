@@ -42,7 +42,7 @@ jmespath==1.1.0
     #   botocore
 openai==2.50.0
     # via savorswipe-backend
-pillow==12.2.0
+pillow==12.3.0
     # via savorswipe-backend
 pydantic==2.13.4
     # via openai
