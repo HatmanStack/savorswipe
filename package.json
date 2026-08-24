@@ -57,6 +57,7 @@
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
     "@react-native-async-storage/async-storage": "^3.1.1",
+    "@react-native/assets-registry": "~0.87.0",
     "@react-navigation/native": "^7.3.16",
     "dotenv": "^17.4.2",
     "expo": "^57.0.13",
@@ -68,21 +69,22 @@
     "expo-image-manipulator": "~57.0.10",
     "expo-image-picker": "~57.0.10",
     "expo-linking": "~57.0.6",
+    "expo-modules-core": "~57.0.11",
     "expo-router": "~57.0.13",
     "expo-splash-screen": "~57.0.6",
     "expo-status-bar": "~57.0.1",
     "expo-system-ui": "~57.0.1",
     "expo-web-browser": "~57.0.1",
     "pdf-lib": "^1.17.1",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
     "react-native": "^0.87.0",
     "react-native-gesture-handler": "~3.2.1",
-    "react-native-reanimated": "~4.5.2",
+    "react-native-reanimated": "^4.6.0",
     "react-native-safe-area-context": "~5.9.0",
     "react-native-screens": "~4.27.0",
     "react-native-web": "^0.21.2",
-    "react-native-worklets": "~0.11.4",
+    "react-native-worklets": "~0.12.1",
     "react-native-worklets-core": "^1.6.3",
     "tslib": "^2.8.1"
   },
@@ -105,9 +107,12 @@
     "jest": "30.3.0",
     "jest-expo": "~57.0.3",
     "markdownlint-cli": "^0.41.0",
-    "react-test-renderer": "19.2.8",
+    "react-test-renderer": "19.2.3",
     "typescript": "~5.9.2",
     "typescript-eslint": "^8.57.1"
+  },
+  "overrides": {
+    "react-native-worklets": "$react-native-worklets"
   },
   "private": true
 }
