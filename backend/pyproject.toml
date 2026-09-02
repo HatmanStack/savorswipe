@@ -5,7 +5,7 @@ requires-python = ">=3.11"
 dependencies = [
     "openai>=3.1.0",
     "pymupdf==1.28.2",
-    "boto3>=1.43.62",
+    "boto3>=1.43.83",
     "requests>=2.34.2",
     "Pillow>=12.3.0",
 ]
