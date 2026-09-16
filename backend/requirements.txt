@@ -34,7 +34,7 @@ idna==3.19
     #   anyio
     #   httpx
     #   requests
-jiter==0.16.0
+jiter==0.17.0
     # via openai
 jmespath==1.1.0
     # via
