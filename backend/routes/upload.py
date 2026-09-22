@@ -38,10 +38,6 @@ lf = _LFProxy()
 # Per-recipe wall-clock budget for the parallel-processing stage.
 RECIPE_BUDGET_SECONDS = float(os.getenv("RECIPE_BUDGET_SECONDS", "90"))
 
-# Maximum payload bytes allowed for the self-invoke async Event payload.
-# Lambda's hard async limit is 256 KB; we stay well under with headroom.
-MAX_ASYNC_PAYLOAD_BYTES = int(os.getenv("MAX_ASYNC_PAYLOAD_BYTES", "200000"))
-
 
 def process_single_recipe(
     recipe_data: Dict,
@@ -110,8 +106,8 @@ def handle_post_request(event, context):
             "body": json.dumps({"returnMessage": "S3_BUCKET environment variable not set"}),
         }
 
-    # Validate FUNCTION_NAME and payload size BEFORE any S3 write so failures
-    # cannot leak upload-pending blobs that lifecycle will still bill for.
+    # Validate FUNCTION_NAME BEFORE any S3 write so failures cannot leak
+    # upload-pending blobs that lifecycle will still bill for.
     function_name = os.getenv("FUNCTION_NAME")
     if not function_name:
         log.error("FUNCTION_NAME env var missing; refusing to queue async invoke")
@@ -126,28 +122,12 @@ def handle_post_request(event, context):
             ),
         }
 
+    # NOTE: the async self-invoke below only ever carries {"async_processing",
+    # "job_id"} — a fixed ~60-byte payload, nowhere near Lambda's 256 KB async
+    # limit regardless of upload size. The actual file data goes to S3 via
+    # put_object (no comparable size ceiling) before that invoke happens, so
+    # there is nothing here to bound the request body's size against.
     serialized_body = json.dumps(body)
-    payload_bytes = len(serialized_body.encode("utf-8"))
-    if payload_bytes > MAX_ASYNC_PAYLOAD_BYTES:
-        log.error(
-            "Upload payload too large for async invoke",
-            job_id=job_id,
-            payload_bytes=payload_bytes,
-            limit=MAX_ASYNC_PAYLOAD_BYTES,
-        )
-        return {
-            "statusCode": 413,
-            "headers": {"Content-Type": "application/json"},
-            "body": json.dumps(
-                {
-                    "success": False,
-                    "error": (
-                        f"Upload payload {payload_bytes} bytes exceeds async limit "
-                        f"{MAX_ASYNC_PAYLOAD_BYTES}"
-                    ),
-                }
-            ),
-        }
 
     try:
         s3_client = lf.S3
@@ -268,13 +248,9 @@ def _extract_recipes_from_files(files, file_errors):
 
             try:
                 if is_pdf:
-                    app_time = upload_mod.upload_user_data(
-                        "user_pdfs", "application/pdf", "pdf", file_content
-                    )
+                    app_time = upload_mod.upload_user_data("user_pdfs", "application/pdf", "pdf", file_content)
                 else:
-                    app_time = upload_mod.upload_user_data(
-                        "user_images", "image/jpeg", "jpg", file_content
-                    )
+                    app_time = upload_mod.upload_user_data("user_images", "image/jpeg", "jpg", file_content)
             except Exception as e:
                 log.warning("Failed to upload user data, using fallback timestamp", error=str(e))
                 app_time = int(time.time())
@@ -296,9 +272,7 @@ def _extract_recipes_from_files(files, file_errors):
 
             for img_idx, base64_image in enumerate(base64_images):
                 recipe_json = ocr.extract_recipe_data(base64_image)
-                upload_mod.upload_user_data(
-                    "user_images_json", "application/json", "json", recipe_json, app_time
-                )
+                upload_mod.upload_user_data("user_images_json", "application/json", "json", recipe_json, app_time)
                 if recipe_json is None:
                     file_errors.append(
                         {
@@ -360,6 +334,7 @@ def process_upload_files(body, job_id, bucket_name):
         existing_embeddings, _ = embedding_store.load_embeddings()
         embedding_generator = lf.EmbeddingGenerator()
         from duplicate_detector import DuplicateDetector
+
         duplicate_detector = DuplicateDetector(existing_embeddings)
     except Exception as e:
         log.error("Service initialization failed", error=str(e))
@@ -505,9 +480,7 @@ def process_upload_files(body, job_id, bucket_name):
             load_attempts = 3
             for attempt in range(load_attempts):
                 try:
-                    response = s3_client.get_object(
-                        Bucket=bucket_name, Key="jsondata/combined_data.json"
-                    )
+                    response = s3_client.get_object(Bucket=bucket_name, Key="jsondata/combined_data.json")
                     json_data = json.loads(response["Body"].read())
                     log.info("Loaded existing recipes from S3", count=len(json_data))
                     break
@@ -524,8 +497,7 @@ def process_upload_files(body, job_id, bucket_name):
                     if attempt + 1 == load_attempts:
                         # Raise so handle_async_processing writes status=error to S3.
                         raise RuntimeError(
-                            "Failed to load existing recipe data from S3 "
-                            f"after {load_attempts} attempts: {str(e)}"
+                            f"Failed to load existing recipe data from S3 after {load_attempts} attempts: {str(e)}"
                         ) from e
                     time.sleep(0.3 * (2**attempt))
 
