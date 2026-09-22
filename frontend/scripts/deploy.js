@@ -127,7 +127,7 @@ INCLUDE_DEV_ORIGINS=${config.INCLUDE_DEV_ORIGINS || "false"}
 PRODUCTION_ORIGINS=${config.PRODUCTION_ORIGINS || ""}
 
 # OpenAI vision model used for recipe OCR
-OPENAI_VISION_MODEL=${config.OPENAI_VISION_MODEL || "gpt-4o"}
+OPENAI_VISION_MODEL=${config.OPENAI_VISION_MODEL || "gpt-5.6-luna"}
 
 # OpenAI embedding model used for duplicate detection.
 # Changing this after recipes exist requires re-embedding every stored recipe.
@@ -354,7 +354,7 @@ async function deploy() {
     GOOGLE_SEARCH_KEY: config.GOOGLE_SEARCH_KEY || "",
     INCLUDE_DEV_ORIGINS: config.INCLUDE_DEV_ORIGINS || "false",
     PRODUCTION_ORIGINS: config.PRODUCTION_ORIGINS || "",
-    OPENAI_VISION_MODEL: config.OPENAI_VISION_MODEL || "gpt-4o",
+    OPENAI_VISION_MODEL: config.OPENAI_VISION_MODEL || "gpt-5.6-luna",
     OPENAI_EMBEDDING_MODEL:
       config.OPENAI_EMBEDDING_MODEL || "text-embedding-3-small",
   };

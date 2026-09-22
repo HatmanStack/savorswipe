@@ -48,7 +48,7 @@ Parameters:
   OpenAIVisionModel:
     Type: String
     Description: OpenAI vision model used for recipe OCR
-    Default: gpt-4o
+    Default: gpt-5.6-luna
 
   OpenAIEmbeddingModel:
     Type: String

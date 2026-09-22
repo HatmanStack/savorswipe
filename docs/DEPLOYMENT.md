@@ -96,7 +96,7 @@ Set via SAM parameter overrides (`samconfig.toml` / `--parameter-overrides`):
 | `SEARCH_ID`              | yes      | —                        | Google Custom Search engine id                                                                                      |
 | `SEARCH_KEY`             | yes      | —                        | Google Custom Search API key                                                                                        |
 | `S3_BUCKET`              | yes      | —                        | Recipe/image storage bucket                                                                                         |
-| `OPENAI_VISION_MODEL`    | no       | `gpt-4o`                 | Vision model for OCR                                                                                                |
+| `OPENAI_VISION_MODEL`    | no       | `gpt-5.6-luna`           | Vision model for OCR                                                                                                |
 | `OPENAI_EMBEDDING_MODEL` | no       | `text-embedding-3-small` | Embedding model for duplicate detection. Changing it after recipes exist requires re-embedding every stored recipe. |
 | `SIMILARITY_THRESHOLD`   | no       | `0.85`                   | Cosine threshold for duplicate detection                                                                            |
 | `PDF_MAX_PAGES`          | no       | `20`                     | Max PDF pages processed per upload                                                                                  |

@@ -67,8 +67,8 @@ def test_complete_recipe_with_gpt_uses_configured_model(mock_openai_client):
     assert kwargs["model"] == config.OPENAI_VISION_MODEL
 
 
-def test_default_model_is_gpt_4o():
-    assert config.OPENAI_VISION_MODEL == "gpt-4o"
+def test_default_model_is_gpt_5_6_luna():
+    assert config.OPENAI_VISION_MODEL == "gpt-5.6-luna"
 
 
 def test_create_completion_retries_without_temperature_on_rejection():
