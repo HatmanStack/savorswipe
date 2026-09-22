@@ -1,53 +1,61 @@
-import React, {useState, useEffect} from 'react';
-import { Dimensions, Image, Pressable, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
-import Head from 'expo-router/head';
-import { useRecipe } from '@/context/RecipeContext';
-import { ThemedView } from '@/components/ThemedView';
-import { RecipeService, ImageService, IngredientScalingService } from '@/services';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import RecipeDetails from '@/components/Recipe';
-import { ThemedText } from '@/components/ThemedText';
-import { ServingSizeControl } from '@/components/ServingSizeControl';
-import { useGlobalSearchParams} from 'expo-router';
-import type { Recipe } from '@/types';
-import { generateRecipeJsonLd, getRecipeDescription, getRecipeImageUrl, getRecipeUrl } from '@/utils/seo';
+import React, { useState, useEffect } from "react";
+import { Image, Pressable, Platform } from "react-native";
+import { useRouter } from "expo-router";
+import Head from "expo-router/head";
+import { useRecipe } from "@/context/RecipeContext";
+import { ThemedView } from "@/components/ThemedView";
+import {
+  RecipeService,
+  ImageService,
+  IngredientScalingService,
+} from "@/services";
+import ParallaxScrollView from "@/components/ParallaxScrollView";
+import RecipeDetails from "@/components/Recipe";
+import { ThemedText } from "@/components/ThemedText";
+import { ServingSizeControl } from "@/components/ServingSizeControl";
+import { useGlobalSearchParams } from "expo-router";
+import { useResponsiveLayout } from "@/hooks";
+import type { Recipe } from "@/types";
+import {
+  generateRecipeJsonLd,
+  getRecipeDescription,
+  getRecipeImageUrl,
+  getRecipeUrl,
+} from "@/utils/seo";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const holderImg = require('@/assets/images/skillet.png');
+const holderImg = require("@/assets/images/skillet.png");
 
 export default function RecipeDetail() {
-  const { currentRecipe, setCurrentRecipe, setJsonData, jsonData } = useRecipe();
-  const [screenDimensions, setScreenDimensions] = useState({ width: Dimensions.get('window').width, height: Dimensions.get('window').height });
+  const { currentRecipe, setCurrentRecipe, setJsonData, jsonData } =
+    useRecipe();
+  const { getImageDimensions, getContentWidth } = useResponsiveLayout();
+  const imageDimensions = getImageDimensions();
+  const contentWidth = getContentWidth();
   const [recipeExists, setRecipeExists] = useState(true);
-  const [recipeImage, setRecipeImage] = useState<{ filename: string; file: string } | null>(null);
+  const [recipeImage, setRecipeImage] = useState<{
+    filename: string;
+    file: string;
+  } | null>(null);
   const [currentServings, setCurrentServings] = useState<number>(4);
   const [scaledRecipe, setScaledRecipe] = useState<Recipe | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const buttonSrc = require('@/assets/images/home_bg.png');
+  const buttonSrc = require("@/assets/images/home_bg.png");
   const router = useRouter();
   const glob = useGlobalSearchParams();
-  
+
   // Check if this is a valid instance - but don't return early
-  const hasValidId = glob.id && glob.id !== 'undefined' && glob.id !== '' && typeof glob.id === 'string';
-  
-
-  useEffect(() => {
-    const handleResize = () => {
-      setScreenDimensions({ width: Dimensions.get('window').width, height: Dimensions.get('window').height });
-    };
-
-    const subscription = Dimensions.addEventListener('change', handleResize);
-    return () => {
-      subscription?.remove();
-    };
-  }, []);
+  const hasValidId =
+    glob.id &&
+    glob.id !== "undefined" &&
+    glob.id !== "" &&
+    typeof glob.id === "string";
 
   // Scale recipe when currentRecipe or currentServings changes
   useEffect(() => {
     if (currentRecipe) {
       const scaled = IngredientScalingService.scaleRecipeIngredients(
         currentRecipe,
-        currentServings
+        currentServings,
       );
       setScaledRecipe(scaled);
     } else {
@@ -60,7 +68,6 @@ export default function RecipeDetail() {
   const handleServingsChange = (newServings: number) => {
     setCurrentServings(newServings);
   };
-
 
   useEffect(() => {
     // Only run if we have a valid recipe ID
@@ -79,7 +86,6 @@ export default function RecipeDetail() {
     if (!currentRecipe || currentRecipe.key !== recipeId || !recipeImage) {
       const fetchData = async () => {
         try {
-
           // Use existing jsonData if available, otherwise fetch it
           let recipeData = jsonData;
           if (!recipeData) {
@@ -105,7 +111,7 @@ export default function RecipeDetail() {
 
             setRecipeImage({
               filename: recipeFilePath,
-              file: fileURL
+              file: fileURL,
             });
           } catch {
             // Image blob creation error - non-critical
@@ -120,14 +126,16 @@ export default function RecipeDetail() {
   }, [glob.id, hasValidId]);
 
   // SEO meta data
-  const recipeTitle = currentRecipe?.Title || 'Recipe';
-  const recipeDescription = currentRecipe ? getRecipeDescription(currentRecipe) : 'View this recipe on SavorSwipe';
-  const recipeUrl = hasValidId ? getRecipeUrl(glob.id as string) : '';
-  const recipeImageUrl = hasValidId ? getRecipeImageUrl(glob.id as string) : '';
+  const recipeTitle = currentRecipe?.Title || "Recipe";
+  const recipeDescription = currentRecipe
+    ? getRecipeDescription(currentRecipe)
+    : "View this recipe on SavorSwipe";
+  const recipeUrl = hasValidId ? getRecipeUrl(glob.id as string) : "";
+  const recipeImageUrl = hasValidId ? getRecipeImageUrl(glob.id as string) : "";
 
   return (
     <>
-      {Platform.OS === 'web' && currentRecipe && (
+      {Platform.OS === "web" && currentRecipe && (
         <Head>
           <title>{recipeTitle} - SavorSwipe</title>
           <meta name="description" content={recipeDescription} />
@@ -149,23 +157,33 @@ export default function RecipeDetail() {
         </Head>
       )}
       <Pressable
-        style={{ position: 'absolute', top: 80, left: 20, zIndex: 1 }}
-        onPress={() => router.push('/')}
+        style={{ position: "absolute", top: 80, left: 20, zIndex: 1 }}
+        onPress={() => router.push("/")}
       >
         <Image source={buttonSrc} style={{ width: 50, height: 50 }} />
       </Pressable>
 
       {!recipeExists ? (
-        <ThemedView style={{ padding: 20, alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-          <Image 
-            source={holderImg} 
-            style={{ width: 100, height: 100, marginBottom: 20 }} 
+        <ThemedView
+          style={{
+            padding: 20,
+            alignItems: "center",
+            justifyContent: "center",
+            flex: 1,
+          }}
+        >
+          <Image
+            source={holderImg}
+            style={{ width: 100, height: 100, marginBottom: 20 }}
           />
-          <ThemedText style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10 }}>
+          <ThemedText
+            style={{ fontSize: 20, fontWeight: "bold", marginBottom: 10 }}
+          >
             Recipe Not Found
           </ThemedText>
-          <ThemedText style={{ textAlign: 'center', marginBottom: 20 }}>
-            The recipe you&apos;re looking for doesn&apos;t exist or is no longer available.
+          <ThemedText style={{ textAlign: "center", marginBottom: 20 }}>
+            The recipe you&apos;re looking for doesn&apos;t exist or is no
+            longer available.
           </ThemedText>
         </ThemedView>
       ) : (
@@ -175,19 +193,24 @@ export default function RecipeDetail() {
             <Image
               source={recipeImage ? { uri: recipeImage.file } : holderImg}
               style={{
-                width: screenDimensions.width > 1000 ? 1000 : screenDimensions.width,
-                height: screenDimensions.height > 700 ? 700 : screenDimensions.height,
-                alignSelf: 'center',
-                resizeMode: 'cover',
+                width: imageDimensions.width,
+                height: imageDimensions.height,
+                alignSelf: "center",
+                resizeMode: "cover",
               }}
             />
           }
           headerText={<></>}
         >
-          <ThemedView style={{ width: screenDimensions.width, height: screenDimensions.height }}>
+          <ThemedView
+            style={{
+              width: contentWidth,
+              alignSelf: "center",
+            }}
+          >
             {scaledRecipe && (
               <>
-                <RecipeDetails currentRecipe={scaledRecipe}/>
+                <RecipeDetails currentRecipe={scaledRecipe} />
                 <ServingSizeControl
                   currentServings={currentServings}
                   onServingsChange={handleServingsChange}

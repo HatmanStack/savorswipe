@@ -7,7 +7,6 @@ import json
 from unittest.mock import MagicMock
 
 import pytest
-
 from routes import upload as upload_route
 
 
@@ -25,7 +24,9 @@ def _event(body):
     return {"body": json.dumps(body)}
 
 
-def test_missing_function_name_short_circuits_before_s3_write(stub_clients, monkeypatch):
+def test_missing_function_name_short_circuits_before_s3_write(
+    stub_clients, monkeypatch
+):
     s3, lam = stub_clients
     monkeypatch.delenv("FUNCTION_NAME", raising=False)
 
@@ -41,24 +42,25 @@ def test_missing_function_name_short_circuits_before_s3_write(stub_clients, monk
     lam.invoke.assert_not_called()
 
 
-def test_oversized_payload_returns_413_and_writes_nothing(stub_clients, monkeypatch):
+def test_large_request_body_still_succeeds(stub_clients, monkeypatch):
+    """A large request body (e.g. a real recipe photo) must not be rejected:
+    the async invoke only ever carries {"async_processing", "job_id"}, never
+    the file data, so nothing here scales with upload size."""
     s3, lam = stub_clients
     monkeypatch.setenv("FUNCTION_NAME", "test-fn")
-    monkeypatch.setattr(upload_route, "MAX_ASYNC_PAYLOAD_BYTES", 256)
 
-    # Body that serializes well above 256 bytes.
+    # ~270KB of base64-ish data, well past the old (wrong) 200_000-byte gate.
     big_body = {
-        "files": [{"data": "A" * 2000, "type": "image/jpeg"}],
+        "files": [{"data": "A" * 270_000, "type": "image/jpeg"}],
         "jobId": "j2",
     }
     resp = upload_route.handle_post_request(_event(big_body), None)
 
-    assert resp["statusCode"] == 413
-    body = json.loads(resp["body"])
-    assert body["success"] is False
-    assert "exceeds async limit" in body["error"]
-    s3.put_object.assert_not_called()
-    lam.invoke.assert_not_called()
+    assert resp["statusCode"] == 202
+    s3.put_object.assert_called()
+    lam.invoke.assert_called_once()
+    invoke_payload = json.loads(lam.invoke.call_args.kwargs["Payload"])
+    assert invoke_payload == {"async_processing": True, "job_id": "j2"}
 
 
 def test_happy_path_writes_pending_and_invokes(stub_clients, monkeypatch):

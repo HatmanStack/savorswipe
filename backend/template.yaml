@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: SavorSwipe Recipe Processing - Complete Stack (Lambda, API Gateway, S3, CloudFront)
 
@@ -37,13 +37,23 @@ Parameters:
     Type: String
     Description: Name for this deployment (used to name all resources)
     Default: savorswipe
-    AllowedPattern: '^[a-z][a-z0-9-]*$'
+    AllowedPattern: "^[a-z][a-z0-9-]*$"
     ConstraintDescription: Must start with lowercase letter, contain only lowercase letters, numbers, and hyphens
 
   OpenAIApiKey:
     Type: String
     Description: OpenAI API Key
     NoEcho: true
+
+  OpenAIVisionModel:
+    Type: String
+    Description: OpenAI vision model used for recipe OCR
+    Default: gpt-4o
+
+  OpenAIEmbeddingModel:
+    Type: String
+    Description: OpenAI embedding model used for duplicate detection. Changing this after recipes exist requires re-embedding all stored recipes.
+    Default: text-embedding-3-small
 
   GoogleSearchId:
     Type: String
@@ -58,13 +68,13 @@ Parameters:
   IncludeDevOrigins:
     Type: String
     Description: Whether to include wildcard (*) origins in CORS for local development
-    Default: 'false'
-    AllowedValues: ['true', 'false']
+    Default: "false"
+    AllowedValues: ["true", "false"]
 
   ProductionOrigins:
     Type: CommaDelimitedList
     Description: Comma-separated list of production origins for CORS (e.g., https://myapp.example.com,https://www.myapp.example.com)
-    Default: ''
+    Default: ""
 
   ReservedConcurrency:
     Type: Number
@@ -74,20 +84,20 @@ Parameters:
     MaxValue: 100
 
 Conditions:
-  IsDevMode: !Equals [!Ref IncludeDevOrigins, 'true']
-  HasProductionOrigins: !Not [!Equals [!Select [0, !Ref ProductionOrigins], '']]
+  IsDevMode: !Equals [!Ref IncludeDevOrigins, "true"]
+  HasProductionOrigins: !Not [!Equals [!Select [0, !Ref ProductionOrigins], ""]]
 
 Resources:
   # S3 Bucket for Recipe Storage
   RecipeBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub '${StackName}-recipes-${AWS::AccountId}'
+      BucketName: !Sub "${StackName}-recipes-${AWS::AccountId}"
       CorsConfiguration:
         CorsRules:
-          - AllowedHeaders: ['*']
+          - AllowedHeaders: ["*"]
             AllowedMethods: [GET, HEAD]
-            AllowedOrigins: ['*']
+            AllowedOrigins: ["*"]
             MaxAge: 3000
       LifecycleConfiguration:
         Rules:
@@ -114,8 +124,8 @@ Resources:
   UploadDLQ:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: !Sub '${StackName}-upload-dlq'
-      MessageRetentionPeriod: 1209600  # 14 days
+      QueueName: !Sub "${StackName}-upload-dlq"
+      MessageRetentionPeriod: 1209600 # 14 days
       Tags:
         - Key: Application
           Value: SavorSwipe
@@ -126,7 +136,7 @@ Resources:
   UploadDLQNotEmptyAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub '${StackName}-upload-dlq-not-empty'
+      AlarmName: !Sub "${StackName}-upload-dlq-not-empty"
       AlarmDescription: Upload async-invoke DLQ has unprocessed messages
       Namespace: AWS/SQS
       MetricName: ApproximateNumberOfMessagesVisible
@@ -145,7 +155,7 @@ Resources:
   RecipeProcessorFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub '${StackName}-recipe-processor'
+      FunctionName: !Sub "${StackName}-recipe-processor"
       Handler: lambda_function.lambda_handler
       Runtime: python3.13
       CodeUri: .
@@ -165,10 +175,12 @@ Resources:
       Environment:
         Variables:
           API_KEY: !Ref OpenAIApiKey
+          OPENAI_VISION_MODEL: !Ref OpenAIVisionModel
+          OPENAI_EMBEDDING_MODEL: !Ref OpenAIEmbeddingModel
           SEARCH_ID: !Ref GoogleSearchId
           SEARCH_KEY: !Ref GoogleSearchKey
           S3_BUCKET: !Ref RecipeBucket
-          FUNCTION_NAME: !Sub '${StackName}-recipe-processor'
+          FUNCTION_NAME: !Sub "${StackName}-recipe-processor"
       Policies:
         - Statement:
             - Effect: Allow
@@ -176,7 +188,7 @@ Resources:
                 - s3:GetObject
                 - s3:PutObject
                 - s3:DeleteObject
-              Resource: !Sub '${RecipeBucket.Arn}/*'
+              Resource: !Sub "${RecipeBucket.Arn}/*"
             - Effect: Allow
               Action:
                 - s3:ListBucket
@@ -184,7 +196,7 @@ Resources:
             - Effect: Allow
               Action:
                 - lambda:InvokeFunction
-              Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${StackName}-recipe-processor'
+              Resource: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${StackName}-recipe-processor"
             - Effect: Allow
               Action:
                 - sqs:SendMessage
@@ -192,7 +204,7 @@ Resources:
             - Effect: Allow
               Action:
                 - cloudwatch:PutMetricData
-              Resource: '*'
+              Resource: "*"
       Tags:
         Application: SavorSwipe
         StackName: !Ref StackName
@@ -201,7 +213,7 @@ Resources:
   HttpApi:
     Type: AWS::ApiGatewayV2::Api
     Properties:
-      Name: !Sub '${StackName}-api'
+      Name: !Sub "${StackName}-api"
       ProtocolType: HTTP
       Tags:
         Application: SavorSwipe
@@ -209,11 +221,11 @@ Resources:
       CorsConfiguration:
         AllowOrigins: !If
           - IsDevMode
-          - ['*']
+          - ["*"]
           - !If
             - HasProductionOrigins
             - !Ref ProductionOrigins
-            - ['https://localhost']  # Placeholder - configure ProductionOrigins for your domain
+            - ["https://localhost"] # Placeholder - configure ProductionOrigins for your domain
         AllowMethods:
           - GET
           - POST
@@ -241,43 +253,43 @@ Resources:
       ApiId: !Ref HttpApi
       IntegrationType: AWS_PROXY
       IntegrationUri: !GetAtt RecipeProcessorFunction.Arn
-      PayloadFormatVersion: '2.0'
+      PayloadFormatVersion: "2.0"
 
   # Routes
   GetRecipesRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref HttpApi
-      RouteKey: 'GET /recipes'
-      Target: !Sub 'integrations/${LambdaIntegration}'
+      RouteKey: "GET /recipes"
+      Target: !Sub "integrations/${LambdaIntegration}"
 
   PostRecipeUploadRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref HttpApi
-      RouteKey: 'POST /recipe/upload'
-      Target: !Sub 'integrations/${LambdaIntegration}'
+      RouteKey: "POST /recipe/upload"
+      Target: !Sub "integrations/${LambdaIntegration}"
 
   DeleteRecipeRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref HttpApi
-      RouteKey: 'DELETE /recipe/{recipe_key}'
-      Target: !Sub 'integrations/${LambdaIntegration}'
+      RouteKey: "DELETE /recipe/{recipe_key}"
+      Target: !Sub "integrations/${LambdaIntegration}"
 
   PostRecipeImageRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref HttpApi
-      RouteKey: 'POST /recipe/{recipe_key}/image'
-      Target: !Sub 'integrations/${LambdaIntegration}'
+      RouteKey: "POST /recipe/{recipe_key}/image"
+      Target: !Sub "integrations/${LambdaIntegration}"
 
   GetUploadStatusRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref HttpApi
-      RouteKey: 'GET /upload/status/{jobId}'
-      Target: !Sub 'integrations/${LambdaIntegration}'
+      RouteKey: "GET /upload/status/{jobId}"
+      Target: !Sub "integrations/${LambdaIntegration}"
 
   # Lambda Permission for API Gateway
   ApiGatewayInvokePermission:
@@ -286,14 +298,14 @@ Resources:
       FunctionName: !Ref RecipeProcessorFunction
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
-      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*'
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"
 
   # CloudFront Origin Access Control (for S3 access)
   CloudFrontOAC:
     Type: AWS::CloudFront::OriginAccessControl
     Properties:
       OriginAccessControlConfig:
-        Name: !Sub '${StackName}-oac'
+        Name: !Sub "${StackName}-oac"
         OriginAccessControlOriginType: s3
         SigningBehavior: always
         SigningProtocol: sigv4
@@ -303,7 +315,7 @@ Resources:
     Type: AWS::CloudFront::Distribution
     Properties:
       DistributionConfig:
-        Comment: !Sub '${StackName} - Recipe Images CDN'
+        Comment: !Sub "${StackName} - Recipe Images CDN"
         Enabled: true
         HttpVersion: http2and3
         PriceClass: PriceClass_100
@@ -313,13 +325,13 @@ Resources:
           AllowedMethods: [GET, HEAD, OPTIONS]
           CachedMethods: [GET, HEAD]
           Compress: true
-          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6  # CachingOptimized
-          OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf  # CORS-S3Origin
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # CachingOptimized
+          OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf # CORS-S3Origin
         Origins:
           - Id: S3Origin
             DomainName: !GetAtt RecipeBucket.RegionalDomainName
             S3OriginConfig:
-              OriginAccessIdentity: ''
+              OriginAccessIdentity: ""
             OriginAccessControlId: !Ref CloudFrontOAC
       Tags:
         - Key: Application
@@ -339,10 +351,10 @@ Resources:
             Principal:
               Service: cloudfront.amazonaws.com
             Action: s3:GetObject
-            Resource: !Sub '${RecipeBucket.Arn}/*'
+            Resource: !Sub "${RecipeBucket.Arn}/*"
             Condition:
               StringEquals:
-                'AWS:SourceArn': !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
+                "AWS:SourceArn": !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}"
 
 Outputs:
   StackName:
@@ -359,13 +371,13 @@ Outputs:
 
   CloudFrontUrl:
     Description: CloudFront Distribution URL (for recipe images)
-    Value: !Sub 'https://${CloudFrontDistribution.DomainName}'
+    Value: !Sub "https://${CloudFrontDistribution.DomainName}"
     Export:
       Name: !Sub "${AWS::StackName}-CloudFrontUrl"
 
   ApiGatewayUrl:
     Description: API Gateway URL (for Lambda functions)
-    Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+    Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com"
     Export:
       Name: !Sub "${AWS::StackName}-ApiGatewayUrl"
 
