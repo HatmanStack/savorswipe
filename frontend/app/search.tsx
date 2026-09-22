@@ -1,27 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Pressable, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
-import Head from 'expo-router/head';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { ThemedView } from '@/components/ThemedView';
-import { ThemedText } from '@/components/ThemedText';
-import { SearchInput } from '@/components/SearchInput';
-import { SearchResultsList } from '@/components/SearchResultsList';
-import { SearchEmptyState } from '@/components/SearchEmptyState';
-import { RecentSearches } from '@/components/RecentSearches';
-import { SearchService } from '@/services/SearchService';
-import { SearchStorageService } from '@/services/SearchStorageService';
-import { useRecipe } from '@/context/RecipeContext';
-import { Recipe, RecentSearch } from '@/types';
-import { useThemeColor } from '@/hooks/useThemeColor';
+import React, { useState, useEffect } from "react";
+import { View, StyleSheet, Pressable, Platform } from "react-native";
+import { useRouter } from "expo-router";
+import Head from "expo-router/head";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { ThemedView } from "@/components/ThemedView";
+import { ThemedText } from "@/components/ThemedText";
+import { SearchInput } from "@/components/SearchInput";
+import { SearchResultsList } from "@/components/SearchResultsList";
+import { SearchEmptyState } from "@/components/SearchEmptyState";
+import { RecentSearches } from "@/components/RecentSearches";
+import { SearchService } from "@/services/SearchService";
+import { SearchStorageService } from "@/services/SearchStorageService";
+import { useRecipe } from "@/context/RecipeContext";
+import { Recipe, RecentSearch } from "@/types";
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { useResponsiveLayout } from "@/hooks";
 
 export default function SearchScreen() {
   const router = useRouter();
   const { jsonData } = useRecipe();
-  const iconColor = useThemeColor({}, 'icon');
+  const iconColor = useThemeColor({}, "icon");
+  const { getContentWidth } = useResponsiveLayout();
+  const contentWidth = getContentWidth();
 
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [results, setResults] = useState<Recipe[]>([]);
   const [recentSearches, setRecentSearches] = useState<RecentSearch[]>([]);
 
@@ -38,7 +41,7 @@ export default function SearchScreen() {
   // Search when query changes
   useEffect(() => {
     // Empty query: clear results and show recent searches instead
-    if (query.trim() === '') {
+    if (query.trim() === "") {
       setResults([]);
       return;
     }
@@ -99,18 +102,26 @@ export default function SearchScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {Platform.OS === 'web' && (
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      {Platform.OS === "web" && (
         <Head>
           <title>Search Recipes - SavorSwipe</title>
-          <meta name="description" content="Search through hundreds of recipes by name or ingredients. Find exactly what you're craving on SavorSwipe." />
+          <meta
+            name="description"
+            content="Search through hundreds of recipes by name or ingredients. Find exactly what you're craving on SavorSwipe."
+          />
           <link rel="canonical" href="https://savorswipe.hatstack.fun/search" />
         </Head>
       )}
-      <ThemedView style={styles.content}>
+      <ThemedView
+        style={[styles.content, { width: contentWidth, alignSelf: "center" }]}
+      >
         {/* Header with close button */}
         <View style={styles.header}>
-          <Pressable onPress={() => router.push('/')} style={styles.closeButton}>
+          <Pressable
+            onPress={() => router.push("/")}
+            style={styles.closeButton}
+          >
             <Ionicons name="close" size={28} color={iconColor} />
           </Pressable>
         </View>
@@ -126,7 +137,7 @@ export default function SearchScreen() {
         </View>
 
         {/* Conditional rendering based on state */}
-        {query === '' && recentSearches.length > 0 && (
+        {query === "" && recentSearches.length > 0 && (
           <RecentSearches
             searches={recentSearches}
             onSearchSelect={handleRecentSearchSelect}
@@ -134,10 +145,11 @@ export default function SearchScreen() {
           />
         )}
 
-        {query !== '' && results.length > 0 && (
+        {query !== "" && results.length > 0 && (
           <View style={styles.resultsContainer}>
             <ThemedText style={styles.resultCount}>
-              Found {results.length} {results.length === 1 ? 'recipe' : 'recipes'}
+              Found {results.length}{" "}
+              {results.length === 1 ? "recipe" : "recipes"}
             </ThemedText>
             <SearchResultsList
               results={results}
@@ -146,7 +158,7 @@ export default function SearchScreen() {
           </View>
         )}
 
-        {query !== '' && results.length === 0 && (
+        {query !== "" && results.length === 0 && (
           <SearchEmptyState
             query={query}
             onSuggestionPress={handleSuggestionPress}
@@ -166,13 +178,13 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
@@ -190,6 +202,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });
