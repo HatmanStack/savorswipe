@@ -3,7 +3,7 @@ import os
 import threading
 import traceback
 
-from openai import OpenAI
+from openai import BadRequestError, OpenAI
 
 from config import OPENAI_VISION_MODEL
 from fix_ingredients import normalize_recipe
@@ -21,12 +21,31 @@ def get_client():
     if _client is None:
         with _lock:
             if _client is None:
-                api_key = os.getenv('API_KEY')
+                api_key = os.getenv("API_KEY")
                 if api_key:
                     _client = OpenAI(api_key=api_key)
                 else:
                     raise ValueError("API_KEY environment variable not set. Mock get_client() in tests.")
     return _client
+
+
+def create_completion(**kwargs):
+    """Call chat.completions.create, retrying once without ``temperature`` if the
+    configured model rejects a non-default value. Some models (e.g. reasoning-style
+    ones like gpt-5.6-luna) only support the default temperature and reject any
+    explicit value with a 400, unlike gpt-4o which accepts the low temperature we
+    want for deterministic OCR."""
+    try:
+        return get_client().chat.completions.create(**kwargs)
+    except BadRequestError as e:
+        if e.param == "temperature" and "temperature" in kwargs:
+            log.warning(
+                "Model rejected explicit temperature, retrying with default",
+                model=kwargs.get("model"),
+            )
+            kwargs = {k: v for k, v in kwargs.items() if k != "temperature"}
+            return get_client().chat.completions.create(**kwargs)
+        raise
 
 
 def _repair_partial_json(recipe_json: str) -> str:
@@ -42,10 +61,10 @@ def _repair_partial_json(recipe_json: str) -> str:
     repaired = recipe_json
     if repaired.count('"') % 2 != 0:
         repaired += '"'
-    if repaired.count('[') > repaired.count(']'):
-        repaired += '\n]'
-    if repaired.count('{') > repaired.count('}'):
-        repaired += '\n}'
+    if repaired.count("[") > repaired.count("]"):
+        repaired += "\n]"
+    if repaired.count("{") > repaired.count("}"):
+        repaired += "\n}"
     return repaired
 
 
@@ -107,22 +126,24 @@ Here is the partial extraction we have so far:
 
     partial_str = json.dumps(partial_data, indent=2)
 
-    response = get_client().chat.completions.create(
+    response = create_completion(
         model=OPENAI_VISION_MODEL,
         response_format={"type": "json_object"},
         messages=[
-            {
-                "role": "system",
-                "content": completion_prompt
-            },
+            {"role": "system", "content": completion_prompt},
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": f"Partial extraction:\n{partial_str}\n\nPlease complete this recipe using the image:"},
-                    {"type": "image_url", "image_url": {
-                        "url": f"data:image/jpeg;base64,{base64_image}", "detail": "high"}}
-                ]
-            }
+                    {
+                        "type": "text",
+                        "text": f"Partial extraction:\n{partial_str}\n\nPlease complete this recipe using the image:",
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{base64_image}", "detail": "high"},
+                    },
+                ],
+            },
         ],
         temperature=0.1,  # Slightly higher to allow for completion creativity while staying accurate
         max_completion_tokens=4096,
@@ -338,22 +359,21 @@ Example 3 - Multiple partial recipes (e.g., index page with snippets):
     # Append safety note if this is a retry
     system_prompt = system_prompt + safety_note
 
-    response = get_client().chat.completions.create(
+    response = create_completion(
         model=OPENAI_VISION_MODEL,
         response_format={"type": "json_object"},
         messages=[
-            {
-                "role": "system",
-                "content": system_prompt
-            },
+            {"role": "system", "content": system_prompt},
             {
                 "role": "user",
                 "content": [
                     {"type": "text", "text": "extract the data in this recipe and output into JSON "},
-                    {"type": "image_url", "image_url": {
-                        "url": f"data:image/jpeg;base64,{base64_image}", "detail": "high"}}
-                ]
-            }
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{base64_image}", "detail": "high"},
+                    },
+                ],
+            },
         ],
         temperature=0.0,
         max_completion_tokens=4096,  # Ensure enough tokens for complete recipe extraction
@@ -361,14 +381,14 @@ Example 3 - Multiple partial recipes (e.g., index page with snippets):
     )
 
     # Handle content filter by retrying (max 2 attempts)
-    if response.choices[0].finish_reason == 'content_filter' and retry_attempt < 2:
+    if response.choices[0].finish_reason == "content_filter" and retry_attempt < 2:
         return extract_recipe_data(base64_image, retry_attempt + 1)
 
     # Parse the LLM response and normalize the recipe
     recipe_json = response.choices[0].message.content
 
     # If content filter triggered after retries, use GPT to complete the recipe
-    if response.choices[0].finish_reason == 'content_filter':
+    if response.choices[0].finish_reason == "content_filter":
         try:
             # Use GPT to complete the truncated recipe based on partial extraction and image
             recipe_json = complete_recipe_with_gpt(recipe_json, base64_image)
@@ -380,10 +400,10 @@ Example 3 - Multiple partial recipes (e.g., index page with snippets):
         recipe_data = json.loads(recipe_json)
 
         # Check if response contains multiple recipes
-        if 'recipes' in recipe_data and isinstance(recipe_data['recipes'], list):
+        if "recipes" in recipe_data and isinstance(recipe_data["recipes"], list):
             # Normalize each recipe separately
             normalized_recipes = []
-            for recipe in recipe_data['recipes']:
+            for recipe in recipe_data["recipes"]:
                 normalized_recipe = normalize_recipe(recipe)
                 normalized_recipes.append(normalized_recipe)
 
@@ -515,26 +535,16 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
 
     try:
         log.info("Calling OpenAI API")
-        response = get_client().chat.completions.create(
+        response = create_completion(
             model=OPENAI_VISION_MODEL,
             response_format={"type": "json_object"},
-
-            messages=[
-                {
-                    "role": "system",
-                    "content": parse_prompt
-                },
-                {
-                    "role": "user",
-                    "content": json_string
-                }
-            ],
+            messages=[{"role": "system", "content": parse_prompt}, {"role": "user", "content": json_string}],
             temperature=0.0,
             max_completion_tokens=16384,
             # 120s: parseJSON can receive all recipes from a multi-page PDF
             # in a single call. At 16384 completion tokens and ~100-150 tok/s
             # gpt-4o non-streaming throughput, a full response can take 110-160s.
-            timeout=120.0
+            timeout=120.0,
         )
         log.info("OpenAI API call completed")
     except Exception as e:
@@ -555,17 +565,17 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
 
         recipes_to_normalize = None
 
-        if isinstance(recipe_data, dict) and 'recipes' in recipe_data:
+        if isinstance(recipe_data, dict) and "recipes" in recipe_data:
             # Format 1: Wrapped array
-            log.info("Detected wrapped array format", count=len(recipe_data['recipes']))
-            recipes_to_normalize = recipe_data['recipes']
+            log.info("Detected wrapped array format", count=len(recipe_data["recipes"]))
+            recipes_to_normalize = recipe_data["recipes"]
         elif isinstance(recipe_data, list):
             # Format 2: Direct array
             log.info("Detected direct array format", count=len(recipe_data))
             recipes_to_normalize = recipe_data
         else:
             # Format 3: Single recipe
-            log.info("Detected single recipe format", title=recipe_data.get('Title', 'Unknown'))
+            log.info("Detected single recipe format", title=recipe_data.get("Title", "Unknown"))
             normalized_recipe = normalize_recipe(recipe_data)
             result = json.dumps(normalized_recipe, ensure_ascii=False)
             return result
@@ -582,4 +592,4 @@ You are an Expert Data Editor specializing in JSON processing and recipe data no
 
     except json.JSONDecodeError:
         # Return empty JSON object to signal parsing failure
-        return '{}'
+        return "{}"
