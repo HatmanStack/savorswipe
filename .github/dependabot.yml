@@ -5,6 +5,34 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 3
+    ignore:
+      # held: ops/docs/blockers.md #1 — remove when eslint-plugin-react ships stable eslint-10 support
+      - dependency-name: "eslint"
+        versions: [">=10"]
+      - dependency-name: "@eslint/js"
+        versions: [">=10"]
+      # held: ops/docs/blockers.md #2 — remove when typescript-eslint and ts-jest accept TS 7
+      - dependency-name: "typescript"
+        versions: [">=7"]
+      # held: ops/docs/blockers.md #3 — remove when babel-preset-expo moves to Babel 8
+      - dependency-name: "@babel/core"
+        versions: [">=8"]
+      - dependency-name: "@babel/preset-env"
+        versions: [">=8"]
+      # held: ops/docs/blockers.md #4 — remove at the Expo 58 migration
+      - dependency-name: "react-native"
+        versions: ["0.87.x"]
+      # held: ops/docs/blockers.md #5 — remove never (SDK majors are manual migrations)
+      - dependency-name: "expo"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "expo-*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "jest-expo"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint-config-expo"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@expo/*"
+        update-types: ["version-update:semver-major"]
     groups:
       dev-dependencies:
         dependency-type: development
