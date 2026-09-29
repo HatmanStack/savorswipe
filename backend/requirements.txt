@@ -35,7 +35,7 @@ jmespath==1.1.0
     # via
     #   boto3
     #   botocore
-openai==3.17.0
+openai==3.19.2
     # via savorswipe-backend
 pillow==12.3.0
     # via savorswipe-backend
