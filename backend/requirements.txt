@@ -18,7 +18,7 @@ charset-normalizer==3.4.7
     # via requests
 h11==0.16.0 ; sys_platform != 'emscripten'
     # via httpcore2
-httpcore2==2.13.0 ; sys_platform != 'emscripten'
+httpcore2==2.13.1 ; sys_platform != 'emscripten'
     # via httpx2
 httpx2==2.13.0
     # via openai
