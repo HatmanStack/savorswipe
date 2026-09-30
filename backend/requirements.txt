@@ -39,7 +39,7 @@ openai==3.19.2
     # via savorswipe-backend
 pillow==12.3.0
     # via savorswipe-backend
-pydantic==2.12.5
+pydantic==2.13.5
     # via openai
 pydantic-core==2.41.5
     # via pydantic
