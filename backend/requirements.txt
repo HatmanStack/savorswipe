@@ -14,7 +14,7 @@ botocore==1.43.99
     #   s3transfer
 certifi==2026.7.22
     # via requests
-charset-normalizer==3.4.7
+charset-normalizer==3.5.2
     # via requests
 h11==0.16.0 ; sys_platform != 'emscripten'
     # via httpcore2
