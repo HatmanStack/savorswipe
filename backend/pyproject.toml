@@ -19,7 +19,7 @@ dev = [
     "pytest-mock>=3.16.0",
     "requests-mock>=1.12.1",
     "moto[s3]>=5.2.3",
-    "ruff>=0.16.10",
+    "ruff>=0.17.0",
 ]
 
 [tool.ruff]
