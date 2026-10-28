@@ -20,7 +20,7 @@ h11==0.16.0 ; sys_platform != 'emscripten'
     # via httpcore2
 httpcore2==2.13.1 ; sys_platform != 'emscripten'
     # via httpx2
-httpx2==2.13.1
+httpx2==2.16.0
     # via openai
 httpx2-jsfetch==1.0 ; python_full_version >= '3.12' and sys_platform == 'emscripten'
     # via httpx2
