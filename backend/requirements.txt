@@ -41,7 +41,7 @@ pillow==13.0.0
     # via savorswipe-backend
 pydantic==2.14.1
     # via openai
-pydantic-core==2.50.1
+pydantic-core==2.50.2
     # via pydantic
 pymupdf==1.28.2
     # via savorswipe-backend
