@@ -43,7 +43,7 @@ pydantic==2.14.1
     # via openai
 pydantic-core==2.50.2
     # via pydantic
-pymupdf==1.28.2
+pymupdf==2.0
     # via savorswipe-backend
 python-dateutil==2.9.0.post0
     # via botocore
