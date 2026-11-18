@@ -45,7 +45,7 @@ pydantic-core==2.50.2
     # via pydantic
 pymupdf==2.0
     # via savorswipe-backend
-python-dateutil==2.9.0.post0
+python-dateutil==4.0.0
     # via botocore
 requests==2.34.2
     # via savorswipe-backend
